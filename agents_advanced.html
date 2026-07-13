@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AI Agents Advanced — Memory, A2A, Evaluation, Debugging</title>
+<link rel="stylesheet" href="fix_readability.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0a0a14;color:#e0e0e0;overflow-x:hidden}
+.nav{position:fixed;top:0;width:100%;background:#0a0a14ee;backdrop-filter:blur(8px);z-index:100;padding:.7rem 2rem;display:flex;gap:1rem;overflow-x:auto;border-bottom:1px solid #222}
+.nav a{color:#888;text-decoration:none;font-size:.8rem;white-space:nowrap;padding:4px 12px;border-radius:20px;transition:.3s}
+.nav a:hover,.nav a.active{color:#fff;background:#7b2ff730}
+main{max-width:1100px;margin:0 auto;padding:5rem 1.5rem 4rem}
+h1{font-size:2rem;text-align:center;margin-bottom:.3rem;background:linear-gradient(90deg,#ff6b6b,#7b2ff7,#00d2ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sub{text-align:center;color:#666;margin-bottom:3rem;font-size:.9rem}
+section{margin-bottom:4rem;scroll-margin-top:4rem}
+h2{font-size:1.4rem;color:#00d2ff;margin-bottom:1rem;padding-left:.5rem;border-left:3px solid #7b2ff7}
+h3{color:#ffc107;margin:.8rem 0 .4rem;font-size:1rem}
+p{line-height:1.7;color:#bbb;margin-bottom:.8rem;font-size:.92rem}
+.diagram{background:#0d0d1a;border-radius:12px;padding:1.5rem;margin:1.2rem 0;overflow-x:auto}
+.analogy{background:#12121f;border:1px solid #7b2ff730;border-radius:12px;padding:1.5rem;margin:1.2rem 0}
+.analogy h3{color:#ffc107;margin-bottom:.5rem}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem;margin:1rem 0}
+.card{background:#12121f;border:1px solid #222;border-radius:10px;padding:1.2rem;transition:.3s}
+.card:hover{border-color:#7b2ff7;transform:translateY(-2px)}
+.card h4{margin-bottom:.4rem;font-size:.95rem}
+.tag{display:inline-block;font-size:.65rem;padding:2px 8px;border-radius:10px;margin-right:4px}
+.layer{margin:.8rem 0;padding:1rem 1.2rem;border-radius:8px;border-left:4px solid;cursor:pointer;transition:.3s;background:#12121f}
+.layer:hover{transform:translateX(4px)}
+.layer .detail{max-height:0;overflow:hidden;transition:max-height .5s;color:#999;font-size:.85rem;line-height:1.6}
+.layer.open .detail{max-height:800px;margin-top:.5rem}
+.code-block{background:#0a0a12;border:1px solid #222;border-radius:8px;padding:1rem;margin:1rem 0;font-family:'Cascadia Code',monospace;font-size:.8rem;line-height:1.6;color:#bbb;overflow-x:auto}
+.code-block .kw{color:#c792ea}.code-block .fn{color:#82aaff}.code-block .str{color:#c3e88d}.code-block .cm{color:#546e7a}
+.comparison{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1rem 0}
+.comparison>div{padding:1rem;border-radius:8px;border:1px solid #222}
+</style>
+</head>
+<body>
+<nav class="nav">
+<a href="index.html">🏠 Home</a>
+<a href="agents_complete.html">← Part 1 (Basics)</a>
+<a href="#memory" class="active">Memory</a>
+<a href="#a2a">A2A Protocol</a>
+<a href="#hitl">Human-in-Loop</a>
+<a href="#debug">Debugging</a>
+<a href="#guardrails">Guardrails</a>
+<a href="#eval">Evaluation</a>
+<a href="#streaming">Streaming</a>
+<a href="#frameworks">Frameworks</a>
+</nav>
+<main>
+<h1>🤖 AI Agents Advanced — Part 2</h1>
+<p class="sub">Memory • A2A • Human-in-Loop • Debugging • Guardrails • Evaluation • Streaming • Frameworks</p>
+</main>
+</body>
+</html>
+<section id="memory">
+<h2>1. Agent Memory Systems</h2>
+<div class="analogy">
+<h3>🧠 Analogy: How Humans Remember</h3>
+<p><strong>Working memory</strong> = what you're thinking RIGHT NOW (7±2 items). Like the current LLM context window.</p>
+<p><strong>Short-term memory</strong> = recent conversation. Fades after a few minutes. Like chat history buffer.</p>
+<p><strong>Long-term memory</strong> = years of experience stored in your brain. Like a vector database of past interactions.</p>
+</div>
+<div class="diagram">
+<svg width="800" height="250" viewBox="0 0 800 250">
+<defs><marker id="a" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="#7b2ff7"/></marker></defs>
+<!-- Three memory types -->
+<rect x="20" y="30" width="220" height="90" rx="8" fill="#ff6b6b10" stroke="#ff6b6b"/>
+<text x="130" y="52" text-anchor="middle" fill="#ff6b6b" font-size="10" font-weight="bold">Working Memory</text>
+<text x="130" y="70" text-anchor="middle" fill="#bbb" font-size="8">= LLM Context Window</text>
+<text x="130" y="88" text-anchor="middle" fill="#888" font-size="7">Last few messages + system prompt</text>
+<text x="130" y="104" text-anchor="middle" fill="#888" font-size="7">Limit: 4K-128K tokens</text>
+
+<rect x="280" y="30" width="220" height="90" rx="8" fill="#ffc10710" stroke="#ffc107"/>
+<text x="390" y="52" text-anchor="middle" fill="#ffc107" font-size="10" font-weight="bold">Short-Term Memory</text>
+<text x="390" y="70" text-anchor="middle" fill="#bbb" font-size="8">= Conversation Buffer</text>
+<text x="390" y="88" text-anchor="middle" fill="#888" font-size="7">Full chat history (sliding window)</text>
+<text x="390" y="104" text-anchor="middle" fill="#888" font-size="7">Summarize old messages to fit</text>
+
+<rect x="540" y="30" width="230" height="90" rx="8" fill="#00e67610" stroke="#00e676"/>
+<text x="655" y="52" text-anchor="middle" fill="#00e676" font-size="10" font-weight="bold">Long-Term Memory</text>
+<text x="655" y="70" text-anchor="middle" fill="#bbb" font-size="8">= Vector DB (Qdrant)</text>
+<text x="655" y="88" text-anchor="middle" fill="#888" font-size="7">Past tasks, user preferences</text>
+<text x="655" y="104" text-anchor="middle" fill="#888" font-size="7">Persists across sessions</text>
+
+<!-- Patterns below -->
+<text x="20" y="155" fill="#7b2ff7" font-size="11" font-weight="bold">Memory Patterns:</text>
+<rect x="20" y="165" width="180" height="50" rx="4" fill="#12121f" stroke="#333"/>
+<text x="110" y="185" text-anchor="middle" fill="#00d2ff" font-size="8" font-weight="bold">Sliding Window</text>
+<text x="110" y="200" text-anchor="middle" fill="#888" font-size="7">Keep last N messages, drop oldest</text>
+
+<rect x="220" y="165" width="180" height="50" rx="4" fill="#12121f" stroke="#333"/>
+<text x="310" y="185" text-anchor="middle" fill="#00d2ff" font-size="8" font-weight="bold">Summary Memory</text>
+<text x="310" y="200" text-anchor="middle" fill="#888" font-size="7">LLM summarizes old messages</text>
+
+<rect x="420" y="165" width="180" height="50" rx="4" fill="#12121f" stroke="#333"/>
+<text x="510" y="185" text-anchor="middle" fill="#00d2ff" font-size="8" font-weight="bold">Retrieval Memory</text>
+<text x="510" y="200" text-anchor="middle" fill="#888" font-size="7">Embed + search past conversations</text>
+
+<rect x="620" y="165" width="160" height="50" rx="4" fill="#12121f" stroke="#333"/>
+<text x="700" y="185" text-anchor="middle" fill="#00d2ff" font-size="8" font-weight="bold">Episodic Memory</text>
+<text x="700" y="200" text-anchor="middle" fill="#888" font-size="7">Store full task outcomes for reuse</text>
+
+<text x="400" y="240" text-anchor="middle" fill="#00e676" font-size="9">YOUR ContentMind uses: Qdrant (long-term) + PipelineState (working) + story_arcs (episodic)</text>
+</svg>
+</div>
+</section>
+<section id="a2a">
+<h2>2. Agent-to-Agent Communication (A2A Protocol)</h2>
+<div class="analogy">
+<h3>🏢 Analogy: Departments in a Company</h3>
+<p><strong>MCP</strong> = an employee using TOOLS (printer, database, calendar). Tool doesn't think back.</p>
+<p><strong>A2A</strong> = departments DELEGATING to each other. Marketing asks Engineering to build something. Engineering can negotiate, ask questions, push back. TWO-WAY intelligent communication.</p>
+</div>
+<div class="diagram">
+<svg width="750" height="200" viewBox="0 0 750 200">
+<!-- MCP comparison -->
+<rect x="20" y="20" width="320" height="80" rx="6" fill="#0d0d1a" stroke="#ffc107" stroke-dasharray="4"/>
+<text x="180" y="40" text-anchor="middle" fill="#ffc107" font-size="9">MCP (Agent → Tool) — one-way</text>
+<rect x="40" y="55" width="70" height="30" rx="4" fill="#7b2ff715" stroke="#7b2ff7"/><text x="75" y="74" text-anchor="middle" fill="#7b2ff7" font-size="8">Agent</text>
+<line x1="110" y1="70" x2="150" y2="70" stroke="#7b2ff7" marker-end="url(#a)"/>
+<rect x="155" y="55" width="70" height="30" rx="4" fill="#ffc10715" stroke="#ffc107"/><text x="190" y="74" text-anchor="middle" fill="#ffc107" font-size="8">Tool</text>
+<text x="250" y="74" fill="#888" font-size="7">Tool can't think</text>
+
+<!-- A2A -->
+<rect x="380" y="20" width="350" height="80" rx="6" fill="#0d0d1a" stroke="#00e676" stroke-dasharray="4"/>
+<text x="555" y="40" text-anchor="middle" fill="#00e676" font-size="9">A2A (Agent ↔ Agent) — two-way intelligent</text>
+<rect x="400" y="55" width="80" height="30" rx="4" fill="#7b2ff715" stroke="#7b2ff7"/><text x="440" y="74" text-anchor="middle" fill="#7b2ff7" font-size="8">Agent A</text>
+<line x1="480" y1="65" x2="530" y2="65" stroke="#00e676" marker-end="url(#a)"/>
+<line x1="530" y1="75" x2="480" y2="75" stroke="#00e676" marker-end="url(#a)"/>
+<rect x="535" y="55" width="80" height="30" rx="4" fill="#00e67615" stroke="#00e676"/><text x="575" y="74" text-anchor="middle" fill="#00e676" font-size="8">Agent B</text>
+<text x="650" y="74" fill="#888" font-size="7">Can negotiate!</text>
+
+<!-- A2A flow -->
+<text x="20" y="130" fill="#00d2ff" font-size="10" font-weight="bold">A2A Protocol Flow (Google, 2025-2026):</text>
+<rect x="20" y="145" width="120" height="30" rx="4" fill="#12121f" stroke="#333"/><text x="80" y="164" text-anchor="middle" fill="#bbb" font-size="7">1. Discover agents</text>
+<rect x="160" y="145" width="120" height="30" rx="4" fill="#12121f" stroke="#333"/><text x="220" y="164" text-anchor="middle" fill="#bbb" font-size="7">2. Send task request</text>
+<rect x="300" y="145" width="120" height="30" rx="4" fill="#12121f" stroke="#333"/><text x="360" y="164" text-anchor="middle" fill="#bbb" font-size="7">3. Agent negotiates</text>
+<rect x="440" y="145" width="120" height="30" rx="4" fill="#12121f" stroke="#333"/><text x="500" y="164" text-anchor="middle" fill="#bbb" font-size="7">4. Execute + report</text>
+<rect x="580" y="145" width="120" height="30" rx="4" fill="#12121f" stroke="#333"/><text x="640" y="164" text-anchor="middle" fill="#bbb" font-size="7">5. Verify + complete</text>
+<text x="400" y="195" text-anchor="middle" fill="#888" font-size="8">Like microservices — but each service is an intelligent agent that can reason about requests</text>
+</svg>
+</div>
+</section>
+
+<section id="hitl">
+<h2>3. Human-in-the-Loop Patterns</h2>
+<div class="card-grid">
+<div class="card" style="border-color:#00e676">
+<h4 style="color:#00e676">Approval Gate</h4>
+<span class="tag" style="background:#00e67620;color:#00e676">YOUR PATTERN</span>
+<p style="font-size:.82rem">Agent pauses before a critical action. Waits for human "yes." Your ContentMind: Telegram approval before YouTube upload.</p>
+</div>
+<div class="card" style="border-color:#ffc107">
+<h4 style="color:#ffc107">Confidence Threshold</h4>
+<p style="font-size:.82rem">Agent proceeds automatically if confidence > 80%. Routes to human if below. Like your quality council: score ≥75 = auto-approve, below = retry or escalate.</p>
+</div>
+<div class="card" style="border-color:#7b2ff7">
+<h4 style="color:#7b2ff7">Review & Correct</h4>
+<p style="font-size:.82rem">Agent drafts, human reviews and edits. Common in content generation, email writing, code review. Agent learns from corrections over time.</p>
+</div>
+<div class="card" style="border-color:#00d2ff">
+<h4 style="color:#00d2ff">Escalation Chain</h4>
+<p style="font-size:.82rem">Agent → Senior Agent → Human. Each level handles more complex cases. Like L1/L2/L3 support. Reduces human load by 80%.</p>
+</div>
+</div>
+</section>
+
+<section id="debug">
+<h2>4. Agent Debugging & Observability</h2>
+<div class="analogy">
+<h3>🔬 Analogy: CCTV for Your Agent</h3>
+<p>Imagine your agent takes 8 steps and fails on step 6. Without tracing, you have NO IDEA why. It's like a crime with no camera footage.</p>
+<p>Agent observability = installing cameras (traces) at every step. You see: what it thought, which tool it called, what it received, and WHERE it went wrong.</p>
+</div>
+<div class="diagram">
+<svg width="800" height="200" viewBox="0 0 800 200">
+<!-- Trace visualization -->
+<rect x="20" y="20" width="760" height="170" rx="8" fill="#0d0d1a" stroke="#333"/>
+<text x="400" y="40" text-anchor="middle" fill="#7b2ff7" font-size="10" font-weight="bold">🔍 Agent Trace (LangFuse / LangSmith view)</text>
+<!-- Steps -->
+<rect x="40" y="55" width="100" height="50" rx="4" fill="#00e67615" stroke="#00e676"/>
+<text x="90" y="73" text-anchor="middle" fill="#00e676" font-size="7">Step 1 ✅</text>
+<text x="90" y="87" text-anchor="middle" fill="#888" font-size="6">Think: "search jobs"</text>
+<text x="90" y="97" text-anchor="middle" fill="#555" font-size="6">120 tokens, 0.8s</text>
+
+<rect x="160" y="55" width="100" height="50" rx="4" fill="#00e67615" stroke="#00e676"/>
+<text x="210" y="73" text-anchor="middle" fill="#00e676" font-size="7">Step 2 ✅</text>
+<text x="210" y="87" text-anchor="middle" fill="#888" font-size="6">Act: search_jobs()</text>
+<text x="210" y="97" text-anchor="middle" fill="#555" font-size="6">0 tokens, 1.2s</text>
+
+<rect x="280" y="55" width="100" height="50" rx="4" fill="#00e67615" stroke="#00e676"/>
+<text x="330" y="73" text-anchor="middle" fill="#00e676" font-size="7">Step 3 ✅</text>
+<text x="330" y="87" text-anchor="middle" fill="#888" font-size="6">Think: "score top"</text>
+<text x="330" y="97" text-anchor="middle" fill="#555" font-size="6">180 tokens, 0.9s</text>
+
+<rect x="400" y="55" width="100" height="50" rx="4" fill="#ffc10715" stroke="#ffc107"/>
+<text x="450" y="73" text-anchor="middle" fill="#ffc107" font-size="7">Step 4 ⚠️</text>
+<text x="450" y="87" text-anchor="middle" fill="#888" font-size="6">Act: score_job()</text>
+<text x="450" y="97" text-anchor="middle" fill="#ffc107" font-size="6">Timeout 5s!</text>
+
+<rect x="520" y="55" width="100" height="50" rx="4" fill="#ff525215" stroke="#ff5252"/>
+<text x="570" y="73" text-anchor="middle" fill="#ff5252" font-size="7">Step 5 ❌</text>
+<text x="570" y="87" text-anchor="middle" fill="#888" font-size="6">Think: confused</text>
+<text x="570" y="97" text-anchor="middle" fill="#ff5252" font-size="6">Hallucinated tool!</text>
+
+<!-- Summary -->
+<text x="400" y="130" text-anchor="middle" fill="#ffc107" font-size="9">Root cause: Step 4 timeout → Step 5 got confused by error message → hallucinated a tool</text>
+<text x="400" y="148" text-anchor="middle" fill="#00e676" font-size="9">Fix: Add timeout handling in tool executor + "if tool fails, say 'I couldn't complete this'"</text>
+<!-- Tools to use -->
+<text x="400" y="175" text-anchor="middle" fill="#555" font-size="8">Tools: LangFuse (open-source, free) | LangSmith (LangChain) | Helicone (proxy-based) | Arize (production)</text>
+</svg>
+</div>
+</section>
+<section id="guardrails">
+<h2>5. Agent Guardrails & Safety</h2>
+<div class="diagram">
+<svg width="750" height="200" viewBox="0 0 750 200">
+<!-- Pipeline -->
+<text x="375" y="20" text-anchor="middle" fill="#7b2ff7" font-size="10" font-weight="bold">Agent Safety Pipeline (what happens BEFORE a tool is executed)</text>
+<rect x="30" y="40" width="110" height="40" rx="4" fill="#7b2ff715" stroke="#7b2ff7"/><text x="85" y="64" text-anchor="middle" fill="#7b2ff7" font-size="8">Agent decides:</text><text x="85" y="74" text-anchor="middle" fill="#bbb" font-size="7">"delete_file(x)"</text>
+<line x1="140" y1="60" x2="165" y2="60" stroke="#7b2ff7" marker-end="url(#a)"/>
+<rect x="170" y="35" width="110" height="50" rx="4" fill="#ff525210" stroke="#ff5252"/><text x="225" y="55" text-anchor="middle" fill="#ff5252" font-size="8">Permission Check</text><text x="225" y="68" text-anchor="middle" fill="#888" font-size="6">Is this tool allowed?</text><text x="225" y="78" text-anchor="middle" fill="#888" font-size="6">Is this arg safe?</text>
+<line x1="280" y1="60" x2="305" y2="60" stroke="#7b2ff7" marker-end="url(#a)"/>
+<rect x="310" y="35" width="110" height="50" rx="4" fill="#ffc10710" stroke="#ffc107"/><text x="365" y="55" text-anchor="middle" fill="#ffc107" font-size="8">Rate Limiter</text><text x="365" y="68" text-anchor="middle" fill="#888" font-size="6">Max 5 tool calls</text><text x="365" y="78" text-anchor="middle" fill="#888" font-size="6">per minute</text>
+<line x1="420" y1="60" x2="445" y2="60" stroke="#7b2ff7" marker-end="url(#a)"/>
+<rect x="450" y="35" width="110" height="50" rx="4" fill="#00e67610" stroke="#00e676"/><text x="505" y="55" text-anchor="middle" fill="#00e676" font-size="8">Sandbox</text><text x="505" y="68" text-anchor="middle" fill="#888" font-size="6">Execute in isolated</text><text x="505" y="78" text-anchor="middle" fill="#888" font-size="6">environment</text>
+<line x1="560" y1="60" x2="585" y2="60" stroke="#7b2ff7" marker-end="url(#a)"/>
+<rect x="590" y="40" width="110" height="40" rx="4" fill="#00d2ff10" stroke="#00d2ff"/><text x="645" y="64" text-anchor="middle" fill="#00d2ff" font-size="8">✅ Execute Tool</text>
+
+<!-- Dangerous tools -->
+<text x="20" y="120" fill="#ff5252" font-size="9" font-weight="bold">Dangerous tool categories to guard:</text>
+<rect x="20" y="130" width="140" height="30" rx="4" fill="#ff525208" stroke="#ff525280"/><text x="90" y="149" text-anchor="middle" fill="#ff5252" font-size="7">🗑️ DELETE operations</text>
+<rect x="180" y="130" width="140" height="30" rx="4" fill="#ff525208" stroke="#ff525280"/><text x="250" y="149" text-anchor="middle" fill="#ff5252" font-size="7">💳 Payment/billing</text>
+<rect x="340" y="130" width="140" height="30" rx="4" fill="#ff525208" stroke="#ff525280"/><text x="410" y="149" text-anchor="middle" fill="#ff5252" font-size="7">📧 Send emails/messages</text>
+<rect x="500" y="130" width="140" height="30" rx="4" fill="#ff525208" stroke="#ff525280"/><text x="570" y="149" text-anchor="middle" fill="#ff5252" font-size="7">🌐 External API calls</text>
+
+<text x="375" y="185" text-anchor="middle" fill="#00e676" font-size="8">YOUR Kiro hook system does this! preToolUse hooks check permissions before tool execution.</text>
+</svg>
+</div>
+</section>
+
+<section id="eval">
+<h2>6. Agent Evaluation — How to Measure Agent Quality</h2>
+<div class="card-grid">
+<div class="card" style="border-color:#00e676">
+<h4 style="color:#00e676">Task Completion Rate</h4>
+<p style="font-size:.82rem">% of tasks the agent finishes successfully. Target: >85%. Below that = tool issues or prompt problems.</p>
+</div>
+<div class="card" style="border-color:#7b2ff7">
+<h4 style="color:#7b2ff7">Step Efficiency</h4>
+<p style="font-size:.82rem">Average steps to complete a task. Fewer = smarter. Agent that takes 8 steps for a 3-step task = wasteful (token cost!).</p>
+</div>
+<div class="card" style="border-color:#ffc107">
+<h4 style="color:#ffc107">Tool Selection Accuracy</h4>
+<p style="font-size:.82rem">% of times agent picks the RIGHT tool on first try. Low = your tool descriptions are ambiguous.</p>
+</div>
+<div class="card" style="border-color:#00d2ff">
+<h4 style="color:#00d2ff">Cost Per Task</h4>
+<p style="font-size:.82rem">Total tokens × price for one task completion. YOUR pipeline: ~3350 tokens × $0.001 = $0.004/video. Track this over time.</p>
+</div>
+<div class="card" style="border-color:#ff6b6b">
+<h4 style="color:#ff6b6b">Recovery Rate</h4>
+<p style="font-size:.82rem">When a tool fails, does the agent recover? YOUR code: Edge-TTS fails → tries backup voices → gTTS. Recovery rate: ~95%.</p>
+</div>
+<div class="card" style="border-color:#e040fb">
+<h4 style="color:#e040fb">Hallucination Rate</h4>
+<p style="font-size:.82rem">% of responses where agent claims it did something it didn't, or invents tool results. Should be <2%.</p>
+</div>
+</div>
+</section>
+
+<section id="streaming">
+<h2>7. Streaming Agents — Real-Time UX</h2>
+<div class="analogy">
+<h3>📺 Analogy: Live Commentary vs Post-Match Summary</h3>
+<p><strong>Non-streaming agent:</strong> You wait 30 seconds for final answer. Like watching the score ONLY at the end of a cricket match.</p>
+<p><strong>Streaming agent:</strong> You see the agent's THINKING live. "Searching... Found 3 results... Scoring... Best match is..." Like ball-by-ball commentary.</p>
+<p style="color:#00e676">This is how Perplexity, ChatGPT, and Claude show their work — the agent streams its reasoning + tool calls in real-time.</p>
+</div>
+<div class="diagram">
+<svg width="700" height="140" viewBox="0 0 700 140">
+<text x="350" y="20" text-anchor="middle" fill="#7b2ff7" font-size="10" font-weight="bold">Server-Sent Events (SSE) — How Streaming Works</text>
+<!-- Server -->
+<rect x="30" y="50" width="120" height="60" rx="6" fill="#7b2ff715" stroke="#7b2ff7"/>
+<text x="90" y="75" text-anchor="middle" fill="#7b2ff7" font-size="9">Your FastAPI</text>
+<text x="90" y="90" text-anchor="middle" fill="#888" font-size="7">Agent running</text>
+<!-- Tokens flowing -->
+<text x="180" y="70" fill="#00d2ff" font-size="7">event: thinking</text>
+<text x="180" y="82" fill="#ffc107" font-size="7">event: tool_call</text>
+<text x="180" y="94" fill="#00e676" font-size="7">event: result</text>
+<text x="180" y="106" fill="#7b2ff7" font-size="7">event: answer_token</text>
+<!-- Arrows (streaming) -->
+<line x1="170" y1="65" x2="350" y2="65" stroke="#00d2ff" stroke-dasharray="3"/><line x1="170" y1="77" x2="370" y2="77" stroke="#ffc107" stroke-dasharray="3"/><line x1="170" y1="89" x2="390" y2="89" stroke="#00e676" stroke-dasharray="3"/><line x1="170" y1="101" x2="410" y2="101" stroke="#7b2ff7" stroke-dasharray="3"/>
+<!-- Client -->
+<rect x="430" y="50" width="160" height="60" rx="6" fill="#00e67615" stroke="#00e676"/>
+<text x="510" y="70" text-anchor="middle" fill="#00e676" font-size="9">Browser / Frontend</text>
+<text x="510" y="85" text-anchor="middle" fill="#888" font-size="7">Shows each event LIVE</text>
+<text x="510" y="100" text-anchor="middle" fill="#888" font-size="7">as it arrives</text>
+<!-- Label -->
+<text x="350" y="130" text-anchor="middle" fill="#555" font-size="8">EventSource API in browser connects to SSE endpoint. Each token/event arrives instantly.</text>
+</svg>
+</div>
+</section>
+
+<section id="frameworks">
+<h2>8. Framework Comparison (2026)</h2>
+<div class="card-grid">
+<div class="card" style="border-color:#7b2ff7">
+<h4 style="color:#7b2ff7">LangGraph</h4>
+<span class="tag" style="background:#7b2ff720;color:#7b2ff7">YOUR CHOICE</span>
+<p style="font-size:.82rem"><strong>Best for:</strong> Complex stateful graphs, conditional routing, cycles (improvement loops). Maximum control.</p>
+<p style="font-size:.78rem;color:#888">Tradeoff: Steeper learning curve, more boilerplate than CrewAI.</p>
+</div>
+<div class="card" style="border-color:#00e676">
+<h4 style="color:#00e676">CrewAI</h4>
+<p style="font-size:.82rem"><strong>Best for:</strong> Role-based teams where agents have clear personas. Quick to prototype. "Researcher + Writer + Editor" pattern.</p>
+<p style="font-size:.78rem;color:#888">Tradeoff: Less control over execution flow than LangGraph.</p>
+</div>
+<div class="card" style="border-color:#00d2ff">
+<h4 style="color:#00d2ff">OpenAI Agents SDK</h4>
+<p style="font-size:.82rem"><strong>Best for:</strong> Function calling native. If you're already on OpenAI/GPT-4, it's the simplest path. Built-in handoff between agents.</p>
+<p style="font-size:.78rem;color:#888">Tradeoff: Locked to OpenAI models. New (2025), less battle-tested.</p>
+</div>
+<div class="card" style="border-color:#ffc107">
+<h4 style="color:#ffc107">Google ADK</h4>
+<p style="font-size:.82rem"><strong>Best for:</strong> A2A protocol integration. If you need agent-to-agent communication across systems. Enterprise-focused.</p>
+<p style="font-size:.78rem;color:#888">Tradeoff: Newest, smallest community, Google-ecosystem oriented.</p>
+</div>
+<div class="card" style="border-color:#ff6b6b">
+<h4 style="color:#ff6b6b">AutoGen (Microsoft)</h4>
+<p style="font-size:.82rem"><strong>Best for:</strong> Multi-agent conversation where agents TALK to each other in rounds. Research and experimentation.</p>
+<p style="font-size:.78rem;color:#888">Tradeoff: Complex setup, more research-oriented than production.</p>
+</div>
+<div class="card" style="border-color:#e040fb">
+<h4 style="color:#e040fb">Raw (No Framework)</h4>
+<p style="font-size:.82rem"><strong>Best for:</strong> Maximum performance, minimal overhead, full understanding. Interview flex: "I built it from scratch in 40 lines."</p>
+<p style="font-size:.78rem;color:#888">Tradeoff: You handle all error cases, retries, state management yourself.</p>
+</div>
+</div>
+<div class="layer" style="border-color:#7b2ff7" onclick="this.classList.toggle('open')">
+<strong>🎯 Interview Answer: "Why did you choose LangGraph?"</strong>
+<div class="detail"><p>"I needed conditional routing (story vs tech mode), cycles (improvement loop that retries up to 3 times), and stateful execution (PipelineState TypedDict with 40+ fields). LangChain doesn't support cycles. CrewAI doesn't give enough control over graph structure. LangGraph lets me define exactly which nodes connect to which, with conditional edges based on runtime state."</p></div>
+</div>
+</section>
+
+<div style="text-align:center;padding:3rem 0;border-top:1px solid #222;margin-top:3rem">
+<p style="color:#7b2ff7;font-size:1.1rem">🎉 Agents Complete — Basic + Advanced. You now know everything interviewers ask.</p>
+<p style="color:#888;margin-top:.5rem"><a href="agents_complete.html" style="color:#00d2ff">← Part 1 (Basics)</a> &nbsp;|&nbsp; <a href="index.html" style="color:#00d2ff">🏠 Home</a></p>
+<p style="color:#555;margin-top:1rem;font-size:.8rem">Next: Transformer Internals (how LLMs actually work inside) →</p>
+</div>
+<script>document.querySelectorAll('.nav a[href^="#"]').forEach(a=>{a.addEventListener('click',e=>{e.preventDefault();document.querySelector(a.getAttribute('href')).scrollIntoView({behavior:'smooth'});document.querySelectorAll('.nav a').forEach(x=>x.classList.remove('active'));a.classList.add('active')})});</script>

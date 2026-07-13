@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LLM Quality Engineering — Your Career Edge</title>
+<link rel="stylesheet" href="fix_readability.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0a0a14;color:#e0e0e0;overflow-x:hidden}
+.nav{position:fixed;top:0;width:100%;background:#0a0a14ee;backdrop-filter:blur(8px);z-index:100;padding:.7rem 2rem;display:flex;gap:1rem;overflow-x:auto;border-bottom:1px solid #222}
+.nav a{color:#888;text-decoration:none;font-size:.8rem;white-space:nowrap;padding:4px 12px;border-radius:20px;transition:.3s}
+.nav a:hover,.nav a.active{color:#fff;background:#7b2ff730}
+main{max-width:1100px;margin:0 auto;padding:5rem 1.5rem 4rem}
+h1{font-size:2rem;text-align:center;margin-bottom:.3rem;background:linear-gradient(90deg,#00e676,#00d2ff,#7b2ff7);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sub{text-align:center;color:#666;margin-bottom:3rem;font-size:.9rem}
+section{margin-bottom:4rem;scroll-margin-top:4rem}
+h2{font-size:1.4rem;color:#00d2ff;margin-bottom:1rem;padding-left:.5rem;border-left:3px solid #7b2ff7}
+p{line-height:1.7;color:#bbb;margin-bottom:.8rem;font-size:.92rem}
+.diagram{background:#0d0d1a;border-radius:12px;padding:1.5rem;margin:1.2rem 0;overflow-x:auto}
+.analogy{background:#12121f;border:1px solid #00e67630;border-radius:12px;padding:1.5rem;margin:1.2rem 0}
+.analogy h3{color:#ffc107;margin-bottom:.5rem}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem;margin:1rem 0}
+.card{background:#12121f;border:1px solid #222;border-radius:10px;padding:1.2rem;transition:.3s}
+.card:hover{border-color:#7b2ff7;transform:translateY(-2px)}
+.card h4{margin-bottom:.4rem;font-size:.95rem}
+.tag{display:inline-block;font-size:.65rem;padding:2px 8px;border-radius:10px;margin-right:4px}
+.layer{margin:.8rem 0;padding:1rem 1.2rem;border-radius:8px;border-left:4px solid;cursor:pointer;transition:.3s;background:#12121f}
+.layer:hover{transform:translateX(4px)}
+.layer .detail{max-height:0;overflow:hidden;transition:max-height .5s;color:#999;font-size:.85rem;line-height:1.6}
+.layer.open .detail{max-height:800px;margin-top:.5rem}
+.highlight-box{background:linear-gradient(135deg,#7b2ff710,#00e67610);border:1px solid #7b2ff740;border-radius:12px;padding:1.5rem;margin:1.5rem 0}
+.code-block{background:#0a0a12;border:1px solid #222;border-radius:8px;padding:1rem;margin:1rem 0;font-family:'Cascadia Code',monospace;font-size:.78rem;line-height:1.6;color:#bbb;overflow-x:auto}
+.code-block .kw{color:#c792ea}.code-block .fn{color:#82aaff}.code-block .str{color:#c3e88d}.code-block .cm{color:#546e7a}
+</style>
+</head>
+<body>
+<nav class="nav">
+<a href="index.html">🏠 Home</a>
+<a href="#why" class="active">The Opportunity</a>
+<a href="#what">What Is It?</a>
+<a href="#architecture">Architecture</a>
+<a href="#pyramid">Test Pyramid</a>
+<a href="#your-edge">Your Edge</a>
+<a href="#tools">Tools Landscape</a>
+<a href="#build">What to Build</a>
+<a href="#jobs">Real Jobs</a>
+</nav>
+<main>
+<h1>🎯 LLM Quality Engineering</h1>
+<p class="sub">The untapped intersection of QA Automation × AI Systems — YOUR career differentiator</p>
+</main>
+</body>
+</html>
+<section id="why">
+<h2>1. The ₹50L Opportunity Nobody Sees</h2>
+<div class="highlight-box">
+<h3 style="color:#00e676;margin-bottom:.5rem">🔑 The Core Insight</h3>
+<p style="color:#e0e0e0">Thousands of engineers are building AI apps. Very few know how to SYSTEMATICALLY TEST them. Non-deterministic outputs break all traditional QA assumptions. Your 5 years of QA automation + your AI projects = the rarest profile in the market.</p>
+</div>
+<div class="diagram">
+<svg width="800" height="220" viewBox="0 0 800 220">
+<!-- The gap visualization -->
+<text x="400" y="20" text-anchor="middle" fill="#7b2ff7" font-size="10" font-weight="bold">The Market Gap — Where Two Worlds Don't Overlap (Yet)</text>
+<!-- Circle 1: QA Engineers -->
+<circle cx="250" cy="130" r="100" fill="#ff6b6b10" stroke="#ff6b6b" stroke-dasharray="4"/>
+<text x="200" y="100" fill="#ff6b6b" font-size="9" font-weight="bold">QA Engineers</text>
+<text x="200" y="115" fill="#888" font-size="7">Know: test strategy, regression</text>
+<text x="200" y="128" fill="#888" font-size="7">CI/CD gates, automation</text>
+<text x="200" y="141" fill="#888" font-size="7">property assertions</text>
+<text x="200" y="158" fill="#ff5252" font-size="7">DON'T know: LLMs, RAG, agents</text>
+<!-- Circle 2: AI Engineers -->
+<circle cx="500" cy="130" r="100" fill="#00d2ff10" stroke="#00d2ff" stroke-dasharray="4"/>
+<text x="510" y="100" fill="#00d2ff" font-size="9" font-weight="bold">AI Engineers</text>
+<text x="510" y="115" fill="#888" font-size="7">Know: RAG, agents, prompts</text>
+<text x="510" y="128" fill="#888" font-size="7">model selection, deployment</text>
+<text x="510" y="141" fill="#888" font-size="7">evaluation metrics</text>
+<text x="510" y="158" fill="#ff5252" font-size="7">DON'T know: systematic QA</text>
+<!-- Overlap (YOU) -->
+<circle cx="375" cy="130" r="40" fill="#00e67630" stroke="#00e676" stroke-width="2"/>
+<text x="375" y="125" text-anchor="middle" fill="#00e676" font-size="9" font-weight="bold">YOU</text>
+<text x="375" y="140" text-anchor="middle" fill="#00e676" font-size="7">Both worlds</text>
+<!-- Arrow -->
+<text x="375" y="200" text-anchor="middle" fill="#ffc107" font-size="9">This overlap has < 1% of the candidate pool but GROWING demand</text>
+</svg>
+</div>
+</section>
+
+<section id="what">
+<h2>2. What IS LLM Quality Engineering?</h2>
+<div class="analogy">
+<h3>🏭 Analogy: Quality Control in a Factory</h3>
+<p>A car factory has: incoming material inspection → assembly line checks → final quality gate → post-delivery monitoring → recall system.</p>
+<p>LLM Quality Engineering is the SAME THING for AI systems: input validation → retrieval quality checks → generation quality gate → production monitoring → regression detection.</p>
+</div>
+<p>It's the discipline of ensuring LLM systems produce RELIABLE, SAFE, CORRECT outputs — systematically, not by luck.</p>
+
+<div class="card-grid">
+<div class="card" style="border-color:#ff6b6b">
+<h4 style="color:#ff6b6b">The Problem It Solves</h4>
+<p style="font-size:.82rem">LLMs are non-deterministic. Same input → different output. Traditional testing (assertEqual) BREAKS. You need PROPERTY-BASED testing: "is the output JSON valid?", "are all claims grounded?", "is the tone appropriate?"</p>
+</div>
+<div class="card" style="border-color:#00e676">
+<h4 style="color:#00e676">Why It Matters NOW</h4>
+<p style="font-size:.82rem">Companies shipping AI to production are getting burned by: hallucinations reaching customers, quality silently degrading after model updates, prompt changes breaking downstream systems. They NEED someone who thinks about quality SYSTEMATICALLY.</p>
+</div>
+<div class="card" style="border-color:#7b2ff7">
+<h4 style="color:#7b2ff7">What Traditional QA Can't Do</h4>
+<p style="font-size:.82rem">You can't write <code>assert response == "exact string"</code> for LLMs. You need: semantic similarity assertions, property checks, statistical quality thresholds, LLM-as-judge evaluators, and drift detection over time.</p>
+</div>
+</div>
+</section>
+
+<section id="architecture">
+<h2>3. Architecture — The LLM Quality Engineering System</h2>
+<div class="diagram">
+<svg width="900" height="380" viewBox="0 0 900 380">
+<defs><marker id="a" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="#7b2ff7"/></marker></defs>
+<text x="450" y="20" text-anchor="middle" fill="#7b2ff7" font-size="11" font-weight="bold">Complete LLM Quality Engineering Pipeline</text>
+
+<!-- PRE-DEPLOYMENT (left) -->
+<rect x="20" y="40" width="400" height="300" rx="8" fill="#0d0d1a" stroke="#00e67640" stroke-dasharray="4"/>
+<text x="220" y="58" text-anchor="middle" fill="#00e676" font-size="9" font-weight="bold">PRE-DEPLOYMENT (CI/CD Quality Gates)</text>
+
+<rect x="40" y="75" width="170" height="50" rx="4" fill="#12121f" stroke="#ff6b6b"/>
+<text x="125" y="95" text-anchor="middle" fill="#ff6b6b" font-size="8" font-weight="bold">① Prompt Test Suite</text>
+<text x="125" y="110" text-anchor="middle" fill="#888" font-size="6">Golden dataset (50+ cases)</text>
+<text x="125" y="120" text-anchor="middle" fill="#888" font-size="6">Expected vs actual assertions</text>
+
+<rect x="230" y="75" width="170" height="50" rx="4" fill="#12121f" stroke="#ffc107"/>
+<text x="315" y="95" text-anchor="middle" fill="#ffc107" font-size="8" font-weight="bold">② RAG Quality Check</text>
+<text x="315" y="110" text-anchor="middle" fill="#888" font-size="6">RAGAS: faithfulness >0.9</text>
+<text x="315" y="120" text-anchor="middle" fill="#888" font-size="6">Context precision >0.8</text>
+
+<rect x="40" y="140" width="170" height="50" rx="4" fill="#12121f" stroke="#00e676"/>
+<text x="125" y="160" text-anchor="middle" fill="#00e676" font-size="8" font-weight="bold">③ Property-Based Tests</text>
+<text x="125" y="175" text-anchor="middle" fill="#888" font-size="6">Output is valid JSON? ✓</text>
+<text x="125" y="185" text-anchor="middle" fill="#888" font-size="6">Score in 0-100 range? ✓</text>
+
+<rect x="230" y="140" width="170" height="50" rx="4" fill="#12121f" stroke="#00d2ff"/>
+<text x="315" y="160" text-anchor="middle" fill="#00d2ff" font-size="8" font-weight="bold">④ Safety Checks</text>
+<text x="315" y="175" text-anchor="middle" fill="#888" font-size="6">No PII leakage? ✓</text>
+<text x="315" y="185" text-anchor="middle" fill="#888" font-size="6">Prompt injection resistant? ✓</text>
+
+<rect x="40" y="205" width="170" height="50" rx="4" fill="#12121f" stroke="#7b2ff7"/>
+<text x="125" y="225" text-anchor="middle" fill="#7b2ff7" font-size="8" font-weight="bold">⑤ Regression Detection</text>
+<text x="125" y="240" text-anchor="middle" fill="#888" font-size="6">Compare v2 vs v1 quality</text>
+<text x="125" y="250" text-anchor="middle" fill="#888" font-size="6">Block deploy if ↓ >5%</text>
+
+<rect x="230" y="205" width="170" height="50" rx="4" fill="#12121f" stroke="#e040fb"/>
+<text x="315" y="225" text-anchor="middle" fill="#e040fb" font-size="8" font-weight="bold">⑥ Cost Estimation</text>
+<text x="315" y="240" text-anchor="middle" fill="#888" font-size="6">New prompt uses more tokens?</text>
+<text x="315" y="250" text-anchor="middle" fill="#888" font-size="6">Alert if >20% cost increase</text>
+
+<!-- Gate -->
+<rect x="120" y="270" width="200" height="35" rx="6" fill="#00e67620" stroke="#00e676" stroke-width="2"/>
+<text x="220" y="292" text-anchor="middle" fill="#00e676" font-size="9" font-weight="bold">✅ QUALITY GATE: Pass → Deploy</text>
+
+<!-- POST-DEPLOYMENT (right) -->
+<rect x="460" y="40" width="420" height="300" rx="8" fill="#0d0d1a" stroke="#ffc10740" stroke-dasharray="4"/>
+<text x="670" y="58" text-anchor="middle" fill="#ffc107" font-size="9" font-weight="bold">POST-DEPLOYMENT (Production Monitoring)</text>
+
+<rect x="480" y="75" width="180" height="50" rx="4" fill="#12121f" stroke="#ffc107"/>
+<text x="570" y="95" text-anchor="middle" fill="#ffc107" font-size="8" font-weight="bold">⑦ Real-Time Quality Scoring</text>
+<text x="570" y="110" text-anchor="middle" fill="#888" font-size="6">LLM-as-judge on % of responses</text>
+<text x="570" y="120" text-anchor="middle" fill="#888" font-size="6">Alert if avg score drops</text>
+
+<rect x="680" y="75" width="180" height="50" rx="4" fill="#12121f" stroke="#ff6b6b"/>
+<text x="770" y="95" text-anchor="middle" fill="#ff6b6b" font-size="8" font-weight="bold">⑧ Drift Detection</text>
+<text x="770" y="110" text-anchor="middle" fill="#888" font-size="6">Embedding drift (are chunks stale?)</text>
+<text x="770" y="120" text-anchor="middle" fill="#888" font-size="6">Output distribution shift</text>
+
+<rect x="480" y="140" width="180" height="50" rx="4" fill="#12121f" stroke="#00d2ff"/>
+<text x="570" y="160" text-anchor="middle" fill="#00d2ff" font-size="8" font-weight="bold">⑨ User Feedback Loop</text>
+<text x="570" y="175" text-anchor="middle" fill="#888" font-size="6">👍/👎 + implicit signals</text>
+<text x="570" y="185" text-anchor="middle" fill="#888" font-size="6">Feed back into test suite</text>
+
+<rect x="680" y="140" width="180" height="50" rx="4" fill="#12121f" stroke="#7b2ff7"/>
+<text x="770" y="160" text-anchor="middle" fill="#7b2ff7" font-size="8" font-weight="bold">⑩ Traces & Debugging</text>
+<text x="770" y="175" text-anchor="middle" fill="#888" font-size="6">LangFuse/LangSmith traces</text>
+<text x="770" y="185" text-anchor="middle" fill="#888" font-size="6">Step-by-step failure replay</text>
+
+<rect x="550" y="210" width="220" height="45" rx="6" fill="#12121f" stroke="#00e676"/>
+<text x="660" y="230" text-anchor="middle" fill="#00e676" font-size="8" font-weight="bold">⑪ Automated Root Cause</text>
+<text x="660" y="245" text-anchor="middle" fill="#888" font-size="6">"Quality dropped because chunk #3 is outdated"</text>
+
+<!-- Dashboard -->
+<rect x="530" y="275" width="300" height="50" rx="6" fill="#7b2ff720" stroke="#7b2ff7"/>
+<text x="680" y="295" text-anchor="middle" fill="#7b2ff7" font-size="9" font-weight="bold">📊 Quality Dashboard</text>
+<text x="680" y="312" text-anchor="middle" fill="#888" font-size="7">Faithfulness | Latency | Cost | Error Rate | Drift | CSAT</text>
+</svg>
+</div>
+</section>
+<section id="pyramid">
+<h2>4. The AI Test Pyramid — A New Testing Mental Model</h2>
+<div class="analogy">
+<h3>🔺 Traditional Test Pyramid → AI Test Pyramid</h3>
+<p>In traditional QA: Unit Tests (many, fast) → Integration Tests → E2E Tests (few, slow).</p>
+<p>For AI systems: the pyramid is DIFFERENT because outputs are non-deterministic.</p>
+</div>
+<div class="diagram">
+<svg width="700" height="320" viewBox="0 0 700 320">
+<!-- Traditional pyramid (left) -->
+<text x="170" y="20" text-anchor="middle" fill="#888" font-size="9">Traditional (Your QA past)</text>
+<polygon points="170,40 50,250 290,250" fill="#ff6b6b08" stroke="#ff6b6b50"/>
+<text x="170" y="230" text-anchor="middle" fill="#ff6b6b" font-size="8">Unit Tests (many, fast, cheap)</text>
+<text x="170" y="170" text-anchor="middle" fill="#ffc107" font-size="8">Integration Tests</text>
+<text x="170" y="100" text-anchor="middle" fill="#7b2ff7" font-size="8">E2E Tests (few, slow)</text>
+<text x="170" y="70" text-anchor="middle" fill="#888" font-size="6">Manual Exploratory</text>
+
+<!-- AI Test Pyramid (right) -->
+<text x="500" y="20" text-anchor="middle" fill="#00e676" font-size="9" font-weight="bold">AI/LLM Test Pyramid (YOUR future)</text>
+<polygon points="500,40 340,250 660,250" fill="#00e67608" stroke="#00e67650"/>
+
+<!-- Level 1: Deterministic -->
+<text x="500" y="230" text-anchor="middle" fill="#00e676" font-size="8" font-weight="bold">Level 1: Deterministic Checks</text>
+<text x="500" y="244" text-anchor="middle" fill="#888" font-size="6">Format valid? JSON? Length OK? No PII? (like unit tests — fast, cheap)</text>
+
+<!-- Level 2: Property -->
+<text x="500" y="180" text-anchor="middle" fill="#ffc107" font-size="8" font-weight="bold">Level 2: Property Assertions</text>
+<text x="500" y="194" text-anchor="middle" fill="#888" font-size="6">Output grounded in context? Score in range? Tone correct?</text>
+
+<!-- Level 3: LLM-Judge -->
+<text x="500" y="130" text-anchor="middle" fill="#7b2ff7" font-size="8" font-weight="bold">Level 3: LLM-as-Judge</text>
+<text x="500" y="144" text-anchor="middle" fill="#888" font-size="6">Strong model evaluates weaker model (expensive but accurate)</text>
+
+<!-- Level 4: Human -->
+<text x="500" y="80" text-anchor="middle" fill="#ff6b6b" font-size="8" font-weight="bold">Level 4: Human Evaluation</text>
+<text x="500" y="94" text-anchor="middle" fill="#888" font-size="6">Sample audit by domain expert (gold standard)</text>
+
+<!-- YOUR connection -->
+<text x="350" y="290" text-anchor="middle" fill="#00d2ff" font-size="8">YOUR QA mindset applies directly: build from bottom up, automate everything possible, sample at the top.</text>
+<text x="350" y="307" text-anchor="middle" fill="#555" font-size="7">ContentMind Quality Council = Level 3 (LLM-as-Judge). You need Levels 1-2 below it and Level 4 above.</text>
+</svg>
+</div>
+</section>
+
+<section id="your-edge">
+<h2>5. YOUR Unique Edge — Skills Translation</h2>
+<div class="diagram">
+<svg width="800" height="220" viewBox="0 0 800 220">
+<text x="400" y="20" text-anchor="middle" fill="#7b2ff7" font-size="10" font-weight="bold">Your QA Skills → Direct Translation to LLM Quality</text>
+<!-- Table -->
+<rect x="20" y="35" width="240" height="25" rx="3" fill="#ff6b6b15"/><text x="140" y="52" text-anchor="middle" fill="#ff6b6b" font-size="8" font-weight="bold">Your QA Background</text>
+<rect x="270" y="35" width="40" height="25" rx="3" fill="#222"/><text x="290" y="52" text-anchor="middle" fill="#888" font-size="10">→</text>
+<rect x="320" y="35" width="270" height="25" rx="3" fill="#00e67615"/><text x="455" y="52" text-anchor="middle" fill="#00e676" font-size="8" font-weight="bold">LLM Quality Engineering Equivalent</text>
+<rect x="600" y="35" width="180" height="25" rx="3" fill="#7b2ff715"/><text x="690" y="52" text-anchor="middle" fill="#7b2ff7" font-size="8" font-weight="bold">Your Proof</text>
+<!-- Rows -->
+<text x="140" y="80" text-anchor="middle" fill="#bbb" font-size="7">Selenium test automation</text>
+<text x="290" y="80" text-anchor="middle" fill="#888" font-size="8">→</text>
+<text x="455" y="80" text-anchor="middle" fill="#bbb" font-size="7">LLM output assertion framework</text>
+<text x="690" y="80" text-anchor="middle" fill="#888" font-size="6">verify.py in your lab exercises</text>
+
+<text x="140" y="100" text-anchor="middle" fill="#bbb" font-size="7">Regression test suites</text>
+<text x="290" y="100" text-anchor="middle" fill="#888" font-size="8">→</text>
+<text x="455" y="100" text-anchor="middle" fill="#bbb" font-size="7">Prompt regression detection</text>
+<text x="690" y="100" text-anchor="middle" fill="#888" font-size="6">Quality council threshold tracking</text>
+
+<text x="140" y="120" text-anchor="middle" fill="#bbb" font-size="7">CI/CD pipeline integration</text>
+<text x="290" y="120" text-anchor="middle" fill="#888" font-size="8">→</text>
+<text x="455" y="120" text-anchor="middle" fill="#bbb" font-size="7">Quality gates blocking bad prompts from deploy</text>
+<text x="690" y="120" text-anchor="middle" fill="#888" font-size="6">GitHub Actions daily pipeline</text>
+
+<text x="140" y="140" text-anchor="middle" fill="#bbb" font-size="7">Dynatrace monitoring</text>
+<text x="290" y="140" text-anchor="middle" fill="#888" font-size="8">→</text>
+<text x="455" y="140" text-anchor="middle" fill="#bbb" font-size="7">LLM observability & drift detection</text>
+<text x="690" y="140" text-anchor="middle" fill="#888" font-size="6">Dynatrace log-to-defect pipelines</text>
+
+<text x="140" y="160" text-anchor="middle" fill="#bbb" font-size="7">API testing (Postman, REST)</text>
+<text x="290" y="160" text-anchor="middle" fill="#888" font-size="8">→</text>
+<text x="455" y="160" text-anchor="middle" fill="#bbb" font-size="7">LLM API response validation (schema + semantics)</text>
+<text x="690" y="160" text-anchor="middle" fill="#888" font-size="6">MCP server + Groq API calls</text>
+
+<text x="140" y="180" text-anchor="middle" fill="#bbb" font-size="7">Defect classification & triage</text>
+<text x="290" y="180" text-anchor="middle" fill="#888" font-size="8">→</text>
+<text x="455" y="180" text-anchor="middle" fill="#bbb" font-size="7">Failure mode classification (hallucination vs retrieval vs prompt)</text>
+<text x="690" y="180" text-anchor="middle" fill="#888" font-size="6">Code healer agent (AI-driven debug)</text>
+
+<text x="140" y="200" text-anchor="middle" fill="#bbb" font-size="7">Quality score tracking over time</text>
+<text x="290" y="200" text-anchor="middle" fill="#888" font-size="8">→</text>
+<text x="455" y="200" text-anchor="middle" fill="#bbb" font-size="7">AI quality metrics dashboard (faithfulness trend)</text>
+<text x="690" y="200" text-anchor="middle" fill="#888" font-size="6">ContentMind council scores (75+ threshold)</text>
+</svg>
+</div>
+</section>
+
+<section id="tools">
+<h2>6. Tools Landscape (2026) — Where to Plug In</h2>
+<div class="card-grid">
+<div class="card" style="border-color:#7b2ff7">
+<h4 style="color:#7b2ff7">DeepEval</h4><span class="tag" style="background:#7b2ff720;color:#7b2ff7">OPEN SOURCE</span>
+<p style="font-size:.82rem">Pytest-style LLM testing. Write assertions like: <code>assert_test(output, metric=Faithfulness())</code>. Closest to "Selenium for LLMs." Perfect for your QA mindset.</p>
+</div>
+<div class="card" style="border-color:#ffc107">
+<h4 style="color:#ffc107">RAGAS</h4><span class="tag" style="background:#ffc10720;color:#ffc107">RAG EVALUATION</span>
+<p style="font-size:.82rem">Specifically for RAG quality: faithfulness, relevancy, precision, recall. Research-backed metrics. Great for your ContentMind RAG evaluation.</p>
+</div>
+<div class="card" style="border-color:#00e676">
+<h4 style="color:#00e676">Confident AI</h4><span class="tag" style="background:#00e67620;color:#00e676">NO-CODE</span>
+<p style="font-size:.82rem">PMs and QA can test AI apps via HTTP — no code needed! Interesting because it targets QA professionals, not just developers.</p>
+</div>
+<div class="card" style="border-color:#00d2ff">
+<h4 style="color:#00d2ff">Promptfoo</h4><span class="tag" style="background:#00d2ff20;color:#00d2ff">PROMPT CI/CD</span>
+<p style="font-size:.82rem">Compare prompt versions side-by-side. Run assertions on output. Integrates into CI/CD as a quality gate. Very QA-friendly.</p>
+</div>
+<div class="card" style="border-color:#ff6b6b">
+<h4 style="color:#ff6b6b">LangFuse</h4><span class="tag" style="background:#ff6b6b20;color:#ff6b6b">OBSERVABILITY</span>
+<p style="font-size:.82rem">Production monitoring: traces, cost, latency, scores over time. Like Dynatrace but for LLMs. Your monitoring background maps directly here.</p>
+</div>
+<div class="card" style="border-color:#e040fb">
+<h4 style="color:#e040fb">Braintrust</h4><span class="tag" style="background:#e040fb20;color:#e040fb">FULL PLATFORM</span>
+<p style="font-size:.82rem">End-to-end: eval → monitor → debug → improve. Paid platform but covers the whole lifecycle. Shows where the market is heading.</p>
+</div>
+</div>
+</section>
+
+<section id="build">
+<h2>7. What You Should Build (Your Portfolio Differentiator)</h2>
+<div class="layer" style="border-color:#00e676" onclick="this.classList.toggle('open')">
+<strong>Option 1: Add Quality Engineering to ContentMind</strong> <span class="tag" style="background:#00e67620;color:#00e676">QUICKEST WIN</span>
+<div class="detail">
+<p>Integrate DeepEval + RAGAS into your existing pipeline:</p>
+<p>• Add faithfulness assertion after generation (blocks publish if hallucinating)</p>
+<p>• Add RAG precision check (alerts if retrieval quality drops)</p>
+<p>• Track quality metrics over 30 days (show improvement trend)</p>
+<p>• Add prompt regression test: compare new prompt vs old on golden dataset</p>
+<p><strong>Resume line:</strong> "Designed and implemented LLM quality engineering pipeline using DeepEval/RAGAS, reducing hallucination rate by X% and enabling prompt regression testing in CI/CD."</p>
+</div>
+</div>
+<div class="layer" style="border-color:#7b2ff7" onclick="this.classList.toggle('open')">
+<strong>Option 2: Build an Open-Source "AI Test Runner"</strong> <span class="tag" style="background:#7b2ff720;color:#7b2ff7">BIGGER BET</span>
+<div class="detail">
+<p>A QA-engineer-friendly tool that wraps DeepEval/RAGAS with:</p>
+<p>• Test case management (golden dataset CRUD)</p>
+<p>• Visual assertions builder (not just code)</p>
+<p>• CI/CD integration (GitHub Action one-liner)</p>
+<p>• Quality dashboard (Grafana-style for LLM metrics)</p>
+<p>• Drift alerting (email/Slack when quality drops)</p>
+<p><strong>Why this matters:</strong> DeepEval is developer-focused (pytest). NOBODY has built a QA-engineer-focused LLM testing tool. You'd be first.</p>
+</div>
+</div>
+<div class="layer" style="border-color:#ffc107" onclick="this.classList.toggle('open')">
+<strong>Option 3: Position as "AI QA Consultant"</strong> <span class="tag" style="background:#ffc10720;color:#ffc107">CAREER MOVE</span>
+<div class="detail">
+<p>Don't build a product. Build EXPERTISE and target these specific roles:</p>
+<p>• CrowdStrike (India remote): "QA Engineer for non-deterministic AI systems"</p>
+<p>• Sarvam (Bangalore): "QA Engineer/SDET — define what good quality means for AI"</p>
+<p>• Talentica: "QA LLM Engineer — ensure accuracy of AI-driven applications"</p>
+<p>These roles pay ₹30-50L and have VERY few qualified applicants with both QA + AI background.</p>
+</div>
+</div>
+</section>
+
+<section id="jobs">
+<h2>8. Real Jobs Hiring NOW (July 2026)</h2>
+<div class="card-grid">
+<div class="card" style="border-color:#00e676">
+<h4 style="color:#00e676">CrowdStrike — QA Engineer (AI Pod)</h4>
+<span class="tag" style="background:#00e67620;color:#00e676">INDIA REMOTE</span>
+<p style="font-size:.82rem">"You are the quality guardian for non-deterministic AI systems — and that distinction matters." Literally describes YOUR unique positioning.</p>
+</div>
+<div class="card" style="border-color:#7b2ff7">
+<h4 style="color:#7b2ff7">Sarvam — QA Engineer / SDET</h4>
+<span class="tag" style="background:#7b2ff720;color:#7b2ff7">BANGALORE</span>
+<p style="font-size:.82rem">"Define what good quality means. Push back on releases when the bar isn't met. There is no separate QA layer — you ARE the layer." High autonomy.</p>
+</div>
+<div class="card" style="border-color:#ffc107">
+<h4 style="color:#ffc107">Talentica — QA LLM Engineer</h4>
+<span class="tag" style="background:#ffc10720;color:#ffc107">PUNE/REMOTE</span>
+<p style="font-size:.82rem">"QA Automation Engineer with strong experience in LLMs and GenAI who can ensure accuracy, stability, and performance of AI-driven applications."</p>
+</div>
+<div class="card" style="border-color:#00d2ff">
+<h4 style="color:#00d2ff">Illumina — QA Engineer (AI Systems)</h4>
+<span class="tag" style="background:#00d2ff20;color:#00d2ff">FDA REGULATED</span>
+<p style="font-size:.82rem">"Lead quality strategy for AI/agentic systems — reliable, explainable, safe in a regulated environment." Premium salary for regulated domains.</p>
+</div>
+<div class="card" style="border-color:#ff6b6b">
+<h4 style="color:#ff6b6b">Dassault Systèmes — AI Quality Engineer</h4>
+<span class="tag" style="background:#ff6b6b20;color:#ff6b6b">PUNE</span>
+<p style="font-size:.82rem">"Lead execution and team adoption of testing, automation tools & best practices for AI-powered products."</p>
+</div>
+<div class="card" style="border-color:#e040fb">
+<h4 style="color:#e040fb">Digital India Corp — QA Engineer (AI)</h4>
+<span class="tag" style="background:#e040fb20;color:#e040fb">GOVERNMENT</span>
+<p style="font-size:.82rem">"Design and execute comprehensive test plans for AI models, ensuring correct functionality of machine learning algorithms."</p>
+</div>
+</div>
+
+<div class="highlight-box" style="margin-top:2rem">
+<h3 style="color:#ffc107;margin-bottom:.5rem">🎯 Your Interview Pitch (30 seconds)</h3>
+<p style="color:#e0e0e0;font-size:.9rem">"I bring 5 years of QA automation — Selenium, CI/CD, regression suites, Dynatrace monitoring — combined with hands-on AI engineering: I've built a 14-agent LangGraph pipeline with RAG, MCP server, and a self-evaluating quality council. I understand BOTH sides: how to build AI systems AND how to systematically ensure they work correctly in production. My quality council is essentially an LLM-as-judge evaluator — I was doing AI quality engineering before it had a name."</p>
+</div>
+</section>
+
+<div style="text-align:center;padding:3rem 0;border-top:1px solid #222;margin-top:3rem">
+<p style="color:#7b2ff7;font-size:1.1rem">🎯 This is YOUR edge. QA Automation × AI Engineering = Almost nobody else has both.</p>
+<p style="color:#888;margin-top:.5rem"><a href="index.html" style="color:#00d2ff">🏠 Back to Course Home</a></p>
+</div>
+<script>document.querySelectorAll('.nav a[href^="#"]').forEach(a=>{a.addEventListener('click',e=>{e.preventDefault();document.querySelector(a.getAttribute('href')).scrollIntoView({behavior:'smooth'});document.querySelectorAll('.nav a').forEach(x=>x.classList.remove('active'));a.classList.add('active')})});</script>

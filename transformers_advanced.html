@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Transformers Advanced — Fine-Tuning, Variants, Scaling, Serving</title>
+<link rel="stylesheet" href="fix_readability.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0a0a14;color:#e0e0e0;overflow-x:hidden}
+.nav{position:fixed;top:0;width:100%;background:#0a0a14ee;backdrop-filter:blur(8px);z-index:100;padding:.7rem 2rem;display:flex;gap:1rem;overflow-x:auto;border-bottom:1px solid #222}
+.nav a{color:#888;text-decoration:none;font-size:.8rem;white-space:nowrap;padding:4px 12px;border-radius:20px;transition:.3s}
+.nav a:hover,.nav a.active{color:#fff;background:#7b2ff730}
+main{max-width:1100px;margin:0 auto;padding:5rem 1.5rem 4rem}
+h1{font-size:2rem;text-align:center;margin-bottom:.3rem;background:linear-gradient(90deg,#ffc107,#7b2ff7,#00e676);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sub{text-align:center;color:#666;margin-bottom:3rem;font-size:.9rem}
+section{margin-bottom:4rem;scroll-margin-top:4rem}
+h2{font-size:1.4rem;color:#00d2ff;margin-bottom:1rem;padding-left:.5rem;border-left:3px solid #7b2ff7}
+p{line-height:1.7;color:#bbb;margin-bottom:.8rem;font-size:.92rem}
+.diagram{background:#0d0d1a;border-radius:12px;padding:1.5rem;margin:1.2rem 0;overflow-x:auto}
+.analogy{background:#12121f;border:1px solid #7b2ff730;border-radius:12px;padding:1.5rem;margin:1.2rem 0}
+.analogy h3{color:#ffc107;margin-bottom:.5rem}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem;margin:1rem 0}
+.card{background:#12121f;border:1px solid #222;border-radius:10px;padding:1.2rem;transition:.3s}
+.card:hover{border-color:#7b2ff7;transform:translateY(-2px)}
+.card h4{margin-bottom:.4rem;font-size:.95rem}
+.tag{display:inline-block;font-size:.65rem;padding:2px 8px;border-radius:10px;margin-right:4px}
+.layer{margin:.8rem 0;padding:1rem 1.2rem;border-radius:8px;border-left:4px solid;cursor:pointer;transition:.3s;background:#12121f}
+.layer:hover{transform:translateX(4px)}
+.layer .detail{max-height:0;overflow:hidden;transition:max-height .5s;color:#999;font-size:.85rem;line-height:1.6}
+.layer.open .detail{max-height:800px;margin-top:.5rem}
+.comparison{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1rem 0}
+.comparison>div{padding:1rem;border-radius:8px;border:1px solid #222}
+.code-block{background:#0a0a12;border:1px solid #222;border-radius:8px;padding:1rem;margin:1rem 0;font-family:'Cascadia Code',monospace;font-size:.78rem;line-height:1.6;color:#bbb;overflow-x:auto}
+.code-block .kw{color:#c792ea}.code-block .fn{color:#82aaff}.code-block .str{color:#c3e88d}.code-block .cm{color:#546e7a}.code-block .num{color:#f78c6c}
+</style>
+</head>
+<body>
+<nav class="nav">
+<a href="index.html">🏠 Home</a>
+<a href="transformers_complete.html">← Part 1</a>
+<a href="#finetune" class="active">Fine-Tuning</a>
+<a href="#variants">Model Variants</a>
+<a href="#scaling">Scaling Laws</a>
+<a href="#serving">Inference Serving</a>
+<a href="#context">Context Extension</a>
+<a href="#interview">Interview</a>
+</nav>
+<main>
+<h1>🧠 Transformers Advanced — Part 2</h1>
+<p class="sub">Fine-Tuning Deep Dive • Model Variants & MoE • Scaling Laws • Inference Serving</p>
+</main>
+</body>
+</html>
+<section id="finetune">
+<h2>1. Fine-Tuning Deep Dive — LoRA Mechanics</h2>
+<div class="analogy">
+<h3>🎨 Analogy: Adding a Sticker to a Painting</h3>
+<p><strong>Full fine-tuning</strong> = repainting the ENTIRE painting (expensive, risky — might ruin the original).</p>
+<p><strong>LoRA</strong> = placing a small transparent STICKER on top. Original painting untouched. Sticker adds your customization. You can remove or swap stickers anytime.</p>
+<p style="color:#00e676">The sticker is tiny (~10MB) but changes how the painting looks. The painting (model) stays at 35GB.</p>
+</div>
+<div class="diagram">
+<svg width="800" height="280" viewBox="0 0 800 280">
+<defs><marker id="a" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="#7b2ff7"/></marker></defs>
+<!-- Original weight matrix -->
+<text x="400" y="20" text-anchor="middle" fill="#7b2ff7" font-size="10" font-weight="bold">How LoRA Works (inside one transformer layer)</text>
+<rect x="50" y="50" width="200" height="120" rx="8" fill="#ff6b6b10" stroke="#ff6b6b"/>
+<text x="150" y="72" text-anchor="middle" fill="#ff6b6b" font-size="9" font-weight="bold">Original Weight Matrix W</text>
+<text x="150" y="92" text-anchor="middle" fill="#bbb" font-size="8">Size: 4096 × 4096</text>
+<text x="150" y="108" text-anchor="middle" fill="#888" font-size="7">= 16 MILLION parameters</text>
+<text x="150" y="125" text-anchor="middle" fill="#888" font-size="7">(FROZEN — never changes)</text>
+<text x="150" y="155" text-anchor="middle" fill="#ff5252" font-size="7">Too big to retrain fully!</text>
+
+<!-- LoRA matrices -->
+<rect x="320" y="40" width="100" height="60" rx="6" fill="#00e67610" stroke="#00e676"/>
+<text x="370" y="62" text-anchor="middle" fill="#00e676" font-size="8" font-weight="bold">Matrix A</text>
+<text x="370" y="78" text-anchor="middle" fill="#bbb" font-size="7">4096 × 16</text>
+<text x="370" y="92" text-anchor="middle" fill="#888" font-size="6">65K params</text>
+
+<text x="370" y="115" text-anchor="middle" fill="#7b2ff7" font-size="12">×</text>
+
+<rect x="320" y="125" width="100" height="60" rx="6" fill="#00d2ff10" stroke="#00d2ff"/>
+<text x="370" y="147" text-anchor="middle" fill="#00d2ff" font-size="8" font-weight="bold">Matrix B</text>
+<text x="370" y="163" text-anchor="middle" fill="#bbb" font-size="7">16 × 4096</text>
+<text x="370" y="177" text-anchor="middle" fill="#888" font-size="6">65K params</text>
+
+<!-- Result -->
+<rect x="490" y="70" width="180" height="100" rx="8" fill="#ffc10710" stroke="#ffc107"/>
+<text x="580" y="95" text-anchor="middle" fill="#ffc107" font-size="9" font-weight="bold">A × B = ΔW (update)</text>
+<text x="580" y="115" text-anchor="middle" fill="#bbb" font-size="7">Size: 4096 × 4096</text>
+<text x="580" y="130" text-anchor="middle" fill="#888" font-size="7">But only 130K params trained!</text>
+<text x="580" y="148" text-anchor="middle" fill="#00e676" font-size="7">That's 0.8% of original W</text>
+
+<!-- Final equation -->
+<rect x="50" y="200" width="700" height="60" rx="8" fill="#0d0d1a" stroke="#444"/>
+<text x="400" y="225" text-anchor="middle" fill="#7b2ff7" font-size="11">output = W·x + (A·B)·x</text>
+<text x="400" y="245" text-anchor="middle" fill="#888" font-size="8">Original behavior + Learned adjustment (your fine-tuning)</text>
+
+<!-- Arrow labels -->
+<line x1="250" y1="110" x2="320" y2="80" stroke="#7b2ff7" stroke-dasharray="3"/>
+<line x1="420" y1="115" x2="490" y2="115" stroke="#7b2ff7" marker-end="url(#a)"/>
+</svg>
+</div>
+
+<div class="card-grid">
+<div class="card" style="border-color:#ff6b6b">
+<h4 style="color:#ff6b6b">Full Fine-Tuning</h4>
+<p style="font-size:.82rem">Trains ALL 70B params. Needs 280GB+ GPU RAM. Takes days. Risk of catastrophic forgetting. Cost: $10K+.</p>
+<p style="font-size:.75rem;color:#888">When: You're a research lab with unlimited budget.</p>
+</div>
+<div class="card" style="border-color:#00e676">
+<h4 style="color:#00e676">LoRA</h4>
+<span class="tag" style="background:#00e67620;color:#00e676">RECOMMENDED</span>
+<p style="font-size:.82rem">Trains 0.1-2% of params via low-rank matrices. Needs 16-24GB RAM. Takes hours. No forgetting. Cost: $5-50.</p>
+<p style="font-size:.75rem;color:#888">When: You need behavior change with limited hardware.</p>
+</div>
+<div class="card" style="border-color:#7b2ff7">
+<h4 style="color:#7b2ff7">QLoRA</h4>
+<span class="tag" style="background:#7b2ff720;color:#7b2ff7">YOUR BEST OPTION</span>
+<p style="font-size:.82rem">LoRA + 4-bit quantized base model. Fits in 6-8GB RAM! Train Llama 8B on your laptop. Free on Google Colab T4.</p>
+<p style="font-size:.75rem;color:#888">When: You have a laptop, no GPU budget, and need to learn.</p>
+</div>
+</div>
+
+<div class="layer" style="border-color:#ffc107" onclick="this.classList.toggle('open')">
+<strong>Training Data Format (what you'd feed it)</strong>
+<div class="detail">
+<div class="code-block">
+<span class="cm">// training_data.jsonl — one example per line</span><br>
+{<span class="str">"messages"</span>: [{<span class="str">"role"</span>:<span class="str">"user"</span>,<span class="str">"content"</span>:<span class="str">"Score: AI Engineer at TCS Chennai, RAG required"</span>},{<span class="str">"role"</span>:<span class="str">"assistant"</span>,<span class="str">"content"</span>:<span class="str">"{\"score\":85,\"tier\":\"Strong\",\"reason\":\"Perfect domain match\"}"</span>}]}<br>
+{<span class="str">"messages"</span>: [{<span class="str">"role"</span>:<span class="str">"user"</span>,<span class="str">"content"</span>:<span class="str">"Score: Java Developer at Infosys Pune"</span>},{<span class="str">"role"</span>:<span class="str">"assistant"</span>,<span class="str">"content"</span>:<span class="str">"{\"score\":25,\"tier\":\"Weak\",\"reason\":\"Wrong domain\"}"</span>}]}<br><br>
+<span class="cm">// Minimum: 50 examples. Sweet spot: 200-500. More ≠ always better.</span>
+</div>
+<p>YOUR scored_jobs.json already HAS this data! You have 50+ scored jobs with labels. That's a ready-made fine-tuning dataset.</p>
+</div>
+</div>
+<div class="layer" style="border-color:#00e676" onclick="this.classList.toggle('open')">
+<strong>When Fine-Tuning FAILS (common mistakes)</strong>
+<div class="detail">
+<p>• <strong>Too few examples (&lt;20)</strong> → Model doesn't learn the pattern, just memorizes.</p>
+<p>• <strong>Inconsistent labels</strong> → Same input labeled differently confuses the model.</p>
+<p>• <strong>Wrong use case</strong> → Fine-tuning for FACTS (use RAG instead). Fine-tune for BEHAVIOR only.</p>
+<p>• <strong>Overfitting</strong> → Too many epochs. Model repeats training examples verbatim. Fix: 1-3 epochs max.</p>
+<p>• <strong>Base model too weak</strong> → 8B model won't become GPT-4 level no matter how much you fine-tune. It learns FORMATTING, not intelligence.</p>
+</div>
+</div>
+</section>
+
+<section id="variants">
+<h2>2. Model Architecture Variants</h2>
+<div class="diagram">
+<svg width="850" height="250" viewBox="0 0 850 250">
+<text x="425" y="20" text-anchor="middle" fill="#7b2ff7" font-size="10" font-weight="bold">Three Transformer Types — Which Does What</text>
+<!-- Encoder only -->
+<rect x="20" y="45" width="240" height="120" rx="8" fill="#00d2ff10" stroke="#00d2ff"/>
+<text x="140" y="68" text-anchor="middle" fill="#00d2ff" font-size="10" font-weight="bold">Encoder-Only (BERT)</text>
+<text x="140" y="88" text-anchor="middle" fill="#bbb" font-size="8">Sees ALL tokens at once (bidirectional)</text>
+<text x="140" y="106" text-anchor="middle" fill="#888" font-size="7">Best for: classification, NER, embeddings</text>
+<text x="140" y="120" text-anchor="middle" fill="#888" font-size="7">Example: sentence-transformers (YOUR embedder!)</text>
+<text x="140" y="140" text-anchor="middle" fill="#555" font-size="6">Can't generate text. Only understands.</text>
+<text x="140" y="155" text-anchor="middle" fill="#00d2ff" font-size="7">Models: BERT, RoBERTa, DeBERTa</text>
+
+<!-- Decoder only -->
+<rect x="290" y="45" width="240" height="120" rx="8" fill="#7b2ff710" stroke="#7b2ff7"/>
+<text x="410" y="68" text-anchor="middle" fill="#7b2ff7" font-size="10" font-weight="bold">Decoder-Only (GPT/Llama)</text>
+<text x="410" y="88" text-anchor="middle" fill="#bbb" font-size="8">Sees only PAST tokens (left-to-right)</text>
+<text x="410" y="106" text-anchor="middle" fill="#888" font-size="7">Best for: text generation, chat, code</text>
+<text x="410" y="120" text-anchor="middle" fill="#888" font-size="7">Example: YOUR Groq calls (Llama 3.3 70B)</text>
+<text x="410" y="140" text-anchor="middle" fill="#555" font-size="6">Generates text. The dominant architecture in 2026.</text>
+<text x="410" y="155" text-anchor="middle" fill="#7b2ff7" font-size="7">Models: GPT-4, Llama, Claude, Gemini</text>
+
+<!-- Encoder-Decoder -->
+<rect x="560" y="45" width="260" height="120" rx="8" fill="#ffc10710" stroke="#ffc107"/>
+<text x="690" y="68" text-anchor="middle" fill="#ffc107" font-size="10" font-weight="bold">Encoder-Decoder (T5)</text>
+<text x="690" y="88" text-anchor="middle" fill="#bbb" font-size="8">Encoder sees input, decoder generates output</text>
+<text x="690" y="106" text-anchor="middle" fill="#888" font-size="7">Best for: translation, summarization</text>
+<text x="690" y="120" text-anchor="middle" fill="#888" font-size="7">Example: Google Translate, BART</text>
+<text x="690" y="140" text-anchor="middle" fill="#555" font-size="6">Declining in popularity — decoder-only does everything.</text>
+<text x="690" y="155" text-anchor="middle" fill="#ffc107" font-size="7">Models: T5, BART, mBART</text>
+
+<!-- MoE -->
+<text x="425" y="195" text-anchor="middle" fill="#00e676" font-size="10" font-weight="bold">🆕 Mixture of Experts (MoE) — The Efficiency Trick</text>
+<rect x="50" y="205" width="750" height="35" rx="6" fill="#00e67608" stroke="#00e676"/>
+<text x="425" y="220" text-anchor="middle" fill="#bbb" font-size="8">Model has 8 "expert" networks but only activates 2 per token. 70B total params but only 14B active = fast like 14B, smart like 70B.</text>
+<text x="425" y="234" text-anchor="middle" fill="#888" font-size="7">Used by: Mixtral 8x7B, GPT-4 (rumored), DeepSeek. YOUR Groq serves Mixtral — you've used MoE without knowing it!</text>
+</svg>
+</div>
+</section>
+
+<section id="scaling">
+<h2>3. Scaling Laws — How to Choose Model Size</h2>
+<div class="analogy">
+<h3>📚 Analogy: Student + Books</h3>
+<p>A genius student (big model) with 1 book (little data) → underperforms.</p>
+<p>An average student (small model) with 1000 books (lots of data) → outperforms the genius!</p>
+<p style="color:#00e676"><strong>Chinchilla Law:</strong> Model size and training data must be BALANCED. Double the model → need double the data.</p>
+</div>
+<div class="diagram">
+<svg width="700" height="220" viewBox="0 0 700 220">
+<!-- Scaling chart -->
+<text x="350" y="20" text-anchor="middle" fill="#7b2ff7" font-size="10" font-weight="bold">Model Size vs Data (Chinchilla Optimal)</text>
+<!-- Axes -->
+<line x1="80" y1="180" x2="620" y2="180" stroke="#333"/><line x1="80" y1="180" x2="80" y2="40" stroke="#333"/>
+<text x="350" y="210" text-anchor="middle" fill="#555" font-size="8">Training Data (tokens) →</text>
+<text x="40" y="110" fill="#555" font-size="8" transform="rotate(-90,40,110)">Performance →</text>
+<!-- Lines -->
+<path d="M 100 160 Q 200 100 350 80 Q 500 65 600 60" fill="none" stroke="#00e676" stroke-width="2"/>
+<text x="610" y="55" fill="#00e676" font-size="7">70B + 2T tokens ✅</text>
+<path d="M 100 170 Q 200 140 350 125 Q 500 115 600 110" fill="none" stroke="#ffc107" stroke-width="2"/>
+<text x="610" y="105" fill="#ffc107" font-size="7">8B + 2T tokens ⚡</text>
+<path d="M 100 140 Q 200 120 300 115 Q 400 113 500 112" fill="none" stroke="#ff5252" stroke-width="2" stroke-dasharray="4"/>
+<text x="510" y="108" fill="#ff5252" font-size="7">70B + 100B tokens ❌ undertrained</text>
+<!-- Insight box -->
+<rect x="150" y="40" width="350" height="25" rx="4" fill="#12121f" stroke="#333"/>
+<text x="325" y="56" text-anchor="middle" fill="#bbb" font-size="8">Llama 3.1 8B (trained on 15T tokens) beats Llama 2 70B (trained on 2T tokens)!</text>
+</svg>
+</div>
+<div class="layer" style="border-color:#7b2ff7" onclick="this.classList.toggle('open')">
+<strong>🎯 Practical: Which model size for YOUR use case?</strong>
+<div class="detail">
+<p>• <strong>Simple classification/extraction:</strong> 8B is enough (Llama 3.1 8B via Ollama)</p>
+<p>• <strong>General chat/content generation:</strong> 70B (your Groq setup)</p>
+<p>• <strong>Complex reasoning/math/code:</strong> 70B+ or frontier models (GPT-4, Claude)</p>
+<p>• <strong>Edge deployment (phone/browser):</strong> 1-3B models (Phi-3, Gemma 2B)</p>
+<p>• <strong>Your ContentMind:</strong> 70B for script writing (needs quality), 8B would suffice for scoring (simpler task)</p>
+</div>
+</div>
+</section>
+
+<section id="serving">
+<h2>4. Inference Serving Systems</h2>
+<p>When you DEPLOY an LLM at scale, you need a serving system. These handle batching, memory management, and multiple concurrent users:</p>
+<div class="card-grid">
+<div class="card" style="border-color:#7b2ff7">
+<h4 style="color:#7b2ff7">vLLM</h4>
+<span class="tag" style="background:#7b2ff720;color:#7b2ff7">MOST POPULAR</span>
+<p style="font-size:.82rem"><strong>Key innovation:</strong> PagedAttention — manages KV cache like virtual memory (pages). No wasted GPU memory. 2-4x throughput over naive serving.</p>
+<p style="font-size:.75rem;color:#888">50K+ GitHub stars. Used by most AI startups. OpenAI-compatible API built-in.</p>
+</div>
+<div class="card" style="border-color:#ffc107">
+<h4 style="color:#ffc107">TGI (Text Generation Inference)</h4>
+<span class="tag" style="background:#ffc10720;color:#ffc107">HUGGINGFACE</span>
+<p style="font-size:.82rem">Production-ready serving by HuggingFace. Supports continuous batching, quantization, tensor parallelism. Docker-native deployment.</p>
+<p style="font-size:.75rem;color:#888">Great if you're in the HuggingFace ecosystem. Easy to deploy.</p>
+</div>
+<div class="card" style="border-color:#00e676">
+<h4 style="color:#00e676">Ollama</h4>
+<span class="tag" style="background:#00e67620;color:#00e676">YOUR LOCAL TOOL</span>
+<p style="font-size:.82rem">Run models locally with one command. Handles quantization (GGUF), memory management, and exposes OpenAI-compatible API. Perfect for dev.</p>
+<p style="font-size:.75rem;color:#888">Not for production scale (single user). But amazing for development and fine-tuning.</p>
+</div>
+<div class="card" style="border-color:#00d2ff">
+<h4 style="color:#00d2ff">Groq (LPU)</h4>
+<span class="tag" style="background:#00d2ff20;color:#00d2ff">YOUR PROD CHOICE</span>
+<p style="font-size:.82rem">Custom hardware (Language Processing Unit) optimized for sequential token generation. 500+ tokens/sec vs 50 on GPU. The fastest inference available.</p>
+<p style="font-size:.75rem;color:#888">YOUR ContentMind uses this. Free tier: 30 RPM, unlimited tokens. Insanely fast.</p>
+</div>
+</div>
+<div class="diagram">
+<svg width="750" height="140" viewBox="0 0 750 140">
+<text x="375" y="20" text-anchor="middle" fill="#7b2ff7" font-size="9" font-weight="bold">When to Use What</text>
+<rect x="20" y="35" width="170" height="45" rx="4" fill="#12121f" stroke="#333"/>
+<text x="105" y="55" text-anchor="middle" fill="#00e676" font-size="8">Local Dev / Testing</text>
+<text x="105" y="70" text-anchor="middle" fill="#bbb" font-size="7">→ Ollama</text>
+<rect x="210" y="35" width="170" height="45" rx="4" fill="#12121f" stroke="#333"/>
+<text x="295" y="55" text-anchor="middle" fill="#ffc107" font-size="8">Prototype API / Free Tier</text>
+<text x="295" y="70" text-anchor="middle" fill="#bbb" font-size="7">→ Groq (free, fast)</text>
+<rect x="400" y="35" width="170" height="45" rx="4" fill="#12121f" stroke="#333"/>
+<text x="485" y="55" text-anchor="middle" fill="#7b2ff7" font-size="8">Production (own GPU)</text>
+<text x="485" y="70" text-anchor="middle" fill="#bbb" font-size="7">→ vLLM + Cloud GPU</text>
+<rect x="590" y="35" width="140" height="45" rx="4" fill="#12121f" stroke="#333"/>
+<text x="660" y="55" text-anchor="middle" fill="#00d2ff" font-size="8">Enterprise Scale</text>
+<text x="660" y="70" text-anchor="middle" fill="#bbb" font-size="7">→ AWS Bedrock / Vertex</text>
+<text x="375" y="110" text-anchor="middle" fill="#888" font-size="8">YOUR path: Ollama (dev) → Groq (prod free tier) → vLLM (if you need own hosting later)</text>
+<text x="375" y="128" text-anchor="middle" fill="#555" font-size="7">Interview tip: Knowing vLLM's PagedAttention + when to self-host vs API = senior-level thinking</text>
+</svg>
+</div>
+</section>
+
+<section id="context">
+<h2>5. Context Length Extension</h2>
+<div class="layer" style="border-color:#00d2ff" onclick="this.classList.toggle('open')">
+<strong>How models go from 4K → 128K+ context</strong>
+<div class="detail">
+<p><strong>RoPE (Rotary Position Embedding):</strong> Encodes position as rotation angles. Can be scaled to longer sequences than trained on. Llama uses this. Think: a clock that can spin faster if needed.</p>
+<p><strong>YaRN / NTK-Aware Scaling:</strong> Techniques to extend RoPE beyond training length. Llama 3 trained at 8K, extended to 128K using these tricks.</p>
+<p><strong>Sliding Window Attention (Mistral):</strong> Each token only attends to the last 4K tokens, not all 128K. Reduces memory from O(128K²) to O(4K × 128K). Trade: can't directly relate token #1 to token #128K.</p>
+<p style="color:#ffc107"><strong>Practical takeaway:</strong> Just because a model supports 128K context doesn't mean you should USE it all. Attention quality degrades with distance. Use RAG to select the 3 best chunks instead of stuffing 100K tokens.</p>
+</div>
+</div>
+<div class="layer" style="border-color:#ffc107" onclick="this.classList.toggle('open')">
+<strong>Model Distillation — Small models that punch above their weight</strong>
+<div class="detail">
+<p><strong>What:</strong> Train a SMALL model (3B) to mimic a LARGE model (70B). The small model learns the large model's behavior without needing the same parameters.</p>
+<p><strong>How:</strong> Feed inputs to the large model, get outputs. Train the small model to produce the same outputs. It's "student learns from teacher."</p>
+<p><strong>Examples:</strong> Phi-3 (3.8B) performs like models 10x its size. GPT-4-mini is distilled from GPT-4.</p>
+<p><strong>Your use:</strong> If you fine-tune Llama 8B on your data and it's good enough, you've essentially distilled your USE CASE into a small deployable model.</p>
+</div>
+</div>
+</section>
+
+<section id="interview">
+<h2>6. Interview Answers — Transformer Advanced</h2>
+<div class="layer" style="border-color:#7b2ff7" onclick="this.classList.toggle('open')">
+<strong>Q: "Explain LoRA and when you'd use it"</strong>
+<div class="detail"><p>"LoRA decomposes weight updates into two small matrices A (d×r) and B (r×d) where r is the rank (typically 8-64). This means I train only 0.1-2% of parameters while the base model stays frozen. I'd use it when I need consistent OUTPUT FORMAT or STYLE that prompting alone can't reliably achieve — like always outputting my specific JSON scoring schema. I wouldn't use it for adding factual knowledge — that's RAG's job."</p></div>
+</div>
+<div class="layer" style="border-color:#00d2ff" onclick="this.classList.toggle('open')">
+<strong>Q: "What is Mixture of Experts and why does it matter?"</strong>
+<div class="detail"><p>"MoE models have N expert sub-networks but only activate K per token (typically 2 of 8). So a model with 70B total parameters might only use 14B per forward pass — giving you 70B intelligence at 14B speed. Mixtral 8x7B is the famous example. It matters for serving cost: you get better quality per compute dollar."</p></div>
+</div>
+<div class="layer" style="border-color:#00e676" onclick="this.classList.toggle('open')">
+<strong>Q: "How would you serve an LLM in production?"</strong>
+<div class="detail"><p>"For my portfolio projects: Groq's free API (fast, zero infra cost). For a real production system: vLLM on a cloud GPU with continuous batching and PagedAttention for efficient KV cache management. I'd quantize to INT8 for 2x memory savings, add prefix caching for shared system prompts, and put it behind a FastAPI gateway with health checks, rate limiting, and structured logging. Auto-scale based on queue depth."</p></div>
+</div>
+<div class="layer" style="border-color:#ffc107" onclick="this.classList.toggle('open')">
+<strong>Q: "How do you decide between 8B and 70B for a task?"</strong>
+<div class="detail"><p>"I follow chinchilla scaling intuition: use the SMALLEST model that achieves acceptable quality. For classification and extraction, 8B fine-tuned usually matches 70B prompted — at 10x lower cost and 5x lower latency. For complex generation (creative writing, multi-step reasoning), 70B is worth the cost. I test both on a representative sample and compare quality + cost. In my ContentMind, I'd use 8B for quality scoring and 70B for script generation."</p></div>
+</div>
+</section>
+
+<div style="text-align:center;padding:3rem 0;border-top:1px solid #222;margin-top:3rem">
+<p style="color:#7b2ff7;font-size:1.1rem">🎉 Transformers Complete (Part 1 + Part 2) — From attention to production serving.</p>
+<p style="color:#888;margin-top:.5rem"><a href="transformers_complete.html" style="color:#00d2ff">← Part 1 (Basics)</a> &nbsp;|&nbsp; <a href="index.html" style="color:#00d2ff">🏠 Home</a></p>
+<p style="color:#555;margin-top:1rem;font-size:.8rem">Remaining: Embeddings Deep Dive, Prompt Engineering, LLMOps, Evaluation & Safety</p>
+</div>
+<script>document.querySelectorAll('.nav a[href^="#"]').forEach(a=>{a.addEventListener('click',e=>{e.preventDefault();document.querySelector(a.getAttribute('href')).scrollIntoView({behavior:'smooth'});document.querySelectorAll('.nav a').forEach(x=>x.classList.remove('active'));a.classList.add('active')})});</script>

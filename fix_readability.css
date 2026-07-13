@@ -1,0 +1,26 @@
+/* 
+  FIX: SVG text too small to read
+  Add to any page: <link rel="stylesheet" href="fix_readability.css">
+  This scales all diagrams up by 1.3x making text readable
+*/
+
+.diagram {
+  overflow-x: auto;
+  overflow-y: visible;
+  padding: 2rem 1rem;
+}
+
+.diagram svg {
+  transform: scale(1.4);
+  transform-origin: top left;
+  margin-bottom: 3rem;
+  min-width: 700px;
+}
+
+/* Make body text slightly larger too */
+p { font-size: 1rem !important; }
+.card p { font-size: 0.9rem !important; }
+.layer .detail { font-size: 0.92rem !important; }
+.layer .detail p { font-size: 0.92rem !important; }
+h2 { font-size: 1.6rem !important; }
+.analogy p { font-size: 0.95rem !important; }

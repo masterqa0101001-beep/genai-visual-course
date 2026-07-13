@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GenAI Visual Course — Home</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0a0a14;color:#e0e0e0;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem}
+h1{font-size:2.2rem;text-align:center;margin-bottom:.3rem;background:linear-gradient(90deg,#00d2ff,#7b2ff7);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sub{color:#666;margin-bottom:2.5rem;text-align:center}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.2rem;max-width:900px;width:100%}
+.card{background:#12121f;border:1px solid #222;border-radius:12px;padding:1.5rem;text-decoration:none;color:#e0e0e0;transition:.3s;display:block}
+.card:hover{border-color:#7b2ff7;transform:translateY(-4px);box-shadow:0 8px 30px #7b2ff720}
+.card h2{font-size:1.1rem;margin-bottom:.5rem}
+.card p{font-size:.85rem;color:#888;line-height:1.5}
+.card .status{display:inline-block;font-size:.7rem;padding:3px 10px;border-radius:10px;margin-top:.7rem;font-weight:600}
+.done{background:#00e67620;color:#00e676;border:1px solid #00e67640}
+.soon{background:#ffc10720;color:#ffc107;border:1px solid #ffc10740}
+.footer{margin-top:3rem;color:#444;font-size:.75rem;text-align:center}
+</style>
+</head>
+<body>
+<h1>🧬 GenAI Visual Course</h1>
+<p class="sub">Click any topic to start learning visually</p>
+<div class="grid">
+<a href="rag_complete.html" class="card">
+<h2>📚 RAG — Part 1 (Basics)</h2>
+<p>What is RAG, why it exists, full pipeline, chunking, embeddings, retrieval, reranking, generation.</p>
+<span class="status done">✅ READY</span>
+</a>
+<a href="rag_advanced.html" class="card">
+<h2>🔬 RAG — Part 2 (Advanced)</h2>
+<p>6 RAG types, code architecture, failure modes, industry implementations, interview answers.</p>
+<span class="status done">✅ READY</span>
+</a>
+<a href="agents_complete.html" class="card">
+<h2>🤖 Agents & Tool Use</h2>
+<p>How agents think, ReAct loop, function calling, MCP, multi-agent patterns, failure modes. YOUR 14-agent pipeline mapped.</p>
+<span class="status done">✅ READY</span>
+</a>
+<a href="transformers_complete.html" class="card">
+<h2>🧠 Transformer Internals</h2>
+<p>Attention, KV cache, RLHF/DPO, quantization, inference optimization — all visual, no math.</p>
+<span class="status done">✅ READY</span>
+</a>
+<a href="llm_quality_engineering.html" class="card" style="border-color:#00e676">
+<h2>🎯 LLM Quality Engineering (YOUR Edge)</h2>
+<p>The untapped QA × AI intersection. Test pyramid for LLMs, drift detection, quality gates, real job listings. Your career differentiator.</p>
+<span class="status done">✅ READY — START HERE</span>
+</a>
+<a href="embeddings_complete.html" class="card">
+<h2>🔍 Embeddings Deep Dive</h2>
+<p>Vector space geometry, model comparison, similarity algorithms, hybrid search, fine-tuning embeddings, vector DB internals.</p>
+<span class="status done">✅ READY</span>
+</a>
+<a href="#" class="card" style="opacity:.5;pointer-events:none">
+<h2>✍️ Prompt Engineering</h2>
+<p>CoT, meta-prompting, structured output, testing, A/B testing — production patterns.</p>
+<span class="status soon">🔜 COMING SOON</span>
+</a>
+<a href="loop_engineering.html" class="card" style="border-color:#00e676">
+<h2>🔄 Loop Engineering (NEW — June 2026)</h2>
+<p>The paradigm shift from prompting to autonomous loops. 10 patterns, cost reality, YOUR ContentMind mapped. 5-week market lead.</p>
+<span class="status done">✅ READY — CUTTING EDGE</span>
+</a>
+<a href="llmops_deployment.html" class="card">
+<h2>🚀 LLMOps & Deployment</h2>
+<p>FastAPI, Docker, Cloud Run, CI/CD, streaming, versioning, scaling, monitoring — complete production stack.</p>
+<span class="status done">✅ READY</span>
+</a>
+<a href="#" class="card" style="opacity:.5;pointer-events:none">
+<h2>📏 Evaluation & Safety</h2>
+<p>Guardrails, prompt injection defense, RAGAS, LLM-as-judge, content moderation, observability patterns.</p>
+<span class="status soon">🔜 COMING NEXT</span>
+</a>
+<a href="#" class="card" style="opacity:.5;pointer-events:none">
+<h2>🏗️ AI System Design Interview</h2>
+<p>7-step framework, whiteboard walkthroughs, worked examples (support bot, recommendation engine), scoring rubrics.</p>
+<span class="status soon">🔜 COMING NEXT</span>
+</a>
+<a href="#" class="card" style="opacity:.5;pointer-events:none">
+<h2>🎨 Multimodal AI</h2>
+<p>Image generation, vision APIs, TTS/STT, video understanding, CLIP embeddings, multimodal RAG. YOUR ContentMind mapped.</p>
+<span class="status soon">🔜 COMING NEXT</span>
+</a>
+<a href="#" class="card" style="opacity:.5;pointer-events:none">
+<h2>🎤 Behavioral Interview Prep</h2>
+<p>STAR method, "tell me about a challenge", career transition story, why AI, leadership signals, questions to ask.</p>
+<span class="status soon">🔜 COMING NEXT</span>
+</a>
+</div>
+<p class="footer">Open this file: GenAI_Mastery_Lab/visual_course/index.html — This is your course homepage.</p>
+</body>
+</html>

@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LLMOps & Deployment — Complete Production Guide</title>
+<link rel="stylesheet" href="fix_readability.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0a0a14;color:#e0e0e0;overflow-x:hidden}
+.nav{position:fixed;top:0;width:100%;background:#0a0a14ee;backdrop-filter:blur(8px);z-index:100;padding:.7rem 2rem;display:flex;gap:1rem;overflow-x:auto;border-bottom:1px solid #222}
+.nav a{color:#888;text-decoration:none;font-size:.8rem;white-space:nowrap;padding:4px 12px;border-radius:20px;transition:.3s}
+.nav a:hover,.nav a.active{color:#fff;background:#7b2ff730}
+main{max-width:1100px;margin:0 auto;padding:5rem 1.5rem 4rem}
+h1{font-size:2rem;text-align:center;margin-bottom:.3rem;background:linear-gradient(90deg,#00d2ff,#7b2ff7,#ff6b6b);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sub{text-align:center;color:#666;margin-bottom:3rem;font-size:.9rem}
+section{margin-bottom:4rem;scroll-margin-top:4rem}
+h2{font-size:1.4rem;color:#00d2ff;margin-bottom:1rem;padding-left:.5rem;border-left:3px solid #7b2ff7}
+p{line-height:1.7;color:#bbb;margin-bottom:.8rem;font-size:.92rem}
+.diagram{background:#0d0d1a;border-radius:12px;padding:1.5rem;margin:1.2rem 0;overflow-x:auto}
+.analogy{background:#12121f;border:1px solid #7b2ff730;border-radius:12px;padding:1.5rem;margin:1.2rem 0}
+.analogy h3{color:#ffc107;margin-bottom:.5rem}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem;margin:1rem 0}
+.card{background:#12121f;border:1px solid #222;border-radius:10px;padding:1.2rem;transition:.3s}
+.card:hover{border-color:#7b2ff7;transform:translateY(-2px)}
+.card h4{margin-bottom:.4rem;font-size:.95rem}
+.tag{display:inline-block;font-size:.65rem;padding:2px 8px;border-radius:10px;margin-right:4px}
+.layer{margin:.8rem 0;padding:1rem 1.2rem;border-radius:8px;border-left:4px solid;cursor:pointer;transition:.3s;background:#12121f}
+.layer:hover{transform:translateX(4px)}
+.layer .detail{max-height:0;overflow:hidden;transition:max-height .5s;color:#999;font-size:.85rem;line-height:1.6}
+.layer.open .detail{max-height:1000px;margin-top:.5rem}
+.highlight-box{background:linear-gradient(135deg,#7b2ff710,#00e67610);border:1px solid #7b2ff740;border-radius:12px;padding:1.5rem;margin:1.5rem 0}
+.code-block{background:#0a0a12;border:1px solid #222;border-radius:8px;padding:1rem;margin:1rem 0;font-family:'Cascadia Code',monospace;font-size:.82rem;line-height:1.6;color:#bbb;overflow-x:auto}
+</style>
+</head>
+<body>
+<nav class="nav">
+<a href="index.html">🏠 Home</a>
+<a href="#what" class="active">What?</a>
+<a href="#stack">The Stack</a>
+<a href="#fastapi">FastAPI</a>
+<a href="#docker">Docker</a>
+<a href="#cloud">Cloud Deploy</a>
+<a href="#cicd">CI/CD</a>
+<a href="#streaming">Streaming</a>
+<a href="#versioning">Versioning</a>
+<a href="#scaling">Scaling</a>
+<a href="#monitoring">Monitoring</a>
+<a href="#your-gap">Your Gap</a>
+<a href="#interview">Interview</a>
+</nav>
+<main>
+<h1>🚀 LLMOps & Deployment</h1>
+<p class="sub">From scripts to production — FastAPI, Docker, Cloud, CI/CD, Streaming, Monitoring</p>
+</main>
+</body>
+</html>
+<section id="what">
+<h2>1. What Is LLMOps? (DevOps for AI Applications)</h2>
+<div class="analogy">
+<h3>🏗️ Analogy: Building a House vs Maintaining a Building</h3>
+<p><strong>Building your AI app</strong> = constructing the house (your ContentMind, your MCP server). Fun, creative.</p>
+<p><strong>LLMOps</strong> = making that house into a commercial BUILDING that handles 1000 tenants, has fire safety, elevators, maintenance crew, and doesn't collapse. Not glamorous but absolutely essential for ₹35L+ roles.</p>
+<p style="color:#ff6b6b"><strong>YOUR gap:</strong> You built the house. Now you need to know how to run the building.</p>
+</div>
+<div class="highlight-box">
+<h3 style="color:#ffc107;margin-bottom:.5rem">Why Every ₹35L+ JD Mentions This</h3>
+<p>• "Experience with containerized deployment" — Flipkart AI<br>
+• "FastAPI or Flask for model serving" — Swiggy ML<br>
+• "CI/CD with automated quality gates" — Razorpay<br>
+• "Docker + Kubernetes experience preferred" — Meesho<br>
+• "Cloud deployment (AWS/GCP)" — literally every JD above ₹30L</p>
+</div>
+</section>
+
+<section id="stack">
+<h2>2. The LLMOps Stack (Full Picture)</h2>
+<div class="diagram">
+<svg width="850" height="380" viewBox="0 0 850 380">
+<text x="425" y="20" text-anchor="middle" fill="#7b2ff7" font-size="12" font-weight="bold">Complete LLMOps Stack (bottom to top)</text>
+<!-- Layer 1: Infrastructure -->
+<rect x="50" y="310" width="750" height="50" rx="6" fill="#ff6b6b08" stroke="#ff6b6b"/>
+<text x="425" y="330" text-anchor="middle" fill="#ff6b6b" font-size="11" font-weight="bold">Infrastructure Layer</text>
+<text x="425" y="348" text-anchor="middle" fill="#888" font-size="9">Cloud (GCP/AWS/Azure) • GPU instances • Serverless (Cloud Run/Lambda) • CDN</text>
+<!-- Layer 2: Container -->
+<rect x="50" y="250" width="750" height="50" rx="6" fill="#ffc10708" stroke="#ffc107"/>
+<text x="425" y="270" text-anchor="middle" fill="#ffc107" font-size="11" font-weight="bold">Container Layer</text>
+<text x="425" y="288" text-anchor="middle" fill="#888" font-size="9">Docker • Container Registry (GCR/ECR) • Kubernetes (for scale) • Health checks</text>
+<!-- Layer 3: Serving -->
+<rect x="50" y="190" width="750" height="50" rx="6" fill="#00e67608" stroke="#00e676"/>
+<text x="425" y="210" text-anchor="middle" fill="#00e676" font-size="11" font-weight="bold">Serving Layer</text>
+<text x="425" y="228" text-anchor="middle" fill="#888" font-size="9">FastAPI • Streaming (SSE) • Rate limiting • Authentication • Load balancing</text>
+<!-- Layer 4: Model -->
+<rect x="50" y="130" width="750" height="50" rx="6" fill="#00d2ff08" stroke="#00d2ff"/>
+<text x="425" y="150" text-anchor="middle" fill="#00d2ff" font-size="11" font-weight="bold">Model Layer</text>
+<text x="425" y="168" text-anchor="middle" fill="#888" font-size="9">Groq/OpenAI API • Ollama (local) • vLLM (self-hosted) • Model routing • Fallback chains</text>
+<!-- Layer 5: Quality -->
+<rect x="50" y="70" width="750" height="50" rx="6" fill="#7b2ff708" stroke="#7b2ff7"/>
+<text x="425" y="90" text-anchor="middle" fill="#7b2ff7" font-size="11" font-weight="bold">Quality & Observability Layer</text>
+<text x="425" y="108" text-anchor="middle" fill="#888" font-size="9">LangFuse traces • Prompt versioning • A/B testing • Evaluation pipeline • Alerts</text>
+<!-- Layer 6: CI/CD -->
+<rect x="50" y="35" width="750" height="28" rx="4" fill="#e040fb08" stroke="#e040fb"/>
+<text x="425" y="54" text-anchor="middle" fill="#e040fb" font-size="10" font-weight="bold">CI/CD: GitHub Actions → Test → Quality Gate → Build → Deploy → Monitor</text>
+<!-- YOUR markers -->
+<text x="820" y="165" fill="#00e676" font-size="8">✅ YOU</text>
+<text x="820" y="225" fill="#ffc107" font-size="8">⚠️ partial</text>
+<text x="820" y="285" fill="#ff5252" font-size="8">❌ gap</text>
+<text x="820" y="335" fill="#ff5252" font-size="8">❌ gap</text>
+<text x="820" y="105" fill="#ffc107" font-size="8">⚠️ partial</text>
+<text x="820" y="54" fill="#00e676" font-size="8">✅ GH Actions</text>
+</svg>
+</div>
+</section>
+
+<section id="fastapi">
+<h2>3. FastAPI — The Standard for LLM API Serving</h2>
+<div class="layer" style="border-color:#00e676" onclick="this.classList.toggle('open')">
+<strong>Why FastAPI (not Flask, not Django)</strong>
+<div class="detail">
+<p>• <strong>Async native:</strong> LLM calls are I/O bound (waiting for Groq/OpenAI response). Async = handle 100 concurrent requests with 1 worker.</p>
+<p>• <strong>Auto-generated docs:</strong> Visit /docs → instant Swagger UI. YOUR API is self-documenting.</p>
+<p>• <strong>Pydantic validation:</strong> Request/response schemas enforced automatically. Bad input rejected with clear error.</p>
+<p>• <strong>Streaming support:</strong> SSE (Server-Sent Events) for token-by-token output built-in.</p>
+<p>• <strong>Industry standard:</strong> Used by Anthropic, LangChain, most AI startups. Interviewers expect this.</p>
+</div>
+</div>
+<div class="layer" style="border-color:#7b2ff7" onclick="this.classList.toggle('open')">
+<strong>Production FastAPI patterns for LLM apps</strong>
+<div class="detail">
+<p><strong>1. Lifespan (load model once at startup, not per request):</strong></p>
+<div class="code-block">@asynccontextmanager<br>async def lifespan(app):<br>&nbsp;&nbsp;app.state.model = SentenceTransformer('all-MiniLM-L6-v2') # 3s once<br>&nbsp;&nbsp;yield # app runs<br>&nbsp;&nbsp;# cleanup on shutdown</div>
+<p><strong>2. Health endpoint (required by every cloud platform):</strong></p>
+<div class="code-block">@app.get("/health")<br>async def health():<br>&nbsp;&nbsp;return {"status": "healthy", "model_loaded": True}</div>
+<p><strong>3. Pydantic models (type-safe request/response):</strong></p>
+<div class="code-block">class ScoreRequest(BaseModel):<br>&nbsp;&nbsp;title: str = Field(min_length=3, max_length=200)<br>&nbsp;&nbsp;description: str = Field(default="", max_length=5000)</div>
+<p><strong>4. Error handling (don't crash, return useful errors):</strong></p>
+<div class="code-block">@app.exception_handler(Exception)<br>async def global_handler(request, exc):<br>&nbsp;&nbsp;return JSONResponse(status_code=500, content={"error": str(exc)})</div>
+</div>
+</div>
+</section>
+
+<section id="docker">
+<h2>4. Docker — Ship Anywhere, Run Everywhere</h2>
+<div class="analogy">
+<h3>📦 Analogy: Shipping Container</h3>
+<p>Before shipping containers: every cargo needed custom handling. Fragile, slow, expensive.</p>
+<p>After containers: ANY cargo fits in a standard box. Load on ANY ship. Unload at ANY port. Standard interface.</p>
+<p><strong>Docker = shipping containers for software.</strong> Your app + all dependencies in one standard box. Runs identically on your laptop, CI, and cloud.</p>
+</div>
+<div class="layer" style="border-color:#ffc107" onclick="this.classList.toggle('open')">
+<strong>Dockerfile anatomy for LLM apps</strong>
+<div class="detail">
+<div class="code-block"># Multi-stage build (smaller final image)<br>FROM python:3.12-slim<br>WORKDIR /app<br><br># Install deps (cached layer — only rebuilds if requirements change)<br>COPY requirements.txt .<br>RUN pip install --no-cache-dir -r requirements.txt<br><br># Copy app code<br>COPY . .<br><br># Pre-download model INTO image (fast startup!)<br>RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')"<br><br># Security: don't run as root<br>RUN useradd appuser && chown -R appuser /app<br>USER appuser<br><br>EXPOSE 8000<br>HEALTHCHECK CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"<br>CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]</div>
+<p><strong>Key decisions:</strong> (1) Pre-download model = 2s startup not 30s. (2) Non-root user = security. (3) HEALTHCHECK = cloud knows when container is ready. (4) Slim base = 400MB not 2GB.</p>
+</div>
+</div>
+<div class="layer" style="border-color:#00d2ff" onclick="this.classList.toggle('open')">
+<strong>Docker commands you need to know</strong>
+<div class="detail">
+<div class="code-block"># Build<br>docker build -t job-scorer-api:v1 .<br><br># Run locally<br>docker run -p 8000:8000 -e GROQ_API_KEY=xxx job-scorer-api:v1<br><br># Push to registry (for cloud deploy)<br>docker tag job-scorer-api:v1 gcr.io/my-project/job-scorer-api:v1<br>docker push gcr.io/my-project/job-scorer-api:v1<br><br># Debug (get inside container)<br>docker exec -it container_name /bin/bash</div>
+</div>
+</div>
+</section>
+
+<section id="cloud">
+<h2>5. Cloud Deployment Options</h2>
+<div class="card-grid">
+<div class="card" style="border-color:#00e676">
+<h4 style="color:#00e676">GCP Cloud Run</h4>
+<span class="tag" style="background:#00e67620;color:#00e676">RECOMMENDED FOR YOU</span>
+<p style="font-size:.85rem"><strong>What:</strong> Serverless containers. Push Docker image → get URL. Auto-scales 0→N.<br><strong>Cost:</strong> ₹0 when idle (scales to zero). Free tier: 2M requests/month.<br><strong>Deploy:</strong> <code>gcloud run deploy</code> — one command!<br><strong>Best for:</strong> APIs with variable traffic (like your job scorer).</p>
+</div>
+<div class="card" style="border-color:#ffc107">
+<h4 style="color:#ffc107">AWS Lambda</h4>
+<p style="font-size:.85rem"><strong>What:</strong> Serverless functions. No containers needed (but supports them).<br><strong>Cost:</strong> Pay per invocation. Free tier: 1M requests/month.<br><strong>Best for:</strong> Event-driven (your GitHub Actions trigger style). Cold starts can be slow for ML models.</p>
+</div>
+<div class="card" style="border-color:#7b2ff7">
+<h4 style="color:#7b2ff7">AWS EC2 / GCP Compute</h4>
+<p style="font-size:.85rem"><strong>What:</strong> Full virtual machines. You manage everything.<br><strong>Cost:</strong> Pay per hour regardless of traffic. Cheapest for constant load.<br><strong>Best for:</strong> Self-hosted vLLM, models that need GPU 24/7.</p>
+</div>
+<div class="card" style="border-color:#00d2ff">
+<h4 style="color:#00d2ff">Railway / Render</h4>
+<p style="font-size:.85rem"><strong>What:</strong> Simplified PaaS. Push git → auto-deploy. Like Heroku but modern.<br><strong>Cost:</strong> $5-20/month for always-on. Easier than GCP/AWS.<br><strong>Best for:</strong> Portfolio demos where you want simple + reliable.</p>
+</div>
+</div>
+<div class="layer" style="border-color:#00e676" onclick="this.classList.toggle('open')">
+<strong>Cloud Run deploy (5 commands — do this for real)</strong>
+<div class="detail">
+<div class="code-block"># 1. Auth<br>gcloud auth login<br>gcloud config set project YOUR_PROJECT<br><br># 2. Build + push (cloud builds it for you!)<br>gcloud builds submit --tag gcr.io/YOUR_PROJECT/job-scorer:v1<br><br># 3. Deploy<br>gcloud run deploy job-scorer \<br>&nbsp;&nbsp;--image gcr.io/YOUR_PROJECT/job-scorer:v1 \<br>&nbsp;&nbsp;--region asia-south1 \<br>&nbsp;&nbsp;--allow-unauthenticated \<br>&nbsp;&nbsp;--memory 1Gi --cpu 1 \<br>&nbsp;&nbsp;--min-instances 0 --max-instances 3<br><br># 4. Get URL<br>gcloud run services describe job-scorer --format='value(status.url)'<br># → https://job-scorer-xxx-el.a.run.app ← LIVE API!</div>
+<p><strong>That's it.</strong> You now have a LIVE production API. ₹0 cost at idle. Auto-scales. This is a real resume line.</p>
+</div>
+</div>
+</section>
+<section id="cicd">
+<h2>6. CI/CD for LLM Apps (Beyond Regular DevOps)</h2>
+<div class="diagram">
+<svg width="850" height="160" viewBox="0 0 850 160">
+<text x="425" y="18" text-anchor="middle" fill="#7b2ff7" font-size="11" font-weight="bold">LLM CI/CD Pipeline (GitHub Actions)</text>
+<!-- Steps -->
+<rect x="20" y="40" width="100" height="45" rx="4" fill="#12121f" stroke="#00d2ff"/><text x="70" y="58" text-anchor="middle" fill="#00d2ff" font-size="9">Push Code</text><text x="70" y="73" text-anchor="middle" fill="#888" font-size="7">trigger</text>
+<rect x="140" y="40" width="100" height="45" rx="4" fill="#12121f" stroke="#ffc107"/><text x="190" y="58" text-anchor="middle" fill="#ffc107" font-size="9">Unit Tests</text><text x="190" y="73" text-anchor="middle" fill="#888" font-size="7">pytest</text>
+<rect x="260" y="40" width="120" height="45" rx="4" fill="#12121f" stroke="#ff6b6b"/><text x="320" y="58" text-anchor="middle" fill="#ff6b6b" font-size="9">Prompt Tests</text><text x="320" y="73" text-anchor="middle" fill="#ff6b6b" font-size="7">🆕 LLM-specific!</text>
+<rect x="400" y="40" width="110" height="45" rx="4" fill="#12121f" stroke="#00e676"/><text x="455" y="58" text-anchor="middle" fill="#00e676" font-size="9">Cost Check</text><text x="455" y="73" text-anchor="middle" fill="#00e676" font-size="7">🆕 token budget</text>
+<rect x="530" y="40" width="100" height="45" rx="4" fill="#12121f" stroke="#7b2ff7"/><text x="580" y="58" text-anchor="middle" fill="#7b2ff7" font-size="9">Build Docker</text><text x="580" y="73" text-anchor="middle" fill="#888" font-size="7">container</text>
+<rect x="650" y="40" width="90" height="45" rx="4" fill="#12121f" stroke="#e040fb"/><text x="695" y="58" text-anchor="middle" fill="#e040fb" font-size="9">Deploy</text><text x="695" y="73" text-anchor="middle" fill="#888" font-size="7">Cloud Run</text>
+<rect x="760" y="40" width="70" height="45" rx="4" fill="#12121f" stroke="#00e676"/><text x="795" y="63" text-anchor="middle" fill="#00e676" font-size="9">✅ Live</text>
+<!-- Arrows -->
+<text x="127" y="65" fill="#555" font-size="10">→</text><text x="247" y="65" fill="#555" font-size="10">→</text><text x="387" y="65" fill="#555" font-size="10">→</text><text x="517" y="65" fill="#555" font-size="10">→</text><text x="637" y="65" fill="#555" font-size="10">→</text><text x="747" y="65" fill="#555" font-size="10">→</text>
+<!-- LLM-specific additions highlighted -->
+<rect x="250" y="95" width="280" height="40" rx="6" fill="#ff6b6b08" stroke="#ff6b6b50"/>
+<text x="390" y="112" text-anchor="middle" fill="#ff6b6b" font-size="9" font-weight="bold">🆕 LLMOps additions (not in regular DevOps):</text>
+<text x="390" y="127" text-anchor="middle" fill="#888" font-size="8">Prompt regression tests + token cost estimation + quality gate before deploy</text>
+</svg>
+</div>
+<div class="layer" style="border-color:#ff6b6b" onclick="this.classList.toggle('open')">
+<strong>Prompt Regression Tests (the KEY LLMOps addition)</strong>
+<div class="detail">
+<p>Regular code has unit tests. LLM apps need PROMPT tests:</p>
+<div class="code-block"># test_prompts.py — runs in CI before deploy<br>TEST_CASES = [<br>&nbsp;&nbsp;{"input": "AI Engineer Chennai", "expect_tier": "Strong", "expect_score_min": 70},<br>&nbsp;&nbsp;{"input": "Java Developer Pune", "expect_tier": "Weak", "expect_score_max": 40},<br>]<br><br>def test_scoring_accuracy():<br>&nbsp;&nbsp;correct = 0<br>&nbsp;&nbsp;for case in TEST_CASES:<br>&nbsp;&nbsp;&nbsp;&nbsp;result = score(case["input"])<br>&nbsp;&nbsp;&nbsp;&nbsp;if result["tier"] == case["expect_tier"]:<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;correct += 1<br>&nbsp;&nbsp;accuracy = correct / len(TEST_CASES)<br>&nbsp;&nbsp;assert accuracy >= 0.8, f"Prompt accuracy dropped to {accuracy}!"</div>
+<p><strong>This blocks deployment if a prompt change degrades quality.</strong> It's the LLMOps equivalent of "tests must pass before merge."</p>
+</div>
+</div>
+</section>
+
+<section id="streaming">
+<h2>7. Streaming (Token-by-Token Delivery)</h2>
+<div class="analogy">
+<h3>📺 Analogy: Netflix vs YouTube Download</h3>
+<p><strong>Non-streaming:</strong> Wait for entire movie to download before watching. (Wait 5 seconds for full LLM response.)</p>
+<p><strong>Streaming:</strong> Start watching immediately while it downloads. (See tokens appear one by one as LLM generates.)</p>
+<p style="color:#00e676">Users perceive streaming as 10x faster even though total time is the same. It's a UX game-changer.</p>
+</div>
+<div class="layer" style="border-color:#7b2ff7" onclick="this.classList.toggle('open')">
+<strong>SSE (Server-Sent Events) — How streaming works</strong>
+<div class="detail">
+<div class="code-block">from fastapi.responses import StreamingResponse<br><br>@app.post("/chat/stream")<br>async def chat_stream(request: ChatRequest):<br>&nbsp;&nbsp;async def generate():<br>&nbsp;&nbsp;&nbsp;&nbsp;stream = groq.chat.completions.create(<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;model="llama-3.3-70b-versatile",<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;messages=request.messages,<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;stream=True  # ← THIS enables streaming<br>&nbsp;&nbsp;&nbsp;&nbsp;)<br>&nbsp;&nbsp;&nbsp;&nbsp;for chunk in stream:<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;token = chunk.choices[0].delta.content or ""<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;yield f"data: {token}\n\n"  # SSE format<br>&nbsp;&nbsp;&nbsp;&nbsp;yield "data: [DONE]\n\n"<br>&nbsp;&nbsp;return StreamingResponse(generate(), media_type="text/event-stream")</div>
+<p><strong>Client side (browser):</strong></p>
+<div class="code-block">const source = new EventSource("/chat/stream");<br>source.onmessage = (event) => {<br>&nbsp;&nbsp;document.getElementById("output").innerText += event.data;<br>};</div>
+</div>
+</div>
+</section>
+
+<section id="versioning">
+<h2>8. Prompt & Model Versioning</h2>
+<div class="layer" style="border-color:#ffc107" onclick="this.classList.toggle('open')">
+<strong>The Problem: "Which prompt was in production when quality dropped?"</strong>
+<div class="detail">
+<p>Without versioning, you change a prompt → quality drops → you can't REMEMBER what the old prompt was. This is like coding without git.</p>
+<p><strong>Solution: Prompt Registry pattern</strong></p>
+<div class="code-block">PROMPTS = {<br>&nbsp;&nbsp;"scorer_v1": {"template": "...", "model": "llama-3.3-70b", "metrics": {"accuracy": 0.78}},<br>&nbsp;&nbsp;"scorer_v2": {"template": "...", "model": "llama-3.3-70b", "metrics": {"accuracy": 0.85}},<br>}<br>ACTIVE = "scorer_v2"  # change this to switch versions instantly</div>
+<p><strong>Better: LangFuse prompt management</strong> — change prompts WITHOUT redeploying code. Rollback in 1 click. A/B test by routing % of traffic.</p>
+</div>
+</div>
+<div class="layer" style="border-color:#00d2ff" onclick="this.classList.toggle('open')">
+<strong>Model versioning (handle deprecations gracefully)</strong>
+<div class="detail">
+<p>YOU already learned this the hard way: Groq decommissioned <code>llama-3.1-70b-versatile</code> mid-project.</p>
+<p><strong>Pattern:</strong> Never hardcode model names in business logic. Use a settings layer:</p>
+<div class="code-block">MODEL_ROUTING = {<br>&nbsp;&nbsp;"fast": "llama-3.1-8b-instant",<br>&nbsp;&nbsp;"default": "llama-3.3-70b-versatile",<br>&nbsp;&nbsp;"creative": "llama-3.3-70b-versatile",<br>}<br># Change ONE place to switch models globally</div>
+<p>YOUR settings.py already does this with <code>model_fast</code> and <code>model_default</code>! Good pattern.</p>
+</div>
+</div>
+</section>
+
+<section id="scaling">
+<h2>9. Scaling Patterns</h2>
+<div class="card-grid">
+<div class="card" style="border-color:#00e676">
+<h4 style="color:#00e676">Semantic Caching</h4>
+<p style="font-size:.85rem"><strong>What:</strong> If similar query was answered before (cosine > 0.95), return cached answer. Skip LLM entirely.<br><strong>Savings:</strong> 30-50% of LLM calls for repetitive queries (support bots, FAQ).<br><strong>How:</strong> Embed query → search cache collection → if match → return cached response.</p>
+</div>
+<div class="card" style="border-color:#7b2ff7">
+<h4 style="color:#7b2ff7">Model Routing (Tiered)</h4>
+<p style="font-size:.85rem"><strong>What:</strong> Route simple queries to cheap/fast model, complex to expensive/smart model.<br><strong>How:</strong> Classifier decides complexity → route to 8B (₹cheap) or 70B (₹expensive).<br><strong>YOUR pattern:</strong> You could score jobs with 8B (fast, free) and only use 70B for borderline cases.</p>
+</div>
+<div class="card" style="border-color:#ffc107">
+<h4 style="color:#ffc107">Rate Limiting</h4>
+<p style="font-size:.85rem"><strong>What:</strong> Prevent abuse. Max 10 requests/minute per user.<br><strong>How:</strong> Redis counter per API key. Reject with 429 if exceeded.<br><strong>Why:</strong> Without this, one user can burn your entire token budget in minutes.</p>
+</div>
+<div class="card" style="border-color:#00d2ff">
+<h4 style="color:#00d2ff">Async + Queue (Background Jobs)</h4>
+<p style="font-size:.85rem"><strong>What:</strong> Heavy tasks (video generation) run in background. API returns immediately with job ID.<br><strong>How:</strong> Redis queue (Celery/RQ) + webhook callback when done.<br><strong>YOUR use:</strong> ContentMind video assembly could be a queued job that notifies via Telegram when done.</p>
+</div>
+<div class="card" style="border-color:#ff6b6b">
+<h4 style="color:#ff6b6b">Circuit Breaker</h4>
+<p style="font-size:.85rem"><strong>What:</strong> If Groq API fails 3 times in a row → STOP calling for 60 seconds. Serve degraded response instead.<br><strong>Why:</strong> Prevents cascading failures. Your user gets "I'm temporarily limited" instead of 500 errors.<br><strong>YOUR code:</strong> Your Groq rate limit tracking is a basic version of this!</p>
+</div>
+<div class="card" style="border-color:#e040fb">
+<h4 style="color:#e040fb">Auto-Scaling</h4>
+<p style="font-size:.85rem"><strong>What:</strong> Cloud Run spins up more instances when traffic spikes. Scales back to 0 when idle.<br><strong>Config:</strong> <code>--min-instances 0 --max-instances 10</code><br><strong>Cost:</strong> Pay only for actual compute used. ₹0 when nobody is calling your API.</p>
+</div>
+</div>
+</section>
+
+<section id="monitoring">
+<h2>10. Monitoring & Observability in Production</h2>
+<div class="layer" style="border-color:#7b2ff7" onclick="this.classList.toggle('open')">
+<strong>The 5 Metrics Every LLM API Must Track</strong>
+<div class="detail">
+<p>1. <strong>Latency (p95):</strong> 95th percentile response time. Target: <3 seconds. Alert if >5s.</p>
+<p>2. <strong>Error rate:</strong> % of requests returning 5xx. Target: <2%. Alert if >5%.</p>
+<p>3. <strong>Token usage:</strong> Tokens consumed per request. Track for cost forecasting.</p>
+<p>4. <strong>Quality score:</strong> LLM-as-judge on sampled responses. Alert if average drops >5%.</p>
+<p>5. <strong>Cost per request:</strong> (Input tokens × input price + output tokens × output price). Track daily spend.</p>
+</div>
+</div>
+<div class="layer" style="border-color:#00e676" onclick="this.classList.toggle('open')">
+<strong>Structured Logging (JSON format for searchability)</strong>
+<div class="detail">
+<div class="code-block">import logging, json<br>logging.basicConfig(format='{"time":"%(asctime)s","level":"%(levelname)s","msg":"%(message)s"}')<br><br># Every LLM call logs:<br>log.info(json.dumps({<br>&nbsp;&nbsp;"event": "llm_call",<br>&nbsp;&nbsp;"model": "llama-3.3-70b",<br>&nbsp;&nbsp;"tokens_in": 680,<br>&nbsp;&nbsp;"tokens_out": 120,<br>&nbsp;&nbsp;"latency_ms": 2300,<br>&nbsp;&nbsp;"cost_usd": 0.0008,<br>&nbsp;&nbsp;"success": True<br>}))</div>
+<p>JSON logs → queryable in Cloud Logging / Datadog / Grafana. "Show me all requests where latency > 5s" becomes a simple query.</p>
+</div>
+</div>
+<div class="layer" style="border-color:#ffc107" onclick="this.classList.toggle('open')">
+<strong>LangFuse integration (1 decorator = full observability)</strong>
+<div class="detail">
+<div class="code-block">from langfuse.decorators import observe<br><br>@observe(as_type="generation")  # ← this ONE line<br>def groq_chat(messages, model, temperature):<br>&nbsp;&nbsp;response = client.chat.completions.create(...)<br>&nbsp;&nbsp;return response.choices[0].message.content<br><br># LangFuse now automatically captures:<br># - Input/output messages<br># - Model name, tokens, cost<br># - Latency<br># - Full trace of multi-step pipelines</div>
+</div>
+</div>
+</section>
+
+<section id="your-gap">
+<h2>11. Your Current State & Upgrade Path</h2>
+<div class="diagram">
+<svg width="750" height="150" viewBox="0 0 750 150">
+<text x="375" y="18" text-anchor="middle" fill="#7b2ff7" font-size="11" font-weight="bold">Your LLMOps Status</text>
+<rect x="20" y="35" width="110" height="40" rx="4" fill="#00e67615" stroke="#00e676"/><text x="75" y="52" text-anchor="middle" fill="#00e676" font-size="9">✅ CI/CD</text><text x="75" y="67" text-anchor="middle" fill="#888" font-size="7">GitHub Actions</text>
+<rect x="145" y="35" width="110" height="40" rx="4" fill="#00e67615" stroke="#00e676"/><text x="200" y="52" text-anchor="middle" fill="#00e676" font-size="9">✅ Model Config</text><text x="200" y="67" text-anchor="middle" fill="#888" font-size="7">settings.py</text>
+<rect x="270" y="35" width="110" height="40" rx="4" fill="#00e67615" stroke="#00e676"/><text x="325" y="52" text-anchor="middle" fill="#00e676" font-size="9">✅ Rate Limiting</text><text x="325" y="67" text-anchor="middle" fill="#888" font-size="7">Groq RPM tracking</text>
+<rect x="395" y="35" width="110" height="40" rx="4" fill="#ff525215" stroke="#ff5252"/><text x="450" y="52" text-anchor="middle" fill="#ff5252" font-size="9">❌ API Serving</text><text x="450" y="67" text-anchor="middle" fill="#888" font-size="7">No FastAPI yet</text>
+<rect x="520" y="35" width="100" height="40" rx="4" fill="#ff525215" stroke="#ff5252"/><text x="570" y="52" text-anchor="middle" fill="#ff5252" font-size="9">❌ Docker</text><text x="570" y="67" text-anchor="middle" fill="#888" font-size="7">Not containerized</text>
+<rect x="635" y="35" width="100" height="40" rx="4" fill="#ff525215" stroke="#ff5252"/><text x="685" y="52" text-anchor="middle" fill="#ff5252" font-size="9">❌ Cloud</text><text x="685" y="67" text-anchor="middle" fill="#888" font-size="7">No platform deploy</text>
+<!-- Action -->
+<text x="375" y="105" text-anchor="middle" fill="#ffc107" font-size="10" font-weight="bold">Your 1-Day Action Plan:</text>
+<text x="375" y="122" text-anchor="middle" fill="#bbb" font-size="9">1. Build FastAPI wrapper around job_scorer (2 hours)</text>
+<text x="375" y="137" text-anchor="middle" fill="#bbb" font-size="9">2. Dockerize it (30 min) → 3. Deploy to Cloud Run (30 min) → NEW RESUME LINE ✅</text>
+</svg>
+</div>
+</section>
+
+<section id="interview">
+<h2>12. Interview Answers</h2>
+<div class="layer" style="border-color:#7b2ff7" onclick="this.classList.toggle('open')">
+<strong>Q: "How would you deploy an LLM application to production?"</strong>
+<div class="detail"><p>"I'd serve it via FastAPI with async endpoints, Pydantic validation, and health checks. Containerize with Docker (multi-stage build, pre-downloaded models, non-root user). Deploy to GCP Cloud Run for serverless scaling (0 to N instances, pay-per-use). CI/CD via GitHub Actions with prompt regression tests as a quality gate — blocks deploy if accuracy drops below 80%. Add LangFuse for tracing and cost monitoring. For high traffic: semantic caching to skip 30-50% of LLM calls, and model routing to use cheap 8B for simple queries."</p></div>
+</div>
+<div class="layer" style="border-color:#00d2ff" onclick="this.classList.toggle('open')">
+<strong>Q: "How do you handle model deprecation in production?"</strong>
+<div class="detail"><p>"Never hardcode model names in business logic — use a settings/routing layer. When Groq deprecated llama-3.1, I had fast-fail detection: if the error contains 'decommissioned', raise immediately without retrying. The fix was changing one string in settings.py. For production: I'd add a fallback chain (primary model → secondary → cached responses) so the system degrades gracefully while the team updates."</p></div>
+</div>
+<div class="layer" style="border-color:#00e676" onclick="this.classList.toggle('open')">
+<strong>Q: "How do you optimize cost in LLM production systems?"</strong>
+<div class="detail"><p>"Five layers: (1) Semantic caching — skip LLM for similar past queries (30-50% savings). (2) Model tiering — route simple tasks to 8B, complex to 70B. (3) Prompt optimization — shorter prompts = fewer tokens (I reduced 12 calls to 5, saving 60%). (4) Batch processing — batch multiple items into one LLM call where possible. (5) Token budgets per request — hard cap prevents runaway costs. In my pipeline, these combined achieve ₹0/month running cost."</p></div>
+</div>
+</section>
+
+<div style="text-align:center;padding:3rem 0;border-top:1px solid #222;margin-top:3rem">
+<p style="color:#7b2ff7;font-size:1.1rem">🚀 LLMOps Complete — From script to scalable production system.</p>
+<p style="color:#888;margin-top:.5rem"><a href="index.html" style="color:#00d2ff">🏠 Back to Course Home</a></p>
+<p style="color:#555;margin-top:1rem;font-size:.8rem">DO THIS: Build FastAPI + Docker + Cloud Run for your job scorer. That's your ₹35L resume line.</p>
+</div>
+<script>document.querySelectorAll('.nav a[href^="#"]').forEach(a=>{a.addEventListener('click',e=>{e.preventDefault();document.querySelector(a.getAttribute('href')).scrollIntoView({behavior:'smooth'});document.querySelectorAll('.nav a').forEach(x=>x.classList.remove('active'));a.classList.add('active')})});</script>

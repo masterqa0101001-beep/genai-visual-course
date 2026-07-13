@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RAG Advanced — Types, Failures, Code & Industry</title>
+<link rel="stylesheet" href="fix_readability.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0a0a14;color:#e0e0e0;overflow-x:hidden}
+.nav{position:fixed;top:0;width:100%;background:#0a0a14ee;backdrop-filter:blur(8px);z-index:100;padding:.7rem 2rem;display:flex;gap:1rem;overflow-x:auto;border-bottom:1px solid #222}
+.nav a{color:#888;text-decoration:none;font-size:.8rem;white-space:nowrap;padding:4px 12px;border-radius:20px;transition:.3s}
+.nav a:hover,.nav a.active{color:#fff;background:#7b2ff730}
+main{max-width:1100px;margin:0 auto;padding:5rem 1.5rem 4rem}
+h1{font-size:2rem;text-align:center;margin-bottom:.3rem;background:linear-gradient(90deg,#ff6b6b,#7b2ff7,#00d2ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sub{text-align:center;color:#666;margin-bottom:3rem;font-size:.9rem}
+section{margin-bottom:4rem;scroll-margin-top:4rem}
+h2{font-size:1.4rem;color:#00d2ff;margin-bottom:1rem;padding-left:.5rem;border-left:3px solid #7b2ff7}
+h3{color:#ffc107;margin:.8rem 0 .4rem;font-size:1rem}
+p{line-height:1.7;color:#bbb;margin-bottom:.8rem;font-size:.92rem}
+.diagram{background:#0d0d1a;border-radius:12px;padding:1.5rem;margin:1.2rem 0;overflow-x:auto}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem;margin:1rem 0}
+.card{background:#12121f;border:1px solid #222;border-radius:10px;padding:1.2rem;transition:.3s}
+.card:hover{border-color:#7b2ff7;transform:translateY(-2px)}
+.card h4{margin-bottom:.4rem;font-size:.95rem}
+.tag{display:inline-block;font-size:.65rem;padding:2px 8px;border-radius:10px;margin-right:4px;margin-bottom:4px}
+.code-block{background:#0a0a12;border:1px solid #222;border-radius:8px;padding:1rem;margin:1rem 0;overflow-x:auto;font-family:'Cascadia Code','Fira Code',monospace;font-size:.8rem;line-height:1.6;color:#bbb}
+.code-block .kw{color:#c792ea}
+.code-block .fn{color:#82aaff}
+.code-block .str{color:#c3e88d}
+.code-block .cm{color:#546e7a}
+.code-block .num{color:#f78c6c}
+.layer{margin:.8rem 0;padding:1rem 1.2rem;border-radius:8px;border-left:4px solid;cursor:pointer;transition:.3s;background:#12121f}
+.layer:hover{transform:translateX(4px)}
+.layer .detail{max-height:0;overflow:hidden;transition:max-height .5s;color:#999;font-size:.85rem;line-height:1.6}
+.layer.open .detail{max-height:800px;margin-top:.5rem}
+.comparison{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1rem 0}
+.comparison>div{padding:1rem;border-radius:8px;border:1px solid #222}
+.vs-bad{border-color:#ff5252;background:#ff525208}
+.vs-good{border-color:#00e676;background:#00e67608}
+.badge{font-size:.7rem;padding:2px 8px;border-radius:10px;font-weight:600}
+</style>
+</head>
+<body>
+<nav class="nav">
+<a href="index.html">🏠 Home</a>
+<a href="rag_complete.html">← Part 1 (Basics)</a>
+<a href="#types" class="active">RAG Types</a>
+<a href="#code">Code Architecture</a>
+<a href="#failures">Failure Modes</a>
+<a href="#industry">Industry Examples</a>
+<a href="#interview">Interview Answers</a>
+</nav>
+<main>
+<h1>🔬 RAG Advanced — Part 2</h1>
+<p class="sub">Types • Code Patterns • Failure Modes • How Big Companies Do It</p>
+</main>
+</body>
+</html>
+<section id="types">
+<h2>1. The RAG Zoo — 6 Types You Must Know</h2>
+<p>Not all RAG is the same. Here are the evolution stages — from basic to cutting-edge:</p>
+
+<div class="diagram">
+<svg width="900" height="300" viewBox="0 0 900 300">
+<defs><marker id="a" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#7b2ff7"/></marker></defs>
+<!-- Evolution arrow -->
+<line x1="50" y1="280" x2="850" y2="280" stroke="#333" stroke-width="1"/>
+<text x="450" y="295" text-anchor="middle" fill="#555" font-size="9">Complexity & Capability →</text>
+<!-- Boxes on timeline -->
+<rect x="30" y="200" width="110" height="60" rx="6" fill="#ff525215" stroke="#ff5252"/>
+<text x="85" y="225" text-anchor="middle" fill="#ff5252" font-size="9" font-weight="bold">Naive RAG</text>
+<text x="85" y="242" text-anchor="middle" fill="#888" font-size="7">Chunk→Embed→</text>
+<text x="85" y="252" text-anchor="middle" fill="#888" font-size="7">Retrieve→Generate</text>
+
+<rect x="170" y="160" width="120" height="60" rx="6" fill="#ffc10715" stroke="#ffc107"/>
+<text x="230" y="185" text-anchor="middle" fill="#ffc107" font-size="9" font-weight="bold">Advanced RAG</text>
+<text x="230" y="202" text-anchor="middle" fill="#888" font-size="7">+Reranking +HyDE</text>
+<text x="230" y="212" text-anchor="middle" fill="#888" font-size="7">+Hybrid search</text>
+
+<rect x="320" y="120" width="120" height="60" rx="6" fill="#00e67615" stroke="#00e676"/>
+<text x="380" y="145" text-anchor="middle" fill="#00e676" font-size="9" font-weight="bold">Modular RAG</text>
+<text x="380" y="162" text-anchor="middle" fill="#888" font-size="7">Swap any component</text>
+<text x="380" y="172" text-anchor="middle" fill="#888" font-size="7">(plug & play pipeline)</text>
+
+<rect x="470" y="80" width="120" height="60" rx="6" fill="#00d2ff15" stroke="#00d2ff"/>
+<text x="530" y="105" text-anchor="middle" fill="#00d2ff" font-size="9" font-weight="bold">Graph RAG</text>
+<text x="530" y="122" text-anchor="middle" fill="#888" font-size="7">Knowledge graphs +</text>
+<text x="530" y="132" text-anchor="middle" fill="#888" font-size="7">relationships between entities</text>
+
+<rect x="620" y="50" width="120" height="60" rx="6" fill="#7b2ff715" stroke="#7b2ff7"/>
+<text x="680" y="73" text-anchor="middle" fill="#7b2ff7" font-size="9" font-weight="bold">Agentic RAG</text>
+<text x="680" y="90" text-anchor="middle" fill="#888" font-size="7">Agent DECIDES when</text>
+<text x="680" y="100" text-anchor="middle" fill="#888" font-size="7">and what to retrieve</text>
+
+<rect x="770" y="25" width="110" height="60" rx="6" fill="#e040fb15" stroke="#e040fb"/>
+<text x="825" y="48" text-anchor="middle" fill="#e040fb" font-size="9" font-weight="bold">Multimodal RAG</text>
+<text x="825" y="65" text-anchor="middle" fill="#888" font-size="7">Text + Images +</text>
+<text x="825" y="75" text-anchor="middle" fill="#888" font-size="7">Audio + Video</text>
+
+<!-- YOU marker -->
+<circle cx="150" cy="230" r="8" fill="#ffc107" opacity="0.8"/>
+<text x="150" y="192" text-anchor="middle" fill="#ffc107" font-size="8" font-weight="bold">YOU ARE HERE</text>
+<!-- Target marker -->
+<circle cx="530" cy="110" r="8" fill="#00e676" opacity="0.6"/>
+<text x="560" cy="140" fill="#00e676" font-size="7">TARGET (₹40L)</text>
+</svg>
+</div>
+
+<div class="card-grid">
+<div class="card">
+<h4 style="color:#ff5252">① Naive RAG</h4>
+<span class="tag" style="background:#ff525220;color:#ff5252">YOUR CURRENT</span>
+<p style="font-size:.82rem">Basic pipeline: chunk → embed → retrieve top-K → generate. No optimization. What tutorials teach.</p>
+<p style="font-size:.78rem;color:#888"><strong>Weakness:</strong> Bad chunks, no reranking, no evaluation.</p>
+</div>
+<div class="card">
+<h4 style="color:#ffc107">② Advanced RAG</h4>
+<span class="tag" style="background:#ffc10720;color:#ffc107">YOUR NEXT STEP</span>
+<p style="font-size:.82rem">Adds: semantic chunking, cross-encoder reranking, HyDE, hybrid search, query expansion.</p>
+<p style="font-size:.78rem;color:#888"><strong>Key upgrade:</strong> Two-stage retrieval (fast then accurate).</p>
+</div>
+<div class="card">
+<h4 style="color:#00e676">③ Modular RAG</h4>
+<span class="tag" style="background:#00e67620;color:#00e676">ARCHITECTURE</span>
+<p style="font-size:.82rem">Each component is pluggable. Swap embedding model without changing retrieval. Swap vector DB without changing generation.</p>
+<p style="font-size:.78rem;color:#888"><strong>Key idea:</strong> Interface-based design. Any chunker, any embedder, any retriever.</p>
+</div>
+<div class="card">
+<h4 style="color:#00d2ff">④ Graph RAG (Microsoft)</h4>
+<span class="tag" style="background:#00d2ff20;color:#00d2ff">2024-2025 TREND</span>
+<p style="font-size:.82rem">Instead of flat chunks, build a KNOWLEDGE GRAPH (entities + relationships). Then traverse the graph to find context.</p>
+<p style="font-size:.78rem;color:#888"><strong>Best for:</strong> Complex domains with many interconnected entities (legal, medical, research).</p>
+</div>
+<div class="card">
+<h4 style="color:#7b2ff7">⑤ Agentic RAG</h4>
+<span class="tag" style="background:#7b2ff720;color:#7b2ff7">YOUR ContentMind</span>
+<p style="font-size:.82rem">An AGENT decides: "Do I need to retrieve? What query? From which collection? Is the result good enough or should I retry?"</p>
+<p style="font-size:.78rem;color:#888"><strong>Your code already does this!</strong> Trend ranker queries Qdrant, decides if topic is covered.</p>
+</div>
+<div class="card">
+<h4 style="color:#e040fb">⑥ Multimodal RAG</h4>
+<span class="tag" style="background:#e040fb20;color:#e040fb">EMERGING</span>
+<p style="font-size:.82rem">Retrieve across text + images + audio. Use CLIP embeddings to search images with text queries. Your ContentMind partially does this (Pexels image search from text).</p>
+<p style="font-size:.78rem;color:#888"><strong>Coming:</strong> Video RAG, Audio RAG, cross-modal retrieval.</p>
+</div>
+</div>
+</section>
+<section id="code">
+<h2>2. Code Architecture — Your Pipeline Visualized</h2>
+<p>Here's how your <code>bootstrap_rag.py</code> maps to the RAG pipeline — and what the UPGRADED version looks like:</p>
+
+<div class="comparison">
+<div class="vs-bad">
+<h4 style="color:#ff5252">Your Current Code</h4>
+<div class="code-block">
+<span class="cm"># bootstrap_rag.py (simplified)</span><br>
+<span class="kw">def</span> <span class="fn">embed_and_chunk</span>(text, meta):<br>
+&nbsp;&nbsp;<span class="cm"># Fixed 500 words, 50 overlap</span><br>
+&nbsp;&nbsp;words = text.split()<br>
+&nbsp;&nbsp;chunks = [words[i:i+<span class="num">500</span>] <span class="kw">for</span> i ...]<br>
+&nbsp;&nbsp;<span class="cm"># Embed each chunk</span><br>
+&nbsp;&nbsp;embeddings = model.encode(chunks)<br>
+&nbsp;&nbsp;<span class="kw">return</span> chunks, embeddings, meta<br><br>
+<span class="cm"># Retrieval (in script_writer)</span><br>
+results = qdrant.search(<br>
+&nbsp;&nbsp;query_embedding,<br>
+&nbsp;&nbsp;limit=<span class="num">5</span> <span class="cm"># top 5, no reranking</span><br>
+)
+</div>
+</div>
+<div class="vs-good">
+<h4 style="color:#00e676">Upgraded Version (what to aim for)</h4>
+<div class="code-block">
+<span class="cm"># advanced_rag.py</span><br>
+<span class="kw">def</span> <span class="fn">semantic_chunk</span>(text):<br>
+&nbsp;&nbsp;<span class="cm"># Split where meaning SHIFTS</span><br>
+&nbsp;&nbsp;sentences = split_sentences(text)<br>
+&nbsp;&nbsp;embeddings = model.encode(sentences)<br>
+&nbsp;&nbsp;splits = find_low_similarity(embeddings)<br>
+&nbsp;&nbsp;<span class="kw">return</span> group_by_splits(sentences, splits)<br><br>
+<span class="cm"># Two-stage retrieval</span><br>
+candidates = qdrant.search(query, limit=<span class="num">20</span>)<br>
+reranked = cross_encoder.predict(<br>
+&nbsp;&nbsp;[[query, c] <span class="kw">for</span> c <span class="kw">in</span> candidates]<br>
+)<br>
+top3 = sorted(reranked)[::<span class="num">-1</span>][:<span class="num">3</span>]
+</div>
+</div>
+</div>
+
+<h3>Full Architecture Diagram (Production RAG)</h3>
+<div class="diagram">
+<svg width="850" height="350" viewBox="0 0 850 350">
+<defs><marker id="a2" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="#7b2ff7"/></marker></defs>
+<!-- INGESTION SIDE -->
+<rect x="20" y="20" width="380" height="150" rx="8" fill="#0d0d1a" stroke="#444" stroke-dasharray="4"/>
+<text x="210" y="42" text-anchor="middle" fill="#888" font-size="10">OFFLINE (Ingestion — runs once or on schedule)</text>
+<!-- Boxes -->
+<rect x="40" y="55" width="80" height="35" rx="4" fill="#ff6b6b15" stroke="#ff6b6b"/><text x="80" y="77" text-anchor="middle" fill="#ff6b6b" font-size="8">Sources</text>
+<rect x="140" y="55" width="80" height="35" rx="4" fill="#ffc10715" stroke="#ffc107"/><text x="180" y="77" text-anchor="middle" fill="#ffc107" font-size="8">Chunk</text>
+<rect x="240" y="55" width="80" height="35" rx="4" fill="#00e67615" stroke="#00e676"/><text x="280" y="77" text-anchor="middle" fill="#00e676" font-size="8">Embed</text>
+<rect x="40" y="110" width="80" height="35" rx="4" fill="#00d2ff15" stroke="#00d2ff"/><text x="80" y="132" text-anchor="middle" fill="#00d2ff" font-size="8">Vector DB</text>
+<rect x="140" y="110" width="80" height="35" rx="4" fill="#00d2ff15" stroke="#00d2ff"/><text x="180" y="132" text-anchor="middle" fill="#00d2ff" font-size="8">BM25 Index</text>
+<line x1="120" y1="72" x2="140" y2="72" stroke="#7b2ff7" marker-end="url(#a2)"/>
+<line x1="220" y1="72" x2="240" y2="72" stroke="#7b2ff7" marker-end="url(#a2)"/>
+<line x1="280" y1="90" x2="80" y2="110" stroke="#7b2ff7" marker-end="url(#a2)"/>
+<line x1="280" y1="90" x2="180" y2="110" stroke="#7b2ff7" marker-end="url(#a2)"/>
+<!-- RETRIEVAL SIDE -->
+<rect x="430" y="20" width="400" height="310" rx="8" fill="#0d0d1a" stroke="#444" stroke-dasharray="4"/>
+<text x="630" y="42" text-anchor="middle" fill="#888" font-size="10">ONLINE (Per query — must be fast)</text>
+<!-- Query flow -->
+<rect x="450" y="60" width="100" height="35" rx="4" fill="#ffc10715" stroke="#ffc107"/><text x="500" y="82" text-anchor="middle" fill="#ffc107" font-size="8">User Query</text>
+<rect x="450" y="115" width="100" height="35" rx="4" fill="#e040fb15" stroke="#e040fb"/><text x="500" y="130" text-anchor="middle" fill="#e040fb" font-size="7">HyDE Expand</text><text x="500" y="142" text-anchor="middle" fill="#888" font-size="6">(optional)</text>
+<line x1="500" y1="95" x2="500" y2="115" stroke="#7b2ff7" marker-end="url(#a2)"/>
+<!-- Dual search -->
+<rect x="580" y="100" width="90" height="30" rx="4" fill="#00d2ff15" stroke="#00d2ff"/><text x="625" y="120" text-anchor="middle" fill="#00d2ff" font-size="7">Vector Search</text>
+<rect x="580" y="140" width="90" height="30" rx="4" fill="#00d2ff15" stroke="#00d2ff"/><text x="625" y="160" text-anchor="middle" fill="#00d2ff" font-size="7">BM25 Search</text>
+<line x1="550" y1="132" x2="580" y2="115" stroke="#7b2ff7" marker-end="url(#a2)"/>
+<line x1="550" y1="132" x2="580" y2="155" stroke="#7b2ff7" marker-end="url(#a2)"/>
+<!-- Merge -->
+<rect x="700" y="115" width="100" height="35" rx="4" fill="#ffc10715" stroke="#ffc107"/><text x="750" y="130" text-anchor="middle" fill="#ffc107" font-size="7">Rank Fusion</text><text x="750" y="143" text-anchor="middle" fill="#888" font-size="6">(merge results)</text>
+<line x1="670" y1="120" x2="700" y2="130" stroke="#7b2ff7" marker-end="url(#a2)"/>
+<line x1="670" y1="155" x2="700" y2="135" stroke="#7b2ff7" marker-end="url(#a2)"/>
+<!-- Rerank -->
+<rect x="620" y="180" width="110" height="35" rx="4" fill="#00e67615" stroke="#00e676"/><text x="675" y="202" text-anchor="middle" fill="#00e676" font-size="8">Cross-Encoder Rerank</text>
+<line x1="750" y1="150" x2="675" y2="180" stroke="#7b2ff7" marker-end="url(#a2)"/>
+<!-- Generate -->
+<rect x="540" y="240" width="150" height="50" rx="6" fill="#7b2ff720" stroke="#7b2ff7"/>
+<text x="615" y="260" text-anchor="middle" fill="#7b2ff7" font-size="9">🧠 LLM Generate</text>
+<text x="615" y="277" text-anchor="middle" fill="#888" font-size="7">"Answer using context only"</text>
+<line x1="675" y1="215" x2="615" y2="240" stroke="#7b2ff7" marker-end="url(#a2)"/>
+<!-- Output -->
+<rect x="540" y="305" width="150" height="25" rx="4" fill="#00e67610" stroke="#00e676"/>
+<text x="615" y="322" text-anchor="middle" fill="#00e676" font-size="8">✅ Grounded Answer + Citations</text>
+<line x1="615" y1="290" x2="615" y2="305" stroke="#00e676" marker-end="url(#a2)"/>
+</svg>
+</div>
+</section>
+
+<section id="failures">
+<h2>3. RAG Failure Modes — What Goes Wrong & How to Fix</h2>
+
+<div class="layer" style="border-color:#ff5252" onclick="this.classList.toggle('open')">
+<strong>💀 Failure 1: Hallucination Despite RAG</strong> <span class="badge" style="background:#ff525220;color:#ff5252">COMMON</span>
+<div class="detail">
+<p><strong>Symptom:</strong> LLM makes claims NOT present in retrieved context.</p>
+<p><strong>Root cause:</strong> Prompt doesn't enforce "use ONLY context." LLM falls back to training knowledge.</p>
+<p><strong>Fix:</strong> Add explicit instruction: "If the answer is not in the context below, say 'I don't have information about that.'" Also add: "Cite which chunk your answer comes from."</p>
+</div>
+</div>
+<div class="layer" style="border-color:#ffc107" onclick="this.classList.toggle('open')">
+<strong>💀 Failure 2: Retrieved Wrong Chunks</strong> <span class="badge" style="background:#ffc10720;color:#ffc107">YOUR RISK</span>
+<div class="detail">
+<p><strong>Symptom:</strong> Top-K results are about the right TOPIC but wrong ASPECT. Query about "deploying RAG" gets chunks about "what is RAG."</p>
+<p><strong>Root causes:</strong> (1) Chunks too broad (500 words covers multiple subtopics). (2) No reranking. (3) Bi-encoder misses nuance.</p>
+<p><strong>Fix:</strong> Smaller semantic chunks + cross-encoder reranking + HyDE for query expansion.</p>
+</div>
+</div>
+<div class="layer" style="border-color:#00d2ff" onclick="this.classList.toggle('open')">
+<strong>💀 Failure 3: Missing Relevant Chunks (Low Recall)</strong>
+<div class="detail">
+<p><strong>Symptom:</strong> The answer exists in your knowledge base but wasn't retrieved.</p>
+<p><strong>Root cause:</strong> Query uses different words than the document. "How to make it faster" vs doc says "latency optimization."</p>
+<p><strong>Fix:</strong> (1) HyDE. (2) Multi-query (rephrase 3 ways). (3) Hybrid search (BM25 catches exact terms vector misses).</p>
+</div>
+</div>
+<div class="layer" style="border-color:#00e676" onclick="this.classList.toggle('open')">
+<strong>💀 Failure 4: Chunk Cut Mid-Concept</strong>
+<div class="detail">
+<p><strong>Symptom:</strong> Retrieved chunk says "...which is why cross-encoders are better" but doesn't say better THAN WHAT or WHY.</p>
+<p><strong>Root cause:</strong> Fixed-size chunking split a paragraph in the middle.</p>
+<p><strong>Fix:</strong> Semantic chunking (split at meaning boundaries) OR parent-child chunking (retrieve small, return large).</p>
+</div>
+</div>
+<div class="layer" style="border-color:#e040fb" onclick="this.classList.toggle('open')">
+<strong>💀 Failure 5: Context Poisoning</strong>
+<div class="detail">
+<p><strong>Symptom:</strong> One WRONG chunk in context makes the LLM produce incorrect answer (even with 4 correct chunks).</p>
+<p><strong>Root cause:</strong> Outdated document in your knowledge base. Or adversarial content injection.</p>
+<p><strong>Fix:</strong> (1) Metadata filtering (only retrieve docs updated after X date). (2) Source trust scoring. (3) Faithfulness check on output.</p>
+</div>
+</div>
+<div class="layer" style="border-color:#7b2ff7" onclick="this.classList.toggle('open')">
+<strong>💀 Failure 6: Lost in the Middle</strong>
+<div class="detail">
+<p><strong>Symptom:</strong> LLM ignores chunks placed in the MIDDLE of a long context. Uses only first and last chunks.</p>
+<p><strong>Root cause:</strong> Attention mechanism naturally weights beginning and end more heavily.</p>
+<p><strong>Fix:</strong> (1) Fewer chunks (3 instead of 10). (2) Put most relevant chunk LAST (closest to generation). (3) Use "cite your sources" to force reading all.</p>
+</div>
+</div>
+</section>
+<section id="industry">
+<h2>4. Industry Implementations — How the Big Players Do RAG</h2>
+
+<div class="card-grid">
+<div class="card" style="border-color:#00d2ff">
+<h4 style="color:#00d2ff">🔍 Perplexity AI</h4>
+<span class="tag" style="background:#00d2ff20;color:#00d2ff">Search + RAG</span>
+<p style="font-size:.8rem"><strong>How:</strong> User query → web search (real-time) → extract chunks from top pages → rerank → generate with citations.</p>
+<p style="font-size:.8rem"><strong>Key insight:</strong> They DON'T pre-index. They search the web LIVE per query. RAG from real-time web, not a static database.</p>
+<p style="font-size:.75rem;color:#888"><strong>Your ContentMind parallel:</strong> Your HackerNews/arXiv ingestion is similar — but theirs is real-time, yours is batched.</p>
+</div>
+<div class="card" style="border-color:#00e676">
+<h4 style="color:#00e676">🤖 ChatGPT (Retrieval)</h4>
+<span class="tag" style="background:#00e67620;color:#00e676">Agentic RAG</span>
+<p style="font-size:.8rem"><strong>How:</strong> Model DECIDES if it needs to search (agentic). If yes → Bing search → extract → cite. If not → answer from training.</p>
+<p style="font-size:.8rem"><strong>Key insight:</strong> The retrieval is OPTIONAL. Agent decides. This is Agentic RAG — exactly what your trend_ranker does (decides whether to call Qdrant).</p>
+</div>
+<div class="card" style="border-color:#7b2ff7">
+<h4 style="color:#7b2ff7">💻 GitHub Copilot (Codebase RAG)</h4>
+<span class="tag" style="background:#7b2ff720;color:#7b2ff7">Code RAG</span>
+<p style="font-size:.8rem"><strong>How:</strong> Embeds your entire codebase → when you type, retrieves relevant files/functions → injects as context → generates code that fits YOUR project.</p>
+<p style="font-size:.8rem"><strong>Key insight:</strong> The "chunks" are functions and classes, not paragraphs. Chunking strategy is AST-based (code structure), not text-based.</p>
+</div>
+<div class="card" style="border-color:#ffc107">
+<h4 style="color:#ffc107">📝 Notion AI</h4>
+<span class="tag" style="background:#ffc10720;color:#ffc107">Workspace RAG</span>
+<p style="font-size:.8rem"><strong>How:</strong> Embeds all your Notion pages → when you ask a question, retrieves from YOUR workspace → answers grounded in YOUR notes.</p>
+<p style="font-size:.8rem"><strong>Key insight:</strong> Permission-aware RAG — only retrieves pages YOU have access to. Uses metadata filtering on user permissions.</p>
+</div>
+<div class="card" style="border-color:#ff6b6b">
+<h4 style="color:#ff6b6b">🏥 Medical RAG (Hospitals)</h4>
+<span class="tag" style="background:#ff6b6b20;color:#ff6b6b">Domain RAG</span>
+<p style="font-size:.8rem"><strong>How:</strong> Medical literature + patient records → chunk by section (symptoms, treatments, studies) → retrieve with strict accuracy requirements.</p>
+<p style="font-size:.8rem"><strong>Key insight:</strong> Hallucination is DANGEROUS here. They use triple-verification: retrieve → generate → fact-check against a second retrieval.</p>
+</div>
+<div class="card" style="border-color:#e040fb">
+<h4 style="color:#e040fb">🎵 Spotify (Audio RAG — Emerging)</h4>
+<span class="tag" style="background:#e040fb20;color:#e040fb">Multimodal</span>
+<p style="font-size:.8rem"><strong>How:</strong> Embed podcast transcripts + audio features → search by topic OR by audio similarity → recommend related content.</p>
+<p style="font-size:.8rem"><strong>Key insight:</strong> Multi-modal: text embeddings for content, audio embeddings for style/mood. Cross-modal retrieval.</p>
+</div>
+</div>
+</section>
+
+<section id="interview">
+<h2>5. Interview-Ready Answers</h2>
+<p>Click each question to reveal the ₹40L answer:</p>
+
+<div class="layer" style="border-color:#7b2ff7" onclick="this.classList.toggle('open')">
+<strong>Q: "Design a RAG system for a customer support bot"</strong>
+<div class="detail">
+<p>"I'd design it in three stages. <strong>Ingestion:</strong> Chunk support docs by FAQ structure (one chunk = one question+answer pair). Embed with a model optimized for Q&A retrieval like BGE or E5. Index in both vector store and BM25 for hybrid search.</p>
+<p><strong>Retrieval:</strong> At query time — hybrid BM25+vector search, cross-encoder reranking to get top 3 most relevant FAQ chunks. If confidence is below threshold, escalate to human.</p>
+<p><strong>Generation:</strong> Context-grounded prompt with citation requirement. Faithfulness check on output. If LLM hallucinates beyond context, return 'let me connect you with an agent' instead."</p>
+</div>
+</div>
+<div class="layer" style="border-color:#00d2ff" onclick="this.classList.toggle('open')">
+<strong>Q: "When would you use RAG vs Fine-tuning?"</strong>
+<div class="detail">
+<p>"<strong>RAG</strong> when I need current/external knowledge that changes over time — company docs, product catalogs, recent events. Knowledge lives OUTSIDE the model.</p>
+<p><strong>Fine-tuning</strong> when I need the model to consistently BEHAVE differently — specific output format, domain vocabulary, style. The behavior is baked INTO the model.</p>
+<p><strong>Both together:</strong> Fine-tune for format compliance + RAG for factual grounding. Example: fine-tune to always output JSON medical reports, RAG to ground claims in patient records."</p>
+</div>
+</div>
+<div class="layer" style="border-color:#00e676" onclick="this.classList.toggle('open')">
+<strong>Q: "How do you evaluate RAG quality?"</strong>
+<div class="detail">
+<p>"RAGAS framework with 4 metrics: <strong>Faithfulness</strong> (is the answer grounded in context? catches hallucination), <strong>Answer Relevancy</strong> (does it address the question?), <strong>Context Precision</strong> (are retrieved chunks relevant? catches noisy retrieval), <strong>Context Recall</strong> (did we miss relevant chunks?).</p>
+<p>I maintain a golden test set of 30+ query-answer pairs. After any change to chunking, embedding model, or prompts, I run RAGAS to detect regression. If any metric drops >5%, the change is rolled back."</p>
+</div>
+</div>
+<div class="layer" style="border-color:#ffc107" onclick="this.classList.toggle('open')">
+<strong>Q: "What is your chunking strategy and why?"</strong>
+<div class="detail">
+<p>"I use semantic chunking — splitting at points where the embedding similarity between consecutive sentences drops below a threshold (mean - 1 std dev). This ensures each chunk is a COMPLETE thought rather than an arbitrary word boundary that cuts mid-sentence.</p>
+<p>For production: I implement parent-child chunking — small chunks (200 tokens) for precise retrieval, but I return the parent chunk (800 tokens) to the LLM for richer context. This gives precision of small chunks with the completeness of large chunks."</p>
+</div>
+</div>
+</section>
+
+<div style="text-align:center;padding:3rem 0;border-top:1px solid #222;margin-top:3rem">
+<p style="color:#7b2ff7;font-size:1.1rem">🎉 RAG Complete — From Naive to Production-Grade</p>
+<p style="color:#888;margin-top:.5rem"><a href="rag_complete.html" style="color:#00d2ff">← Part 1 (Basics)</a> &nbsp;|&nbsp; You are on Part 2 (Advanced)</p>
+<p style="color:#555;margin-top:1rem;font-size:.8rem">Next visual topic to build: Agents (How agents think, decide, and act) →</p>
+</div>
+
+<script>
+// Smooth scroll for nav
+document.querySelectorAll('.nav a[href^="#"]').forEach(a=>{
+  a.addEventListener('click',e=>{
+    e.preventDefault();
+    document.querySelector(a.getAttribute('href')).scrollIntoView({behavior:'smooth'});
+    document.querySelectorAll('.nav a').forEach(x=>x.classList.remove('active'));
+    a.classList.add('active');
+  });
+});
+</script>

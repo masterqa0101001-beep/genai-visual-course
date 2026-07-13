@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Loop Engineering — The 2026 Paradigm Shift</title>
+<link rel="stylesheet" href="fix_readability.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0a0a14;color:#e0e0e0;overflow-x:hidden}
+.nav{position:fixed;top:0;width:100%;background:#0a0a14ee;backdrop-filter:blur(8px);z-index:100;padding:.7rem 2rem;display:flex;gap:1rem;overflow-x:auto;border-bottom:1px solid #222}
+.nav a{color:#888;text-decoration:none;font-size:.8rem;white-space:nowrap;padding:4px 12px;border-radius:20px;transition:.3s}
+.nav a:hover,.nav a.active{color:#fff;background:#7b2ff730}
+main{max-width:1100px;margin:0 auto;padding:5rem 1.5rem 4rem}
+h1{font-size:2rem;text-align:center;margin-bottom:.3rem;background:linear-gradient(90deg,#ff6b6b,#ffc107,#00e676);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sub{text-align:center;color:#666;margin-bottom:3rem;font-size:.9rem}
+section{margin-bottom:4rem;scroll-margin-top:4rem}
+h2{font-size:1.4rem;color:#00d2ff;margin-bottom:1rem;padding-left:.5rem;border-left:3px solid #7b2ff7}
+p{line-height:1.7;color:#bbb;margin-bottom:.8rem;font-size:.92rem}
+.diagram{background:#0d0d1a;border-radius:12px;padding:1.5rem;margin:1.2rem 0;overflow-x:auto}
+.analogy{background:#12121f;border:1px solid #7b2ff730;border-radius:12px;padding:1.5rem;margin:1.2rem 0}
+.analogy h3{color:#ffc107;margin-bottom:.5rem}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem;margin:1rem 0}
+.card{background:#12121f;border:1px solid #222;border-radius:10px;padding:1.2rem;transition:.3s}
+.card:hover{border-color:#7b2ff7;transform:translateY(-2px)}
+.card h4{margin-bottom:.4rem;font-size:.95rem}
+.tag{display:inline-block;font-size:.65rem;padding:2px 8px;border-radius:10px;margin-right:4px}
+.layer{margin:.8rem 0;padding:1rem 1.2rem;border-radius:8px;border-left:4px solid;cursor:pointer;transition:.3s;background:#12121f}
+.layer:hover{transform:translateX(4px)}
+.layer .detail{max-height:0;overflow:hidden;transition:max-height .5s;color:#999;font-size:.85rem;line-height:1.6}
+.layer.open .detail{max-height:800px;margin-top:.5rem}
+.highlight-box{background:linear-gradient(135deg,#7b2ff710,#00e67610);border:1px solid #7b2ff740;border-radius:12px;padding:1.5rem;margin:1.5rem 0}
+.quote{border-left:3px solid #ffc107;padding:.8rem 1.2rem;margin:1rem 0;background:#ffc10708;border-radius:0 8px 8px 0}
+.quote p{color:#e0e0e0;font-style:italic;margin:0}
+.quote cite{color:#888;font-size:.8rem;font-style:normal}
+</style>
+</head>
+<body>
+<nav class="nav">
+<a href="index.html">🏠 Home</a>
+<a href="#what" class="active">What?</a>
+<a href="#evolution">Evolution</a>
+<a href="#anatomy">Anatomy</a>
+<a href="#patterns">10 Patterns</a>
+<a href="#vs">Loop vs Chain vs Agent</a>
+<a href="#your-code">Your Code</a>
+<a href="#design">How to Design</a>
+<a href="#cost">Cost Reality</a>
+<a href="#interview">Interview</a>
+</nav>
+<main>
+<h1>🔄 Loop Engineering</h1>
+<p class="sub">The June 2026 paradigm shift — from prompting to designing autonomous iterative systems</p>
+</main>
+</body>
+</html>
+<section id="what">
+<h2>1. What Is Loop Engineering? (Born: June 2026)</h2>
+<div class="quote">
+<p>"I don't prompt Claude anymore. I write loops that prompt Claude."</p>
+<cite>— Boris Cherny, Head of Claude Code at Anthropic (June 2026)</cite>
+</div>
+<div class="quote">
+<p>"Loop engineering is replacing yourself as the person who prompts the agent. You design the system that does it instead."</p>
+<cite>— Addy Osmani, Google Chrome Engineering Lead (June 8, 2026) — coined the term</cite>
+</div>
+
+<div class="analogy">
+<h3>🏭 Analogy: Assembly Line vs Craftsman</h3>
+<p><strong>Prompt engineering</strong> = you're a craftsman. You hand-make each prompt, get one result, start over. Manual. One at a time.</p>
+<p><strong>Loop engineering</strong> = you're a factory designer. You design the MACHINE (the loop) that runs automatically, producing results until quality standards are met. You don't touch each piece — the system handles it.</p>
+<p style="color:#00e676"><strong>You stop being the prompter. You become the architect of a system that prompts ITSELF.</strong></p>
+</div>
+
+<div class="highlight-box">
+<h3 style="color:#ff6b6b;margin-bottom:.5rem">🔥 Why This Is Exploding RIGHT NOW (July 2026)</h3>
+<p>• Peter Steinberger's tweet: 5 million views in 24 hours<br>
+• DataScienceDojo article: 6.5 million views on loop engineering patterns<br>
+• Forbes coverage (June 17, 2026): "A new AI trend"<br>
+• Oracle published full architecture guide<br>
+• Claude Code added native <code>/loop</code> command<br>
+• Cursor added Automations tab for loops<br>
+• Most people haven't learned this yet — early mover advantage is NOW</p>
+</div>
+</section>
+
+<section id="evolution">
+<h2>2. The Evolution: Prompting → Context → Loops</h2>
+<div class="diagram">
+<svg width="850" height="200" viewBox="0 0 850 200">
+<!-- Timeline -->
+<line x1="50" y1="100" x2="800" y2="100" stroke="#333" stroke-width="2"/>
+<!-- Era 1 -->
+<rect x="50" y="40" width="200" height="50" rx="6" fill="#ff6b6b10" stroke="#ff6b6b"/>
+<text x="150" y="60" text-anchor="middle" fill="#ff6b6b" font-size="12" font-weight="bold">Prompt Engineering</text>
+<text x="150" y="78" text-anchor="middle" fill="#888" font-size="9">2022-2024</text>
+<text x="150" y="120" text-anchor="middle" fill="#bbb" font-size="9">You → write prompt → get response</text>
+<text x="150" y="135" text-anchor="middle" fill="#888" font-size="8">One shot. Manual. Linear.</text>
+<!-- Era 2 -->
+<rect x="300" y="40" width="200" height="50" rx="6" fill="#ffc10710" stroke="#ffc107"/>
+<text x="400" y="60" text-anchor="middle" fill="#ffc107" font-size="12" font-weight="bold">Context Engineering</text>
+<text x="400" y="78" text-anchor="middle" fill="#888" font-size="9">2025</text>
+<text x="400" y="120" text-anchor="middle" fill="#bbb" font-size="9">You → manage WHAT LLM sees</text>
+<text x="400" y="135" text-anchor="middle" fill="#888" font-size="8">RAG, memory, tool results as context.</text>
+<!-- Era 3 -->
+<rect x="550" y="40" width="240" height="50" rx="6" fill="#00e67610" stroke="#00e676"/>
+<text x="670" y="60" text-anchor="middle" fill="#00e676" font-size="12" font-weight="bold">Loop Engineering</text>
+<text x="670" y="78" text-anchor="middle" fill="#888" font-size="9">June 2026 → NOW</text>
+<text x="670" y="120" text-anchor="middle" fill="#00e676" font-size="9">System → prompts agent → iterates</text>
+<text x="670" y="135" text-anchor="middle" fill="#888" font-size="8">Autonomous. Goal-directed. Self-correcting.</text>
+<!-- Arrows -->
+<text x="270" y="68" fill="#7b2ff7" font-size="14">→</text>
+<text x="515" y="68" fill="#7b2ff7" font-size="14">→</text>
+<!-- Bottom insight -->
+<text x="425" y="175" text-anchor="middle" fill="#7b2ff7" font-size="10" font-weight="bold">Key shift: YOU stopped being in the loop. The SYSTEM runs the loop.</text>
+<text x="425" y="192" text-anchor="middle" fill="#555" font-size="8">Your role changes from "prompter" to "loop designer" — higher leverage, higher value.</text>
+</svg>
+</div>
+</section>
+
+<section id="anatomy">
+<h2>3. Anatomy of a Loop (5 Essential Components)</h2>
+<div class="diagram">
+<svg width="700" height="400" viewBox="0 0 700 400">
+<!-- Central circular loop -->
+<circle cx="350" cy="200" r="120" fill="none" stroke="#333" stroke-width="1" stroke-dasharray="5"/>
+
+<!-- 1. TRIGGER (top-left outside) -->
+<rect x="20" y="20" width="160" height="60" rx="8" fill="#ff6b6b10" stroke="#ff6b6b" stroke-width="2"/>
+<text x="100" y="42" text-anchor="middle" fill="#ff6b6b" font-size="11" font-weight="bold">① TRIGGER</text>
+<text x="100" y="58" text-anchor="middle" fill="#bbb" font-size="9">Schedule / Event / Manual</text>
+<text x="100" y="72" text-anchor="middle" fill="#888" font-size="8">"Every 5min" or "PR opened"</text>
+<line x1="180" y1="60" x2="280" y2="120" stroke="#ff6b6b" stroke-dasharray="4"/>
+
+<!-- 2. GOAL (top, entering loop) -->
+<rect x="270" y="60" width="160" height="50" rx="8" fill="#ffc10710" stroke="#ffc107" stroke-width="2"/>
+<text x="350" y="82" text-anchor="middle" fill="#ffc107" font-size="11" font-weight="bold">② GOAL</text>
+<text x="350" y="98" text-anchor="middle" fill="#bbb" font-size="9">"Make all tests pass"</text>
+
+<!-- 3. ACT (right side of loop) -->
+<rect x="440" y="170" width="140" height="50" rx="8" fill="#7b2ff710" stroke="#7b2ff7" stroke-width="2"/>
+<text x="510" y="192" text-anchor="middle" fill="#7b2ff7" font-size="11" font-weight="bold">③ ACT</text>
+<text x="510" y="208" text-anchor="middle" fill="#bbb" font-size="9">Agent uses tools</text>
+
+<!-- 4. OBSERVE (bottom of loop) -->
+<rect x="270" y="290" width="160" height="50" rx="8" fill="#00d2ff10" stroke="#00d2ff" stroke-width="2"/>
+<text x="350" y="312" text-anchor="middle" fill="#00d2ff" font-size="11" font-weight="bold">④ OBSERVE</text>
+<text x="350" y="328" text-anchor="middle" fill="#bbb" font-size="9">See result, evaluate</text>
+
+<!-- 5. TERMINATE (left side - exit) -->
+<rect x="100" y="170" width="160" height="50" rx="8" fill="#00e67610" stroke="#00e676" stroke-width="2"/>
+<text x="180" y="192" text-anchor="middle" fill="#00e676" font-size="11" font-weight="bold">⑤ TERMINATE</text>
+<text x="180" y="208" text-anchor="middle" fill="#bbb" font-size="9">Goal met? Stop. Max tries? Stop.</text>
+
+<!-- Curved arrows connecting them (clockwise) -->
+<path d="M 400 110 Q 460 130 450 170" fill="none" stroke="#7b2ff7" stroke-width="2"/>
+<path d="M 490 220 Q 460 270 430 290" fill="none" stroke="#7b2ff7" stroke-width="2"/>
+<path d="M 290 310 Q 230 290 250 230" fill="none" stroke="#7b2ff7" stroke-width="2"/>
+<path d="M 220 170 Q 260 130 290 110" fill="none" stroke="#7b2ff7" stroke-width="2"/>
+
+<!-- Exit arrow -->
+<line x1="180" y1="220" x2="180" y2="260" stroke="#00e676" stroke-width="2"/>
+<rect x="130" y="260" width="100" height="30" rx="4" fill="#00e67620" stroke="#00e676"/>
+<text x="180" y="280" text-anchor="middle" fill="#00e676" font-size="9">✅ DONE</text>
+
+<!-- Loop label -->
+<text x="350" y="205" text-anchor="middle" fill="#555" font-size="9">Repeats N times</text>
+<text x="350" y="220" text-anchor="middle" fill="#555" font-size="8">until goal OR budget</text>
+
+<!-- Right side note -->
+<rect x="530" y="280" width="150" height="80" rx="6" fill="#12121f" stroke="#333"/>
+<text x="605" y="300" text-anchor="middle" fill="#ffc107" font-size="9" font-weight="bold">Key Difference:</text>
+<text x="605" y="316" text-anchor="middle" fill="#bbb" font-size="8">A chain = fixed steps A→B→C</text>
+<text x="605" y="332" text-anchor="middle" fill="#bbb" font-size="8">A loop = dynamic cycling</text>
+<text x="605" y="348" text-anchor="middle" fill="#bbb" font-size="8">until a goal is satisfied</text>
+</svg>
+</div>
+</section>
+<section id="patterns">
+<h2>4. The 10 Loop Engineering Design Patterns</h2>
+<p>Every autonomous AI system uses one or more of these patterns:</p>
+<div class="card-grid">
+<div class="card" style="border-color:#00e676">
+<h4 style="color:#00e676">① Fix Loop</h4>
+<span class="tag" style="background:#00e67620;color:#00e676">DETERMINISTIC</span>
+<p style="font-size:.85rem"><strong>Goal:</strong> "Make all tests pass"<br><strong>How:</strong> Run tests → see failures → fix code → run tests → repeat until green<br><strong>Termination:</strong> All tests pass OR max 10 iterations<br><strong>Example:</strong> Claude Code's <code>/loop</code> command for TDD</p>
+</div>
+<div class="card" style="border-color:#7b2ff7">
+<h4 style="color:#7b2ff7">② Build Loop</h4>
+<span class="tag" style="background:#7b2ff720;color:#7b2ff7">NON-DETERMINISTIC</span>
+<p style="font-size:.85rem"><strong>Goal:</strong> "Implement this feature spec"<br><strong>How:</strong> Read spec → implement piece → validate → implement next piece → repeat<br><strong>Termination:</strong> Spec fully implemented (needs evaluator)<br><strong>Risk:</strong> Expensive if spec is vague</p>
+</div>
+<div class="card" style="border-color:#ffc107">
+<h4 style="color:#ffc107">③ Refine Loop</h4>
+<span class="tag" style="background:#ffc10720;color:#ffc107">YOUR QUALITY COUNCIL!</span>
+<p style="font-size:.85rem"><strong>Goal:</strong> "Score ≥ 75/100 on quality"<br><strong>How:</strong> Generate → evaluate → improve based on feedback → evaluate again<br><strong>Termination:</strong> Score threshold met OR max attempts<br><strong>YOUR CODE:</strong> ContentMind improvement loop (3 tries, escalating thresholds)</p>
+</div>
+<div class="card" style="border-color:#00d2ff">
+<h4 style="color:#00d2ff">④ Monitor Loop</h4>
+<span class="tag" style="background:#00d2ff20;color:#00d2ff">SCHEDULED</span>
+<p style="font-size:.85rem"><strong>Goal:</strong> "Keep system healthy"<br><strong>How:</strong> Check metrics → if degraded → act → recheck<br><strong>Trigger:</strong> Runs on schedule (every hour/day)<br><strong>YOUR CODE:</strong> GitHub Actions daily pipeline IS this pattern!</p>
+</div>
+<div class="card" style="border-color:#ff6b6b">
+<h4 style="color:#ff6b6b">⑤ Review Loop</h4>
+<p style="font-size:.85rem"><strong>Goal:</strong> "PR has no issues"<br><strong>How:</strong> Read code → identify issues → fix → verify fix → repeat for next issue<br><strong>Termination:</strong> No more issues found<br><strong>Example:</strong> Automated PR review + auto-fix</p>
+</div>
+<div class="card" style="border-color:#e040fb">
+<h4 style="color:#e040fb">⑥ Multi-Agent Loop</h4>
+<p style="font-size:.85rem"><strong>Goal:</strong> Complex task requiring specialization<br><strong>How:</strong> Planner breaks task → executors work in parallel → reviewer validates → planner adjusts<br><strong>YOUR CODE:</strong> ContentMind 14-agent pipeline with routing</p>
+</div>
+<div class="card" style="border-color:#00e676">
+<h4 style="color:#00e676">⑦ Feedback Loop</h4>
+<p style="font-size:.85rem"><strong>Goal:</strong> "Improve over time based on real results"<br><strong>How:</strong> Observe outcomes → analyze what worked → adjust strategy → observe again<br><strong>YOUR CODE:</strong> ContentMind Layer 7 (Analytics → Qdrant → weight calibration)</p>
+</div>
+<div class="card" style="border-color:#ffc107">
+<h4 style="color:#ffc107">⑧ Guard Loop</h4>
+<p style="font-size:.85rem"><strong>Goal:</strong> "Continuously validate safety"<br><strong>How:</strong> Monitor output → check against rules → block/flag if violation → continue<br><strong>Example:</strong> Content moderation running on every output</p>
+</div>
+<div class="card" style="border-color:#7b2ff7">
+<h4 style="color:#7b2ff7">⑨ Learning Loop</h4>
+<p style="font-size:.85rem"><strong>Goal:</strong> "Get better at task over iterations"<br><strong>How:</strong> Attempt → fail → store failure reason → next attempt avoids same mistake<br><strong>Emerging:</strong> Agents that maintain a "don't do this again" memory</p>
+</div>
+<div class="card" style="border-color:#00d2ff">
+<h4 style="color:#00d2ff">⑩ Cascade Loop</h4>
+<p style="font-size:.85rem"><strong>Goal:</strong> "Solve by escalating complexity"<br><strong>How:</strong> Try simple approach → if fails → try medium → if fails → try complex<br><strong>YOUR CODE:</strong> TTS: Edge-TTS primary → backup voices → gTTS fallback</p>
+</div>
+</div>
+</section>
+
+<section id="vs">
+<h2>5. Loop vs Chain vs Agent — The Distinction</h2>
+<div class="diagram">
+<svg width="800" height="220" viewBox="0 0 800 220">
+<!-- Chain -->
+<rect x="20" y="20" width="240" height="80" rx="6" fill="#ff6b6b08" stroke="#ff6b6b"/>
+<text x="140" y="42" text-anchor="middle" fill="#ff6b6b" font-size="11" font-weight="bold">Chain (Linear)</text>
+<text x="50" y="68" fill="#bbb" font-size="10">A → B → C → Done</text>
+<text x="140" y="88" text-anchor="middle" fill="#888" font-size="8">Fixed steps. No decisions inside. Always same path.</text>
+<!-- Agent -->
+<rect x="280" y="20" width="240" height="80" rx="6" fill="#ffc10708" stroke="#ffc107"/>
+<text x="400" y="42" text-anchor="middle" fill="#ffc107" font-size="11" font-weight="bold">Agent (Single-Pass Reasoning)</text>
+<text x="310" y="68" fill="#bbb" font-size="10">Think → Act → Observe → Done</text>
+<text x="400" y="88" text-anchor="middle" fill="#888" font-size="8">Decides which tool. Usually 1-5 steps. One goal attempt.</text>
+<!-- Loop -->
+<rect x="540" y="20" width="240" height="80" rx="6" fill="#00e67608" stroke="#00e676"/>
+<text x="660" y="42" text-anchor="middle" fill="#00e676" font-size="11" font-weight="bold">Loop (Iterative System)</text>
+<text x="570" y="68" fill="#bbb" font-size="10">Run → Evaluate → Adjust → Repeat</text>
+<text x="660" y="88" text-anchor="middle" fill="#888" font-size="8">Autonomous. Runs until goal met. Self-correcting. Hours/days.</text>
+<!-- Key difference -->
+<rect x="100" y="120" width="600" height="70" rx="8" fill="#0d0d1a" stroke="#444"/>
+<text x="400" y="142" text-anchor="middle" fill="#7b2ff7" font-size="10" font-weight="bold">The Key Difference Is WHO Decides to Keep Going:</text>
+<text x="400" y="162" text-anchor="middle" fill="#bbb" font-size="9">Chain: nobody (it's fixed). Agent: the LLM (within one conversation). Loop: the SYSTEM (outer orchestrator).</text>
+<text x="400" y="180" text-anchor="middle" fill="#00e676" font-size="9">Loop Engineering = designing that outer system. The agent doesn't know it's in a loop. The system keeps restarting it.</text>
+</svg>
+</div>
+</section>
+
+<section id="your-code">
+<h2>6. YOUR ContentMind = Loop Engineering (Before It Had a Name)</h2>
+<div class="highlight-box">
+<h3 style="color:#ffc107;margin-bottom:.5rem">You've been doing loop engineering since before the term existed!</h3>
+<p>Here's how your existing code maps to the 10 patterns:</p>
+</div>
+<div class="card-grid">
+<div class="card" style="border-color:#00e676">
+<h4 style="color:#00e676">Your Improvement Loop = Pattern ③</h4>
+<p style="font-size:.85rem"><strong>Trigger:</strong> Script generated<br><strong>Goal:</strong> Score ≥ 75<br><strong>Tools:</strong> LLM rewriting + council scoring<br><strong>Feedback:</strong> Score + objections list<br><strong>Termination:</strong> Pass OR 3 attempts (thresholds: 75→75→65)<br><strong>THIS IS TEXTBOOK REFINE LOOP.</strong></p>
+</div>
+<div class="card" style="border-color:#7b2ff7">
+<h4 style="color:#7b2ff7">Your Daily Pipeline = Pattern ④</h4>
+<p style="font-size:.85rem"><strong>Trigger:</strong> Cron at 23:18 UTC<br><strong>Goal:</strong> Publish one quality video<br><strong>Tools:</strong> 14 agents with fallbacks<br><strong>Feedback:</strong> Quality council score<br><strong>Termination:</strong> Published OR quality gate blocks<br><strong>THIS IS A MONITOR LOOP.</strong></p>
+</div>
+<div class="card" style="border-color:#ffc107">
+<h4 style="color:#ffc107">Your TTS Fallback = Pattern ⑩</h4>
+<p style="font-size:.85rem"><strong>Trigger:</strong> Need narration audio<br><strong>Goal:</strong> Get working audio file<br><strong>Cascade:</strong> PrabhatNeural → GuyNeural → AndrewNeural → RyanNeural → gTTS<br><strong>Termination:</strong> One succeeds OR all fail<br><strong>THIS IS A CASCADE LOOP.</strong></p>
+</div>
+<div class="card" style="border-color:#00d2ff">
+<h4 style="color:#00d2ff">Your Analytics Feedback = Pattern ⑦</h4>
+<p style="font-size:.85rem"><strong>Trigger:</strong> Video performance data arrives<br><strong>Goal:</strong> Improve future content quality<br><strong>Feedback:</strong> Views, retention, CTR → Qdrant calibration<br><strong>Loop:</strong> Each day's results inform next day's generation<br><strong>THIS IS A FEEDBACK LOOP.</strong></p>
+</div>
+</div>
+<div class="quote" style="border-color:#00e676">
+<p>"I've been practicing loop engineering since before it had a name — my ContentMind pipeline runs autonomous agent loops with quality gates, escalating thresholds, cascade fallbacks, and feedback calibration."</p>
+<cite>— Your interview answer (July 2026)</cite>
+</div>
+</section>
+
+<section id="design">
+<h2>7. How to Design a Good Loop (The Principles)</h2>
+<div class="layer" style="border-color:#00e676" onclick="this.classList.toggle('open')">
+<strong>Principle 1: Make goals VERIFIABLE (deterministic > non-deterministic)</strong>
+<div class="detail"><p>"All tests pass" is verifiable. "Make it good" is not. The more measurable your goal, the more reliable your loop. YOUR threshold (score ≥ 75) is a perfect example — it's a number the system can check without human judgment.</p></div>
+</div>
+<div class="layer" style="border-color:#ffc107" onclick="this.classList.toggle('open')">
+<strong>Principle 2: Always set a budget (max iterations + max tokens)</strong>
+<div class="detail"><p>A loop without limits is an open-ended bill. Peter Steinberger's team spent $1.3M/month in tokens. YOUR design is smarter: max 3 attempts with escalating acceptance thresholds (75→75→65). That's budget-conscious loop engineering.</p></div>
+</div>
+<div class="layer" style="border-color:#7b2ff7" onclick="this.classList.toggle('open')">
+<strong>Principle 3: Each iteration must make PROGRESS (no spinning)</strong>
+<div class="detail"><p>If the agent retries the exact same action after the same error — that's spinning, not looping. Good loops include: escalating strategy (YOUR "be MORE aggressive" on attempt 2), memory of what was tried, and detection of repeated failures.</p></div>
+</div>
+<div class="layer" style="border-color:#00d2ff" onclick="this.classList.toggle('open')">
+<strong>Principle 4: Design the EXIT before the ENTRY</strong>
+<div class="detail"><p>Before writing a loop, answer: "How does this stop?" Success condition, failure condition, escalation path. YOUR code does this right — each loop has clear termination: score passes, max attempts reached, or fallback to best-so-far.</p></div>
+</div>
+<div class="layer" style="border-color:#ff6b6b" onclick="this.classList.toggle('open')">
+<strong>Principle 5: Manage context across iterations (memory)</strong>
+<div class="detail"><p>Each iteration generates more context. Don't let it overflow. Strategies: summarize previous attempts, keep a "tried_approaches" list, prune irrelevant history. YOUR PipelineState TypedDict is context management across loop iterations.</p></div>
+</div>
+</section>
+
+<section id="cost">
+<h2>8. Cost Reality</h2>
+<div class="card-grid">
+<div class="card" style="border-color:#ff6b6b">
+<h4 style="color:#ff6b6b">Loop costs MORE than one-shot</h4>
+<p style="font-size:.85rem">Agent loops: 4x more tokens than chat. Multi-agent loops: up to 15x. Each iteration = more prompt tokens + more output tokens. Loops trade MONEY for AUTONOMY.</p>
+</div>
+<div class="card" style="border-color:#00e676">
+<h4 style="color:#00e676">YOUR approach = ₹0 Loop Engineering</h4>
+<p style="font-size:.85rem">Free Groq tier (30 RPM) + max 3 iterations + tight prompts (optimized 12→5 calls) + GitHub Actions free tier. You're doing loop engineering at zero cost. That's BETTER than most companies achieving it at $100K+/month.</p>
+</div>
+<div class="card" style="border-color:#ffc107">
+<h4 style="color:#ffc107">Cost controls built into loops</h4>
+<p style="font-size:.85rem">Max iterations, token budgets per step, escalating acceptance (lower bar on retry 3), early termination on repeated failure. YOUR escalating thresholds (75→75→65) = accepting "good enough" instead of burning tokens chasing perfection.</p>
+</div>
+</div>
+</section>
+
+<section id="interview">
+<h2>9. Interview Answers — Loop Engineering</h2>
+<div class="layer" style="border-color:#7b2ff7" onclick="this.classList.toggle('open')">
+<strong>Q: "What is loop engineering and how have you applied it?"</strong>
+<div class="detail"><p>"Loop engineering is designing autonomous systems where an agent iterates toward a goal without human intervention between steps. Instead of prompting manually, you define the trigger, goal, tools, feedback mechanism, and termination conditions — then the system runs itself. My ContentMind pipeline is a daily monitor loop with a nested refine loop: it generates content autonomously, evaluates via a quality council, and iterates with escalating thresholds (75→75→65) until quality passes or budget is exhausted. I was doing this before the term was coined in June 2026."</p></div>
+</div>
+<div class="layer" style="border-color:#00d2ff" onclick="this.classList.toggle('open')">
+<strong>Q: "How do you prevent loops from running forever?"</strong>
+<div class="detail"><p>"Five mechanisms: (1) Max iteration count — hard limit, always. (2) Token budget — stop if cost exceeds threshold. (3) Progress detection — if the same error repeats twice, escalate or stop, don't spin. (4) Escalating acceptance — lower the quality bar on later attempts so you don't chase perfection forever. (5) Timeout — wall-clock time limit regardless of iterations. My pipeline uses 1, 3, and 4. Adding 2 and 5 would make it production-hardened."</p></div>
+</div>
+<div class="layer" style="border-color:#00e676" onclick="this.classList.toggle('open')">
+<strong>Q: "Loop engineering vs prompt engineering — what's the difference?"</strong>
+<div class="detail"><p>"Prompt engineering optimizes a SINGLE interaction: one input → one output. Loop engineering designs the SYSTEM around interactions: triggers that start the agent, goals that define success, feedback mechanisms that evaluate progress, and termination logic that decides when to stop or escalate. The prompt is one component INSIDE the loop. The loop is the orchestration layer that makes the whole thing autonomous."</p></div>
+</div>
+</section>
+
+<div style="text-align:center;padding:3rem 0;border-top:1px solid #222;margin-top:3rem">
+<p style="color:#7b2ff7;font-size:1.1rem">🔄 Loop Engineering — You've been doing this. Now you have the vocabulary.</p>
+<p style="color:#888;margin-top:.5rem"><a href="index.html" style="color:#00d2ff">🏠 Back to Course Home</a></p>
+<p style="color:#555;margin-top:1rem;font-size:.8rem">This topic was coined June 8, 2026. You're learning it in July 2026. That's a 5-week lead on most of the market.</p>
+</div>
+<script>document.querySelectorAll('.nav a[href^="#"]').forEach(a=>{a.addEventListener('click',e=>{e.preventDefault();document.querySelector(a.getAttribute('href')).scrollIntoView({behavior:'smooth'});document.querySelectorAll('.nav a').forEach(x=>x.classList.remove('active'));a.classList.add('active')})});</script>

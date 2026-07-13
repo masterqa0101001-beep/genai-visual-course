@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RAG — Visual Deep Dive</title>
+<link rel="stylesheet" href="fix_readability.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0a0a14;color:#e0e0e0;overflow-x:hidden}
+.nav{position:fixed;top:0;width:100%;background:#0a0a14ee;backdrop-filter:blur(8px);z-index:100;padding:.7rem 2rem;display:flex;gap:1rem;overflow-x:auto;border-bottom:1px solid #222}
+.nav a{color:#888;text-decoration:none;font-size:.8rem;white-space:nowrap;padding:4px 12px;border-radius:20px;transition:.3s}
+.nav a:hover,.nav a.active{color:#fff;background:#7b2ff730}
+main{max-width:1100px;margin:0 auto;padding:5rem 1.5rem 4rem}
+h1{font-size:2.2rem;text-align:center;margin-bottom:.5rem;background:linear-gradient(90deg,#00d2ff,#7b2ff7);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.subtitle{text-align:center;color:#666;margin-bottom:3rem}
+section{margin-bottom:4rem;scroll-margin-top:4rem}
+h2{font-size:1.4rem;color:#00d2ff;margin-bottom:1rem;padding-left:.5rem;border-left:3px solid #7b2ff7}
+p{line-height:1.7;color:#bbb;margin-bottom:1rem}
+.analogy{background:#12121f;border:1px solid #7b2ff730;border-radius:12px;padding:1.5rem;margin:1.5rem 0}
+.analogy h3{color:#ffc107;margin-bottom:.5rem;font-size:1rem}
+</style>
+</head>
+<body>
+<nav class="nav">
+<a href="index.html">🏠 Home</a>
+<a href="#what" class="active">What is RAG?</a>
+<a href="#why">Why RAG?</a>
+<a href="#pipeline">The Pipeline</a>
+<a href="#chunking">Chunking</a>
+<a href="#embeddings">Embeddings</a>
+<a href="#retrieval">Retrieval</a>
+<a href="#reranking">Re-Ranking</a>
+<a href="#generation">Generation</a>
+<a href="#advanced">Advanced</a>
+<a href="#eval">Evaluation</a>
+<a href="#you">Your Code</a>
+<a href="rag_advanced.html" style="color:#7b2ff7;font-weight:bold">Part 2 →</a>
+</nav>
+<main>
+<h1>📚 RAG — Retrieval Augmented Generation</h1>
+<p class="subtitle">Every concept visualized. From basic to production-grade. Click nav to jump.</p>
+</main>
+</body>
+</html>
+<style>
+.diagram{background:#0d0d1a;border-radius:12px;padding:2rem;margin:1.5rem 0;overflow-x:auto}
+svg text{font-family:'Segoe UI',sans-serif}
+.diagram{overflow-x:auto}
+.flow-box{rx:8;ry:8;stroke-width:2}
+.arrow{stroke-width:2;fill:none;marker-end:url(#arrowhead)}
+.label{font-size:12px;fill:#bbb}
+.highlight{animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+.step-reveal{opacity:0;transform:translateY(20px);transition:all .5s}
+.step-reveal.visible{opacity:1;transform:translateY(0)}
+.layer{margin:1rem 0;padding:1rem 1.5rem;border-radius:8px;border-left:4px solid;cursor:pointer;transition:.3s}
+.layer:hover{transform:translateX(5px)}
+.layer .detail{max-height:0;overflow:hidden;transition:max-height .4s;color:#999;font-size:.85rem}
+.layer.open .detail{max-height:500px;margin-top:.5rem}
+.comparison{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1rem 0}
+.comparison>div{padding:1rem;border-radius:8px;border:1px solid #222}
+.vs-bad{border-color:#ff5252;background:#ff525210}
+.vs-good{border-color:#00e676;background:#00e67610}
+.quiz-box{background:#12121f;border:1px solid #333;border-radius:12px;padding:1.5rem;margin:1.5rem 0}
+.quiz-box button{background:#7b2ff7;color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;margin:4px;font-size:.85rem}
+.quiz-box button:hover{background:#9b5ff9}
+.quiz-box .feedback{margin-top:.8rem;padding:.7rem;border-radius:6px;display:none}
+</style>
+<defs style="display:none">
+<svg><defs><marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#7b2ff7"/></marker></defs></svg>
+</defs>
+<section id="what">
+<h2>1. What is RAG?</h2>
+<div class="analogy">
+<h3>🏫 School Kid Analogy: The Open-Book Exam</h3>
+<p>Imagine you're taking an exam. A <strong>normal LLM</strong> is like writing answers from memory only — sometimes you forget facts or make things up.</p>
+<p><strong>RAG</strong> is like an <strong>open-book exam</strong> — before answering each question, you LOOK UP the relevant page in your textbook, read it, and THEN write your answer based on what you just read.</p>
+<p style="color:#00e676">Result: Fewer made-up answers. Grounded in real information.</p>
+</div>
+
+<div class="diagram">
+<svg width="800" height="200" viewBox="0 0 800 200">
+<defs><marker id="ah" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#7b2ff7"/></marker></defs>
+<!-- User -->
+<rect x="20" y="70" width="120" height="60" class="flow-box" fill="#1a1a2e" stroke="#00d2ff"/>
+<text x="80" y="95" text-anchor="middle" fill="#00d2ff" font-size="11">👤 User asks:</text>
+<text x="80" y="115" text-anchor="middle" fill="#fff" font-size="10">"What is LangGraph?"</text>
+<!-- Arrow 1 -->
+<line x1="140" y1="100" x2="190" y2="100" stroke="#7b2ff7" class="arrow" marker-end="url(#ah)"/>
+<!-- Retriever -->
+<rect x="195" y="60" width="130" height="80" class="flow-box" fill="#1a1a2e" stroke="#ffc107"/>
+<text x="260" y="88" text-anchor="middle" fill="#ffc107" font-size="11">📖 RETRIEVE</text>
+<text x="260" y="108" text-anchor="middle" fill="#bbb" font-size="9">Find relevant docs</text>
+<text x="260" y="122" text-anchor="middle" fill="#bbb" font-size="9">from knowledge base</text>
+<!-- Arrow 2 -->
+<line x1="325" y1="100" x2="380" y2="100" stroke="#7b2ff7" class="arrow" marker-end="url(#ah)"/>
+<!-- Context -->
+<rect x="385" y="55" width="150" height="90" class="flow-box" fill="#1a1a2e" stroke="#00e676"/>
+<text x="460" y="80" text-anchor="middle" fill="#00e676" font-size="11">📄 CONTEXT</text>
+<text x="460" y="98" text-anchor="middle" fill="#bbb" font-size="9">"LangGraph is a library</text>
+<text x="460" y="112" text-anchor="middle" fill="#bbb" font-size="9">for building stateful</text>
+<text x="460" y="126" text-anchor="middle" fill="#bbb" font-size="9">multi-agent apps..."</text>
+<!-- Arrow 3 -->
+<line x1="535" y1="100" x2="590" y2="100" stroke="#7b2ff7" class="arrow" marker-end="url(#ah)"/>
+<!-- LLM -->
+<rect x="595" y="60" width="130" height="80" class="flow-box" fill="#1a1a2e" stroke="#7b2ff7"/>
+<text x="660" y="88" text-anchor="middle" fill="#7b2ff7" font-size="11">🧠 LLM</text>
+<text x="660" y="106" text-anchor="middle" fill="#bbb" font-size="9">Generate answer</text>
+<text x="660" y="120" text-anchor="middle" fill="#bbb" font-size="9">USING the context</text>
+<!-- Labels -->
+<text x="165" y="85" fill="#555" font-size="9">query</text>
+<text x="352" y="85" fill="#555" font-size="9">chunks</text>
+<text x="565" y="85" fill="#555" font-size="9">prompt</text>
+<!-- Bottom label -->
+<text x="400" y="180" text-anchor="middle" fill="#7b2ff7" font-size="13" font-weight="bold">R(etrieval) → A(ugmented) → G(eneration)</text>
+</svg>
+</div>
+<p>That's the entire idea. Three steps: <strong>Retrieve</strong> relevant info → <strong>Augment</strong> the prompt with it → <strong>Generate</strong> a grounded answer.</p>
+</section>
+
+<section id="why">
+<h2>2. Why Do We Need RAG?</h2>
+<div class="comparison">
+<div class="vs-bad">
+<h4 style="color:#ff5252">❌ Without RAG (LLM alone)</h4>
+<p style="font-size:.85rem">• Makes up facts ("hallucination")<br>• Knowledge frozen at training date<br>• Can't access YOUR private data<br>• No way to verify claims</p>
+</div>
+<div class="vs-good">
+<h4 style="color:#00e676">✅ With RAG</h4>
+<p style="font-size:.85rem">• Grounded in real documents<br>• Knowledge updates instantly (add new docs)<br>• Works with private/company data<br>• Can cite sources</p>
+</div>
+</div>
+<div class="analogy">
+<h3>🧑‍⚕️ Analogy: Doctor with vs without medical records</h3>
+<p>A doctor guessing from memory = LLM alone (might be wrong).</p>
+<p>A doctor who checks your file before diagnosing = LLM with RAG (grounded in YOUR data).</p>
+</div>
+</section>
+<section id="pipeline">
+<h2>3. The Full RAG Pipeline (7 Steps)</h2>
+<p>Click each layer to expand and see what happens inside:</p>
+
+<div class="layer" style="border-color:#ff6b6b" onclick="this.classList.toggle('open')">
+<strong>① INGEST</strong> — Get documents into the system
+<div class="detail">Sources: PDFs, websites, APIs, databases. Clean HTML, remove junk. YOUR code: HackerNews, arXiv, dev.to, YouTube transcripts.</div>
+</div>
+<div class="layer" style="border-color:#ffc107" onclick="this.classList.toggle('open')">
+<strong>② CHUNK</strong> — Split documents into bite-sized pieces
+<div class="detail">Why? Because LLMs have limited context. You can't feed a 100-page PDF. You feed the 3 most relevant PARAGRAPHS. Strategies: fixed-size, semantic, parent-child.</div>
+</div>
+<div class="layer" style="border-color:#00e676" onclick="this.classList.toggle('open')">
+<strong>③ EMBED</strong> — Convert text chunks into number arrays (vectors)
+<div class="detail">Each chunk becomes a point in 384-dimensional space. Similar meanings = nearby points. Model: sentence-transformers/all-MiniLM-L6-v2 (what YOU use).</div>
+</div>
+<div class="layer" style="border-color:#00d2ff" onclick="this.classList.toggle('open')">
+<strong>④ INDEX</strong> — Store vectors in a searchable database
+<div class="detail">Vector database (Qdrant, Pinecone, Chroma) enables fast "find nearest neighbors" queries. YOUR setup: Qdrant Cloud with 5 collections.</div>
+</div>
+<div class="layer" style="border-color:#7b2ff7" onclick="this.classList.toggle('open')">
+<strong>⑤ RETRIEVE</strong> — Find the most relevant chunks for a query
+<div class="detail">Embed the user's question → search for nearest chunks → return top 3-5. Advanced: HyDE (embed a hypothetical answer instead of the question).</div>
+</div>
+<div class="layer" style="border-color:#e040fb" onclick="this.classList.toggle('open')">
+<strong>⑥ RERANK</strong> — Re-score results for better accuracy
+<div class="detail">Vector search is approximate. A cross-encoder sees query + document TOGETHER and gives a more accurate relevance score. Retrieve 20 → rerank → keep top 3.</div>
+</div>
+<div class="layer" style="border-color:#ff5252" onclick="this.classList.toggle('open')">
+<strong>⑦ GENERATE</strong> — LLM creates answer using retrieved context
+<div class="detail">Prompt: "Answer using ONLY the context below. If not in context, say 'I don't know.'" This grounding instruction prevents hallucination.</div>
+</div>
+
+<div class="diagram">
+<svg width="900" height="120" viewBox="0 0 900 120">
+<defs><marker id="ah2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#7b2ff7"/></marker></defs>
+<!-- Boxes -->
+<rect x="5" y="35" width="90" height="50" rx="6" fill="#ff6b6b20" stroke="#ff6b6b"/><text x="50" y="65" text-anchor="middle" fill="#ff6b6b" font-size="10">① Ingest</text>
+<rect x="125" y="35" width="90" height="50" rx="6" fill="#ffc10720" stroke="#ffc107"/><text x="170" y="65" text-anchor="middle" fill="#ffc107" font-size="10">② Chunk</text>
+<rect x="245" y="35" width="90" height="50" rx="6" fill="#00e67620" stroke="#00e676"/><text x="290" y="65" text-anchor="middle" fill="#00e676" font-size="10">③ Embed</text>
+<rect x="365" y="35" width="90" height="50" rx="6" fill="#00d2ff20" stroke="#00d2ff"/><text x="410" y="65" text-anchor="middle" fill="#00d2ff" font-size="10">④ Index</text>
+<rect x="485" y="35" width="90" height="50" rx="6" fill="#7b2ff720" stroke="#7b2ff7"/><text x="530" y="65" text-anchor="middle" fill="#7b2ff7" font-size="10">⑤ Retrieve</text>
+<rect x="605" y="35" width="90" height="50" rx="6" fill="#e040fb20" stroke="#e040fb"/><text x="650" y="65" text-anchor="middle" fill="#e040fb" font-size="10">⑥ Rerank</text>
+<rect x="725" y="35" width="100" height="50" rx="6" fill="#ff525220" stroke="#ff5252"/><text x="775" y="65" text-anchor="middle" fill="#ff5252" font-size="10">⑦ Generate</text>
+<!-- Arrows -->
+<line x1="95" y1="60" x2="125" y2="60" stroke="#7b2ff7" marker-end="url(#ah2)"/>
+<line x1="215" y1="60" x2="245" y2="60" stroke="#7b2ff7" marker-end="url(#ah2)"/>
+<line x1="335" y1="60" x2="365" y2="60" stroke="#7b2ff7" marker-end="url(#ah2)"/>
+<line x1="455" y1="60" x2="485" y2="60" stroke="#7b2ff7" marker-end="url(#ah2)"/>
+<line x1="575" y1="60" x2="605" y2="60" stroke="#7b2ff7" marker-end="url(#ah2)"/>
+<line x1="695" y1="60" x2="725" y2="60" stroke="#7b2ff7" marker-end="url(#ah2)"/>
+<!-- Labels -->
+<text x="450" y="110" text-anchor="middle" fill="#555" font-size="11">← OFFLINE (once) →                              ← ONLINE (per query) →</text>
+<line x1="460" y1="95" x2="460" y2="105" stroke="#555" stroke-dasharray="3"/>
+</svg>
+</div>
+</section>
+
+<section id="chunking">
+<h2>4. Chunking — Why & How</h2>
+<div class="analogy">
+<h3>📖 Analogy: Highlighting a textbook</h3>
+<p>You don't highlight the ENTIRE book. You highlight KEY PASSAGES that answer your question. Chunking = deciding where to draw the boundaries of each "highlightable passage."</p>
+</div>
+
+<div class="diagram">
+<svg width="800" height="280" viewBox="0 0 800 280">
+<!-- Document -->
+<rect x="20" y="20" width="760" height="40" rx="4" fill="#1a1a2e" stroke="#444"/>
+<text x="400" y="45" text-anchor="middle" fill="#888" font-size="11">📄 Full Document (too big for LLM context — need to split it)</text>
+<!-- Bad chunking -->
+<text x="20" y="90" fill="#ff5252" font-size="12" font-weight="bold">❌ Fixed-Size Chunking (your current: 500 words)</text>
+<rect x="20" y="100" width="180" height="35" rx="4" fill="#ff525215" stroke="#ff5252"/>
+<rect x="210" y="100" width="180" height="35" rx="4" fill="#ff525215" stroke="#ff5252"/>
+<rect x="400" y="100" width="180" height="35" rx="4" fill="#ff525215" stroke="#ff5252"/>
+<text x="110" y="122" text-anchor="middle" fill="#ff5252" font-size="9">RAG is a technique that...</text>
+<text x="300" y="122" text-anchor="middle" fill="#ff5252" font-size="9">...enhances LLM. Vector DBs</text>
+<text x="490" y="122" text-anchor="middle" fill="#ff5252" font-size="9">store embeddings. Fine-tun...</text>
+<text x="700" y="122" fill="#ff5252" font-size="9">⚠️ Cuts mid-sentence!</text>
+<!-- Good chunking -->
+<text x="20" y="175" fill="#00e676" font-size="12" font-weight="bold">✅ Semantic Chunking (split where MEANING changes)</text>
+<rect x="20" y="185" width="240" height="35" rx="4" fill="#00e67615" stroke="#00e676"/>
+<rect x="270" y="185" width="200" height="35" rx="4" fill="#00e67615" stroke="#00e676"/>
+<rect x="480" y="185" width="200" height="35" rx="4" fill="#00e67615" stroke="#00e676"/>
+<text x="140" y="207" text-anchor="middle" fill="#00e676" font-size="9">Topic: RAG (complete thought)</text>
+<text x="370" y="207" text-anchor="middle" fill="#00e676" font-size="9">Topic: Vector DBs (complete)</text>
+<text x="580" y="207" text-anchor="middle" fill="#00e676" font-size="9">Topic: Fine-tuning (complete)</text>
+<text x="700" y="247" fill="#00e676" font-size="9">✅ Each chunk = one concept</text>
+<!-- How it works -->
+<text x="20" y="268" fill="#888" font-size="10">HOW: Compare embeddings of consecutive sentences. Where similarity DROPS = topic changed = SPLIT HERE.</text>
+</svg>
+</div>
+</section>
+<section id="embeddings">
+<h2>5. Embeddings — The Heart of RAG</h2>
+<div class="analogy">
+<h3>🗺️ Analogy: A City Map of Meanings</h3>
+<p>Imagine a city where similar shops are on the SAME street. All bakeries on Baker Street, all bookstores on Reader Lane.</p>
+<p>Embeddings create a "city map" for text — similar meanings live at nearby addresses (coordinates). When you search, you're finding the nearest shop to your location.</p>
+</div>
+<div class="diagram">
+<svg width="600" height="350" viewBox="0 0 600 350">
+<!-- Axes -->
+<line x1="50" y1="300" x2="550" y2="300" stroke="#333"/><line x1="50" y1="300" x2="50" y2="30" stroke="#333"/>
+<text x="300" y="330" text-anchor="middle" fill="#555" font-size="10">Dimension 1 (of 384 total)</text>
+<text x="20" y="170" fill="#555" font-size="10" transform="rotate(-90,20,170)">Dimension 2</text>
+<!-- AI Cluster -->
+<circle cx="200" cy="100" r="60" fill="#7b2ff710" stroke="#7b2ff750" stroke-dasharray="4"/>
+<text x="200" y="65" text-anchor="middle" fill="#7b2ff7" font-size="9">AI / ML Cluster</text>
+<circle cx="180" cy="100" r="5" fill="#7b2ff7"/><text x="195" y="105" fill="#ddd" font-size="8">RAG pipeline</text>
+<circle cx="210" cy="120" r="5" fill="#7b2ff7"/><text x="225" y="125" fill="#ddd" font-size="8">LLM agents</text>
+<circle cx="185" cy="135" r="5" fill="#7b2ff7"/><text x="200" y="140" fill="#ddd" font-size="8">embeddings</text>
+<!-- Web Dev Cluster -->
+<circle cx="420" cy="220" r="55" fill="#00e67610" stroke="#00e67650" stroke-dasharray="4"/>
+<text x="420" y="185" text-anchor="middle" fill="#00e676" font-size="9">Web Dev Cluster</text>
+<circle cx="400" cy="220" r="5" fill="#00e676"/><text x="415" cy="225" fill="#ddd" font-size="8">React hooks</text>
+<circle cx="430" cy="240" r="5" fill="#00e676"/><text x="445" y="245" fill="#ddd" font-size="8">CSS grid</text>
+<!-- Query -->
+<circle cx="170" cy="160" r="7" fill="#ffc107" class="highlight"/>
+<text x="170" y="180" text-anchor="middle" fill="#ffc107" font-size="9" font-weight="bold">🔍 Your query</text>
+<!-- Distance line -->
+<line x1="170" y1="160" x2="185" y2="135" stroke="#ffc107" stroke-dasharray="3"/>
+<text x="120" y="200" fill="#ffc107" font-size="8">Nearest neighbor = best match!</text>
+<!-- Far distance -->
+<line x1="170" y1="160" x2="400" y2="220" stroke="#ff525550" stroke-dasharray="5"/>
+<text x="300" y="200" fill="#ff5252" font-size="8">Far away = not relevant</text>
+</svg>
+</div>
+<p><strong>Key insight:</strong> "LLM agents" and "RAG pipeline" are CLOSE in this space even though they share few words. That's the power — meaning, not keywords.</p>
+</section>
+
+<section id="retrieval">
+<h2>6. Retrieval — Finding the Right Chunks</h2>
+<div class="diagram">
+<svg width="800" height="220" viewBox="0 0 800 220">
+<defs><marker id="ah3" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#00d2ff"/></marker></defs>
+<!-- Query -->
+<rect x="20" y="80" width="140" height="50" rx="6" fill="#ffc10720" stroke="#ffc107"/>
+<text x="90" y="100" text-anchor="middle" fill="#ffc107" font-size="10">🔍 Query:</text>
+<text x="90" y="116" text-anchor="middle" fill="#fff" font-size="9">"improve RAG accuracy"</text>
+<!-- Embed -->
+<rect x="200" y="80" width="100" height="50" rx="6" fill="#1a1a2e" stroke="#00d2ff"/>
+<text x="250" y="108" text-anchor="middle" fill="#00d2ff" font-size="10">Embed</text>
+<line x1="160" y1="105" x2="200" y2="105" stroke="#00d2ff" marker-end="url(#ah3)"/>
+<!-- Vector -->
+<text x="330" y="100" fill="#888" font-size="9">[0.23, -0.45, 0.87, ...]</text>
+<line x1="300" y1="105" x2="320" y2="105" stroke="#00d2ff" marker-end="url(#ah3)"/>
+<!-- Search -->
+<rect x="480" y="60" width="130" height="90" rx="6" fill="#1a1a2e" stroke="#7b2ff7"/>
+<text x="545" y="82" text-anchor="middle" fill="#7b2ff7" font-size="10">🗄️ Vector DB</text>
+<text x="545" y="100" text-anchor="middle" fill="#bbb" font-size="8">Find nearest</text>
+<text x="545" y="114" text-anchor="middle" fill="#bbb" font-size="8">neighbors</text>
+<text x="545" y="128" text-anchor="middle" fill="#bbb" font-size="8">(cosine similarity)</text>
+<line x1="420" y1="105" x2="480" y2="105" stroke="#7b2ff7" marker-end="url(#ah3)"/>
+<!-- Results -->
+<rect x="650" y="40" width="130" height="30" rx="4" fill="#00e67615" stroke="#00e676"/>
+<text x="715" y="60" text-anchor="middle" fill="#00e676" font-size="8">✅ 0.89 "reranking improves..."</text>
+<rect x="650" y="80" width="130" height="30" rx="4" fill="#00e67615" stroke="#00e676"/>
+<text x="715" y="100" text-anchor="middle" fill="#00e676" font-size="8">✅ 0.82 "HyDE expands..."</text>
+<rect x="650" y="120" width="130" height="30" rx="4" fill="#ffc10715" stroke="#ffc107"/>
+<text x="715" y="140" text-anchor="middle" fill="#ffc107" font-size="8">⚠️ 0.71 "vector DBs store..."</text>
+<rect x="650" y="160" width="130" height="30" rx="4" fill="#ff525215" stroke="#ff525280"/>
+<text x="715" y="180" text-anchor="middle" fill="#ff5252" font-size="8">❌ 0.34 "fine-tuning is..."</text>
+<line x1="610" y1="105" x2="650" y2="80" stroke="#00e676"/>
+</svg>
+</div>
+<p>The vector DB returns chunks sorted by similarity score. Higher score = more relevant. But vector search is <strong>approximate</strong> — it can miss nuanced matches. That's where re-ranking helps.</p>
+</section>
+
+<section id="reranking">
+<h2>7. Re-Ranking — The Precision Layer</h2>
+<div class="analogy">
+<h3>🎯 Analogy: Job Interview Shortlisting</h3>
+<p><strong>Vector search</strong> = scanning 1000 resumes by keyword match (fast but misses good candidates who used different words)</p>
+<p><strong>Re-ranking</strong> = reading the top 20 resumes CAREFULLY side-by-side with the job description (slow but accurate)</p>
+</div>
+<div class="diagram">
+<svg width="750" height="180" viewBox="0 0 750 180">
+<!-- Stage 1 -->
+<rect x="20" y="30" width="200" height="120" rx="8" fill="#1a1a2e" stroke="#ffc107"/>
+<text x="120" y="55" text-anchor="middle" fill="#ffc107" font-size="11">Stage 1: Bi-Encoder (Fast)</text>
+<text x="120" y="75" text-anchor="middle" fill="#bbb" font-size="9">Embeds query and docs</text>
+<text x="120" y="90" text-anchor="middle" fill="#bbb" font-size="9">SEPARATELY</text>
+<text x="120" y="110" text-anchor="middle" fill="#888" font-size="9">Speed: 10ms</text>
+<text x="120" y="125" text-anchor="middle" fill="#888" font-size="9">Accuracy: ★★★☆☆</text>
+<text x="120" y="140" text-anchor="middle" fill="#ffc107" font-size="9">Returns: top 20 candidates</text>
+<!-- Arrow -->
+<line x1="220" y1="90" x2="280" y2="90" stroke="#7b2ff7" stroke-width="2" marker-end="url(#ah3)"/>
+<text x="250" y="80" fill="#555" font-size="8">top 20</text>
+<!-- Stage 2 -->
+<rect x="285" y="30" width="220" height="120" rx="8" fill="#1a1a2e" stroke="#00e676"/>
+<text x="395" y="55" text-anchor="middle" fill="#00e676" font-size="11">Stage 2: Cross-Encoder (Accurate)</text>
+<text x="395" y="75" text-anchor="middle" fill="#bbb" font-size="9">Sees query + doc TOGETHER</text>
+<text x="395" y="90" text-anchor="middle" fill="#bbb" font-size="9">as a single input pair</text>
+<text x="395" y="110" text-anchor="middle" fill="#888" font-size="9">Speed: 100ms (for 20 items)</text>
+<text x="395" y="125" text-anchor="middle" fill="#888" font-size="9">Accuracy: ★★★★★</text>
+<text x="395" y="140" text-anchor="middle" fill="#00e676" font-size="9">Returns: top 3 (best quality)</text>
+<!-- Arrow -->
+<line x1="505" y1="90" x2="560" y2="90" stroke="#7b2ff7" stroke-width="2" marker-end="url(#ah3)"/>
+<!-- Final -->
+<rect x="565" y="50" width="160" height="80" rx="8" fill="#7b2ff720" stroke="#7b2ff7"/>
+<text x="645" y="80" text-anchor="middle" fill="#7b2ff7" font-size="11">🏆 Top 3 Chunks</text>
+<text x="645" y="100" text-anchor="middle" fill="#bbb" font-size="9">Highly relevant + accurate</text>
+<text x="645" y="115" text-anchor="middle" fill="#bbb" font-size="9">Ready for LLM context</text>
+</svg>
+</div>
+</section>
+<section id="generation">
+<h2>8. Generation — Grounded Answers</h2>
+<div class="diagram">
+<svg width="700" height="200" viewBox="0 0 700 200">
+<!-- Prompt box -->
+<rect x="30" y="20" width="400" height="160" rx="8" fill="#12121f" stroke="#444"/>
+<text x="50" y="45" fill="#7b2ff7" font-size="10" font-weight="bold">PROMPT sent to LLM:</text>
+<text x="50" y="68" fill="#00e676" font-size="9">System: "Answer using ONLY the context below.</text>
+<text x="50" y="82" fill="#00e676" font-size="9">If not in context, say 'I don't know.'"</text>
+<text x="50" y="105" fill="#ffc107" font-size="9">Context: [chunk 1] [chunk 2] [chunk 3]</text>
+<text x="50" y="128" fill="#00d2ff" font-size="9">Question: "What is LangGraph?"</text>
+<text x="50" y="155" fill="#888" font-size="8">↑ This instruction PREVENTS hallucination</text>
+<!-- Arrow -->
+<line x1="430" y1="100" x2="480" y2="100" stroke="#7b2ff7" stroke-width="2" marker-end="url(#ah3)"/>
+<!-- Answer -->
+<rect x="485" y="50" width="190" height="100" rx="8" fill="#00e67610" stroke="#00e676"/>
+<text x="580" y="75" text-anchor="middle" fill="#00e676" font-size="10">✅ Grounded Answer:</text>
+<text x="580" y="95" text-anchor="middle" fill="#bbb" font-size="9">"LangGraph is a library</text>
+<text x="580" y="110" text-anchor="middle" fill="#bbb" font-size="9">for building stateful</text>
+<text x="580" y="125" text-anchor="middle" fill="#bbb" font-size="9">multi-agent apps [source]"</text>
+</svg>
+</div>
+</section>
+
+<section id="advanced">
+<h2>9. Advanced Patterns (What Gets You Hired)</h2>
+
+<div class="layer" style="border-color:#ff6b6b" onclick="this.classList.toggle('open')">
+<strong>🔮 HyDE — Hypothetical Document Embedding</strong>
+<div class="detail">
+<p><strong>Problem:</strong> Questions and answers live in DIFFERENT regions of embedding space. "How to improve accuracy?" is far from "Use cross-encoder re-ranking".</p>
+<p><strong>Solution:</strong> Generate a FAKE answer first → embed THAT → search with the fake answer's embedding. It lands CLOSER to real answers.</p>
+<p><strong>Analogy:</strong> Instead of shouting "WHERE IS THE BAKERY?" (question), you whisper "fresh bread, croissants, oven" (hypothetical answer) — and follow the smell to the bakery.</p>
+</div>
+</div>
+<div class="layer" style="border-color:#00d2ff" onclick="this.classList.toggle('open')">
+<strong>🔀 Hybrid Search — BM25 + Vector</strong>
+<div class="detail">
+<p><strong>BM25:</strong> Keyword matching (finds "Python" when you search "Python"). Fast, exact, misses synonyms.</p>
+<p><strong>Vector:</strong> Meaning matching (finds "Python" when you search "programming language"). Catches synonyms, misses exact terms.</p>
+<p><strong>Hybrid:</strong> Run BOTH → merge results → best of both worlds. Uses Reciprocal Rank Fusion to combine rankings.</p>
+</div>
+</div>
+<div class="layer" style="border-color:#00e676" onclick="this.classList.toggle('open')">
+<strong>👨‍👧 Parent-Child Chunking</strong>
+<div class="detail">
+<p><strong>Problem:</strong> Small chunks = precise search but lose context. Big chunks = good context but noisy search.</p>
+<p><strong>Solution:</strong> Store SMALL chunks (200 tokens) for searching. But when you find a match, return the PARENT chunk (800 tokens) for context.</p>
+<p><strong>Analogy:</strong> You search by CHAPTER TITLE (precise) but read the FULL CHAPTER (context).</p>
+</div>
+</div>
+<div class="layer" style="border-color:#ffc107" onclick="this.classList.toggle('open')">
+<strong>🔄 Multi-Query Retrieval</strong>
+<div class="detail">
+<p><strong>Problem:</strong> One query might miss relevant docs that use different words.</p>
+<p><strong>Solution:</strong> Ask LLM to rephrase your question 3 different ways → search with ALL versions → merge results.</p>
+<p>"improve RAG accuracy" → also search "better retrieval quality" + "reduce hallucination in RAG"</p>
+</div>
+</div>
+</section>
+
+<section id="eval">
+<h2>10. Evaluation — How to KNOW if Your RAG Works</h2>
+<div class="diagram">
+<svg width="700" height="200" viewBox="0 0 700 200">
+<!-- 4 metrics -->
+<rect x="20" y="50" width="150" height="70" rx="8" fill="#7b2ff720" stroke="#7b2ff7"/>
+<text x="95" y="75" text-anchor="middle" fill="#7b2ff7" font-size="10" font-weight="bold">Faithfulness</text>
+<text x="95" y="95" text-anchor="middle" fill="#bbb" font-size="8">Does answer ONLY use</text>
+<text x="95" y="108" text-anchor="middle" fill="#bbb" font-size="8">info from context?</text>
+
+<rect x="190" y="50" width="150" height="70" rx="8" fill="#00d2ff20" stroke="#00d2ff"/>
+<text x="265" y="75" text-anchor="middle" fill="#00d2ff" font-size="10" font-weight="bold">Relevancy</text>
+<text x="265" y="95" text-anchor="middle" fill="#bbb" font-size="8">Does answer address</text>
+<text x="265" y="108" text-anchor="middle" fill="#bbb" font-size="8">the actual question?</text>
+
+<rect x="360" y="50" width="150" height="70" rx="8" fill="#00e67620" stroke="#00e676"/>
+<text x="435" y="75" text-anchor="middle" fill="#00e676" font-size="10" font-weight="bold">Context Precision</text>
+<text x="435" y="95" text-anchor="middle" fill="#bbb" font-size="8">Are retrieved chunks</text>
+<text x="435" y="108" text-anchor="middle" fill="#bbb" font-size="8">actually relevant?</text>
+
+<rect x="530" y="50" width="150" height="70" rx="8" fill="#ffc10720" stroke="#ffc107"/>
+<text x="605" y="75" text-anchor="middle" fill="#ffc107" font-size="10" font-weight="bold">Context Recall</text>
+<text x="605" y="95" text-anchor="middle" fill="#bbb" font-size="8">Did we retrieve ALL</text>
+<text x="605" y="108" text-anchor="middle" fill="#bbb" font-size="8">relevant chunks?</text>
+
+<text x="350" y="155" text-anchor="middle" fill="#888" font-size="11">These 4 metrics (RAGAS framework) tell you exactly WHERE your RAG is failing.</text>
+<text x="350" y="175" text-anchor="middle" fill="#555" font-size="9">Low faithfulness = hallucination | Low precision = noisy retrieval | Low recall = missing info</text>
+</svg>
+</div>
+</section>
+
+<section id="you">
+<h2>11. YOUR Code — Where You Stand</h2>
+<div class="diagram">
+<svg width="750" height="200" viewBox="0 0 750 200">
+<!-- Your pipeline -->
+<rect x="20" y="60" width="100" height="40" rx="4" fill="#00e67620" stroke="#00e676"/><text x="70" y="84" text-anchor="middle" fill="#00e676" font-size="9">✅ Ingest</text>
+<rect x="140" y="60" width="100" height="40" rx="4" fill="#ffc10720" stroke="#ffc107"/><text x="190" y="84" text-anchor="middle" fill="#ffc107" font-size="9">⚠️ Chunk</text>
+<rect x="260" y="60" width="100" height="40" rx="4" fill="#00e67620" stroke="#00e676"/><text x="310" y="84" text-anchor="middle" fill="#00e676" font-size="9">✅ Embed</text>
+<rect x="380" y="60" width="100" height="40" rx="4" fill="#00e67620" stroke="#00e676"/><text x="430" y="84" text-anchor="middle" fill="#00e676" font-size="9">✅ Index</text>
+<rect x="500" y="60" width="100" height="40" rx="4" fill="#00e67620" stroke="#00e676"/><text x="550" y="84" text-anchor="middle" fill="#00e676" font-size="9">✅ Retrieve</text>
+<rect x="620" y="60" width="100" height="40" rx="4" fill="#ff525220" stroke="#ff5252"/><text x="670" y="84" text-anchor="middle" fill="#ff5252" font-size="9">❌ Rerank</text>
+<!-- Labels below -->
+<text x="190" y="120" text-anchor="middle" fill="#ffc107" font-size="8">500 words fixed</text>
+<text x="190" y="132" text-anchor="middle" fill="#ffc107" font-size="8">(should be semantic)</text>
+<text x="670" y="120" text-anchor="middle" fill="#ff5252" font-size="8">Missing!</text>
+<text x="670" y="132" text-anchor="middle" fill="#ff5252" font-size="8">(add cross-encoder)</text>
+<!-- Missing -->
+<text x="375" y="170" text-anchor="middle" fill="#ff5252" font-size="9">Also missing: HyDE query expansion, RAGAS evaluation, hybrid search</text>
+<text x="375" y="190" text-anchor="middle" fill="#00e676" font-size="9">Strong: 5-source ingestion, Qdrant Cloud, semantic deduplication (0.82 threshold)</text>
+</svg>
+</div>
+
+<div class="quiz-box">
+<h4>🧠 Quick Check — Did you understand?</h4>
+<p style="margin:.5rem 0;font-size:.9rem">Why does re-ranking improve results over vector search alone?</p>
+<button onclick="document.getElementById('ans1').style.display='block'">Show Answer</button>
+<div id="ans1" class="feedback" style="background:#00e67615;border:1px solid #00e676">
+<p style="color:#00e676;font-size:.85rem">Because bi-encoders embed query and document SEPARATELY — they can miss nuanced relationships. Cross-encoders see the query + document TOGETHER as one input, understanding the relationship directly. It's like reading two things side-by-side vs remembering them separately.</p>
+</div>
+</div>
+</section>
+
+<div style="text-align:center;padding:3rem 0;border-top:1px solid #222;margin-top:3rem">
+<p style="color:#7b2ff7;font-size:1.1rem">🎉 You just learned the ENTIRE RAG concept visually.</p>
+<p style="color:#888;margin-top:.5rem">Open this file anytime: <code>GenAI_Mastery_Lab/visual_course/rag_complete.html</code></p>
+<p style="color:#555;margin-top:1rem;font-size:.8rem">Next visual topics to build: Agents, Embeddings Deep Dive, Transformers, System Design...</p>
+</div>

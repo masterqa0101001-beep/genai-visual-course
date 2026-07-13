@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Transformer Internals — Visual Deep Dive</title>
+<link rel="stylesheet" href="fix_readability.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0a0a14;color:#e0e0e0;overflow-x:hidden}
+.nav{position:fixed;top:0;width:100%;background:#0a0a14ee;backdrop-filter:blur(8px);z-index:100;padding:.7rem 2rem;display:flex;gap:1rem;overflow-x:auto;border-bottom:1px solid #222}
+.nav a{color:#888;text-decoration:none;font-size:.8rem;white-space:nowrap;padding:4px 12px;border-radius:20px;transition:.3s}
+.nav a:hover,.nav a.active{color:#fff;background:#7b2ff730}
+main{max-width:1100px;margin:0 auto;padding:5rem 1.5rem 4rem}
+h1{font-size:2.2rem;text-align:center;margin-bottom:.3rem;background:linear-gradient(90deg,#ff6b6b,#ffc107,#00d2ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sub{text-align:center;color:#666;margin-bottom:3rem}
+section{margin-bottom:4rem;scroll-margin-top:4rem}
+h2{font-size:1.4rem;color:#00d2ff;margin-bottom:1rem;padding-left:.5rem;border-left:3px solid #7b2ff7}
+h3{color:#ffc107;margin:.8rem 0 .4rem;font-size:1rem}
+p{line-height:1.7;color:#bbb;margin-bottom:.8rem;font-size:.92rem}
+.diagram{background:#0d0d1a;border-radius:12px;padding:1.5rem;margin:1.2rem 0;overflow-x:auto}
+.analogy{background:#12121f;border:1px solid #7b2ff730;border-radius:12px;padding:1.5rem;margin:1.2rem 0}
+.analogy h3{color:#ffc107;margin-bottom:.5rem}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem;margin:1rem 0}
+.card{background:#12121f;border:1px solid #222;border-radius:10px;padding:1.2rem;transition:.3s}
+.card:hover{border-color:#7b2ff7;transform:translateY(-2px)}
+.card h4{margin-bottom:.4rem;font-size:.95rem}
+.tag{display:inline-block;font-size:.65rem;padding:2px 8px;border-radius:10px;margin-right:4px}
+.layer{margin:.8rem 0;padding:1rem 1.2rem;border-radius:8px;border-left:4px solid;cursor:pointer;transition:.3s;background:#12121f}
+.layer:hover{transform:translateX(4px)}
+.layer .detail{max-height:0;overflow:hidden;transition:max-height .5s;color:#999;font-size:.85rem;line-height:1.6}
+.layer.open .detail{max-height:800px;margin-top:.5rem}
+.comparison{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1rem 0}
+.comparison>div{padding:1rem;border-radius:8px;border:1px solid #222}
+</style>
+</head>
+<body>
+<nav class="nav">
+<a href="index.html">🏠 Home</a>
+<a href="#bigpic" class="active">Big Picture</a>
+<a href="#attention">Attention</a>
+<a href="#generation">Generation</a>
+<a href="#kvcache">KV Cache</a>
+<a href="#training">Training</a>
+<a href="#alignment">RLHF/DPO</a>
+<a href="#quantization">Quantization</a>
+<a href="#inference">Inference Opt</a>
+<a href="#practical">Practical Impact</a>
+<a href="transformers_advanced.html" style="color:#7b2ff7;font-weight:bold">Part 2 →</a>
+<a href="llm_architecture_evolution.html" style="color:#ffc107;font-weight:bold">LLM Evolution →</a>
+</nav>
+<main>
+<h1>🧠 Transformer Internals</h1>
+<p class="sub">What's happening inside the black box — explained visually, not mathematically</p>
+</main>
+</body>
+</html>
+<section id="bigpic">
+<h2>1. The Big Picture — What IS a Transformer?</h2>
+<div class="analogy">
+<h3>🏫 Analogy: A Super-Smart Autocomplete</h3>
+<p>Your phone keyboard predicts the next word. "I am going to the ___" → "store", "gym", "park".</p>
+<p>A transformer is the same thing — but with 70 BILLION parameters, trained on the entire internet. It predicts the next TOKEN with superhuman accuracy. That's ALL it does. Everything else (chat, code, reasoning) emerges from this one capability.</p>
+</div>
+<div class="diagram">
+<svg width="850" height="280" viewBox="0 0 850 280">
+<defs><marker id="a" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="#7b2ff7"/></marker></defs>
+<!-- The transformer stack -->
+<text x="425" y="20" text-anchor="middle" fill="#7b2ff7" font-size="11" font-weight="bold">Transformer Architecture (GPT/Llama-style decoder)</text>
+<!-- Input -->
+<rect x="30" y="220" width="790" height="40" rx="6" fill="#ffc10710" stroke="#ffc107"/>
+<text x="425" y="240" text-anchor="middle" fill="#ffc107" font-size="9">INPUT: "The cat sat on the" → [Token IDs: 464, 3797, 3246, 373, 262]</text>
+<text x="425" y="255" text-anchor="middle" fill="#888" font-size="7">+ Positional Encoding (tells model WHERE each token is in sequence)</text>
+<!-- Layers -->
+<rect x="200" y="150" width="450" height="55" rx="6" fill="#7b2ff710" stroke="#7b2ff7"/>
+<text x="425" y="170" text-anchor="middle" fill="#7b2ff7" font-size="9">TRANSFORMER BLOCK × 80 layers (stacked)</text>
+<text x="425" y="188" text-anchor="middle" fill="#888" font-size="7">Each block: [Self-Attention] → [Feed-Forward Neural Network] → [Layer Norm]</text>
+<text x="425" y="198" text-anchor="middle" fill="#555" font-size="6">Llama 70B = 80 layers. GPT-4 ≈ 120 layers. More layers = deeper understanding.</text>
+<!-- Arrow up -->
+<line x1="425" y1="220" x2="425" y2="210" stroke="#7b2ff7" marker-end="url(#a)"/>
+<line x1="425" y1="150" x2="425" y2="140" stroke="#7b2ff7" marker-end="url(#a)"/>
+<!-- Output -->
+<rect x="200" y="80" width="450" height="55" rx="6" fill="#00e67610" stroke="#00e676"/>
+<text x="425" y="100" text-anchor="middle" fill="#00e676" font-size="9">OUTPUT: Probability distribution over 100K vocabulary</text>
+<text x="425" y="118" text-anchor="middle" fill="#888" font-size="7">"mat": 35%, "ground": 20%, "table": 15%, "floor": 10%, ...</text>
+<text x="425" y="128" text-anchor="middle" fill="#555" font-size="6">Temperature controls HOW we pick from this distribution (see sampling section below)</text>
+<!-- The key insight -->
+<rect x="30" y="40" width="170" height="50" rx="6" fill="#ff6b6b10" stroke="#ff6b6b"/>
+<text x="115" y="58" text-anchor="middle" fill="#ff6b6b" font-size="8" font-weight="bold">KEY INSIGHT:</text>
+<text x="115" y="72" text-anchor="middle" fill="#bbb" font-size="7">It only predicts</text>
+<text x="115" y="83" text-anchor="middle" fill="#bbb" font-size="7">ONE token at a time!</text>
+<rect x="680" y="40" width="140" height="50" rx="6" fill="#00d2ff10" stroke="#00d2ff"/>
+<text x="750" y="58" text-anchor="middle" fill="#00d2ff" font-size="8" font-weight="bold">SIZE REFERENCE:</text>
+<text x="750" y="72" text-anchor="middle" fill="#bbb" font-size="7">8B = 8 billion params</text>
+<text x="750" y="83" text-anchor="middle" fill="#bbb" font-size="7">70B = 70 billion params</text>
+</svg>
+</div>
+</section>
+
+<section id="attention">
+<h2>2. Self-Attention — The Core Mechanism</h2>
+<div class="analogy">
+<h3>👥 Analogy: A Room Full of People Looking at Each Other</h3>
+<p>Imagine 10 people in a room, each holding a sign with a word. To understand the sentence, each person LOOKS at everyone else and decides who's most relevant to THEM.</p>
+<p>"The <strong>cat</strong> sat on the mat because <strong>it</strong> was tired" — the word "it" LOOKS at all other words and decides: "cat" is most relevant to me (it refers to the cat).</p>
+<p style="color:#00e676">Attention = each token computing how much to "look at" every other token.</p>
+</div>
+<div class="diagram">
+<svg width="800" height="300" viewBox="0 0 800 300">
+<!-- Q K V explanation -->
+<text x="400" y="20" text-anchor="middle" fill="#7b2ff7" font-size="11" font-weight="bold">Query / Key / Value — The Three Roles</text>
+<!-- Query -->
+<rect x="50" y="45" width="200" height="75" rx="8" fill="#ff6b6b10" stroke="#ff6b6b"/>
+<text x="150" y="67" text-anchor="middle" fill="#ff6b6b" font-size="10" font-weight="bold">Q (Query)</text>
+<text x="150" y="85" text-anchor="middle" fill="#bbb" font-size="8">"What am I looking for?"</text>
+<text x="150" y="100" text-anchor="middle" fill="#888" font-size="7">Each token asks a question</text>
+<text x="150" y="112" text-anchor="middle" fill="#555" font-size="7">about what info it needs</text>
+<!-- Key -->
+<rect x="290" y="45" width="200" height="75" rx="8" fill="#ffc10710" stroke="#ffc107"/>
+<text x="390" y="67" text-anchor="middle" fill="#ffc107" font-size="10" font-weight="bold">K (Key)</text>
+<text x="390" y="85" text-anchor="middle" fill="#bbb" font-size="8">"What do I contain?"</text>
+<text x="390" y="100" text-anchor="middle" fill="#888" font-size="7">Each token advertises</text>
+<text x="390" y="112" text-anchor="middle" fill="#555" font-size="7">what information it has</text>
+<!-- Value -->
+<rect x="530" y="45" width="200" height="75" rx="8" fill="#00e67610" stroke="#00e676"/>
+<text x="630" y="67" text-anchor="middle" fill="#00e676" font-size="10" font-weight="bold">V (Value)</text>
+<text x="630" y="85" text-anchor="middle" fill="#bbb" font-size="8">"Here's my actual info"</text>
+<text x="630" y="100" text-anchor="middle" fill="#888" font-size="7">The actual content that</text>
+<text x="630" y="112" text-anchor="middle" fill="#555" font-size="7">gets passed forward</text>
+<!-- The formula simplified -->
+<rect x="100" y="145" width="600" height="60" rx="8" fill="#0d0d1a" stroke="#444"/>
+<text x="400" y="168" text-anchor="middle" fill="#7b2ff7" font-size="10">Attention = softmax( Q × K<tspan baseline-shift="super" font-size="7">T</tspan> / √d ) × V</text>
+<text x="400" y="190" text-anchor="middle" fill="#888" font-size="8">Translation: "Match my query against all keys → normalize scores → blend values by those scores"</text>
+<!-- Visual example -->
+<text x="400" y="230" text-anchor="middle" fill="#00d2ff" font-size="9" font-weight="bold">Visual: "it" attending to other words</text>
+<text x="80" y="258" fill="#bbb" font-size="9">The</text>
+<text x="150" y="258" fill="#00e676" font-size="9" font-weight="bold">cat</text>
+<text x="220" y="258" fill="#bbb" font-size="9">sat</text>
+<text x="285" y="258" fill="#bbb" font-size="9">on</text>
+<text x="340" y="258" fill="#bbb" font-size="9">the</text>
+<text x="400" y="258" fill="#bbb" font-size="9">mat</text>
+<text x="470" y="258" fill="#bbb" font-size="9">because</text>
+<text x="560" y="258" fill="#ffc107" font-size="9" font-weight="bold">it</text>
+<text x="620" y="258" fill="#bbb" font-size="9">was</text>
+<text x="680" y="258" fill="#bbb" font-size="9">tired</text>
+<!-- Attention bars -->
+<rect x="75" y="268" width="40" height="4" fill="#00e676" opacity="0.9"/>
+<rect x="145" y="268" width="40" height="12" fill="#00e676"/>
+<rect x="215" y="268" width="40" height="3" fill="#00e676" opacity="0.3"/>
+<rect x="280" y="268" width="25" height="2" fill="#00e676" opacity="0.2"/>
+<rect x="335" y="268" width="25" height="2" fill="#00e676" opacity="0.2"/>
+<rect x="395" y="268" width="30" height="3" fill="#00e676" opacity="0.3"/>
+<rect x="460" y="268" width="55" height="2" fill="#00e676" opacity="0.2"/>
+<rect x="555" y="268" width="20" height="15" fill="#ffc107"/>
+<rect x="615" y="268" width="30" height="5" fill="#00e676" opacity="0.5"/>
+<rect x="675" y="268" width="40" height="6" fill="#00e676" opacity="0.6"/>
+<text x="400" y="295" text-anchor="middle" fill="#888" font-size="7">Bar height = attention weight. "it" pays MOST attention to "cat" (highest bar) and itself.</text>
+</svg>
+</div>
+<div class="layer" style="border-color:#7b2ff7" onclick="this.classList.toggle('open')">
+<strong>Multi-Head Attention — Why multiple heads?</strong>
+<div class="detail"><p>Instead of ONE attention pattern, run 8-64 in PARALLEL. Each head learns a DIFFERENT relationship:</p>
+<p>• Head 1 might learn: syntactic relationships (subject-verb)</p>
+<p>• Head 2 might learn: positional patterns (nearby words)</p>
+<p>• Head 3 might learn: semantic similarity (meaning connections)</p>
+<p>This is WHY models can track multiple aspects simultaneously — like reading a sentence for both grammar AND meaning at once.</p></div>
+</div>
+<div class="layer" style="border-color:#ff6b6b" onclick="this.classList.toggle('open')">
+<strong>⚠️ Why attention is O(n²) — the cost problem</strong>
+<div class="detail"><p>Every token must attend to EVERY other token. 1000 tokens = 1000×1000 = 1 million attention computations. 10,000 tokens = 100 million! This is why long contexts are EXPENSIVE. Doubling context length = 4x the compute cost.</p>
+<p><strong>This is WHY you should retrieve 3 chunks not 30.</strong> Less context = cheaper + faster + less lost-in-middle.</p></div>
+</div>
+</section>
+<section id="generation">
+<h2>3. How Text Generation Works (Auto-Regressive)</h2>
+<div class="analogy">
+<h3>🧱 Analogy: Building a Wall Brick by Brick</h3>
+<p>LLMs generate text ONE TOKEN AT A TIME. Each new token is predicted based on ALL previous tokens. It's like building a wall — each brick depends on the ones below it.</p>
+<p>You can't build brick #5 without bricks 1-4 existing first. That's why generation is SEQUENTIAL and slow.</p>
+</div>
+<div class="diagram">
+<svg width="800" height="180" viewBox="0 0 800 180">
+<text x="400" y="20" text-anchor="middle" fill="#7b2ff7" font-size="10" font-weight="bold">Auto-Regressive Generation (one token at a time)</text>
+<!-- Steps -->
+<rect x="20" y="40" width="145" height="35" rx="4" fill="#ffc10710" stroke="#ffc107"/>
+<text x="92" y="55" text-anchor="middle" fill="#ffc107" font-size="7">Step 1: "The cat" →</text>
+<text x="92" y="68" text-anchor="middle" fill="#00e676" font-size="8" font-weight="bold">"sat"</text>
+
+<rect x="180" y="40" width="155" height="35" rx="4" fill="#ffc10710" stroke="#ffc107"/>
+<text x="257" y="55" text-anchor="middle" fill="#ffc107" font-size="7">Step 2: "The cat sat" →</text>
+<text x="257" y="68" text-anchor="middle" fill="#00e676" font-size="8" font-weight="bold">"on"</text>
+
+<rect x="350" y="40" width="165" height="35" rx="4" fill="#ffc10710" stroke="#ffc107"/>
+<text x="432" y="55" text-anchor="middle" fill="#ffc107" font-size="7">Step 3: "The cat sat on" →</text>
+<text x="432" y="68" text-anchor="middle" fill="#00e676" font-size="8" font-weight="bold">"the"</text>
+
+<rect x="530" y="40" width="175" height="35" rx="4" fill="#ffc10710" stroke="#ffc107"/>
+<text x="617" y="55" text-anchor="middle" fill="#ffc107" font-size="7">Step 4: "The cat sat on the" →</text>
+<text x="617" y="68" text-anchor="middle" fill="#00e676" font-size="8" font-weight="bold">"mat"</text>
+
+<!-- Time arrow -->
+<line x1="20" y1="95" x2="750" y2="95" stroke="#333"/>
+<text x="400" y="110" text-anchor="middle" fill="#555" font-size="8">Time → (each step takes ~50ms with KV cache, ~500ms without)</text>
+
+<!-- Sampling explanation -->
+<text x="400" y="135" text-anchor="middle" fill="#00d2ff" font-size="9" font-weight="bold">At each step, HOW does it pick the next token?</text>
+<rect x="50" y="145" width="130" height="28" rx="4" fill="#12121f" stroke="#333"/><text x="115" y="163" text-anchor="middle" fill="#bbb" font-size="7">Temp=0: Always top pick</text>
+<rect x="200" y="145" width="160" height="28" rx="4" fill="#12121f" stroke="#333"/><text x="280" y="163" text-anchor="middle" fill="#bbb" font-size="7">Temp=0.7: Usually top, sometimes #2-3</text>
+<rect x="380" y="145" width="160" height="28" rx="4" fill="#12121f" stroke="#333"/><text x="460" y="163" text-anchor="middle" fill="#bbb" font-size="7">Top-K=50: Only consider top 50 tokens</text>
+<rect x="560" y="145" width="160" height="28" rx="4" fill="#12121f" stroke="#333"/><text x="640" y="163" text-anchor="middle" fill="#bbb" font-size="7">Top-P=0.9: Top tokens summing to 90%</text>
+</svg>
+</div>
+</section>
+
+<section id="kvcache">
+<h2>4. KV Cache — Why First Token is Slow, Rest are Fast</h2>
+<div class="analogy">
+<h3>📝 Analogy: Re-reading a Book vs Using Bookmarks</h3>
+<p><strong>Without KV cache:</strong> Every time you generate a new word, you re-read the ENTIRE book from page 1. Generating 100 words = reading the book 100 times.</p>
+<p><strong>With KV cache:</strong> You bookmark everything. For each new word, you just check your bookmarks. Only the NEW word needs fresh computation.</p>
+</div>
+<div class="diagram">
+<svg width="800" height="240" viewBox="0 0 800 240">
+<!-- Without cache -->
+<rect x="20" y="20" width="370" height="100" rx="6" fill="#ff525208" stroke="#ff5252"/>
+<text x="205" y="40" text-anchor="middle" fill="#ff5252" font-size="9" font-weight="bold">❌ Without KV Cache (catastrophically slow)</text>
+<text x="205" y="60" text-anchor="middle" fill="#bbb" font-size="8">Step 1: process [1000 tokens] → generate "The"</text>
+<text x="205" y="75" text-anchor="middle" fill="#bbb" font-size="8">Step 2: process [1001 tokens] → generate "cat"</text>
+<text x="205" y="90" text-anchor="middle" fill="#bbb" font-size="8">Step 3: process [1002 tokens] → generate "sat"</text>
+<text x="205" y="108" text-anchor="middle" fill="#ff5252" font-size="7">Total work: 1000 + 1001 + 1002 + ... = O(n²) 🐌</text>
+
+<!-- With cache -->
+<rect x="420" y="20" width="370" height="100" rx="6" fill="#00e67608" stroke="#00e676"/>
+<text x="605" y="40" text-anchor="middle" fill="#00e676" font-size="9" font-weight="bold">✅ With KV Cache (what actually runs)</text>
+<text x="605" y="60" text-anchor="middle" fill="#bbb" font-size="8">Step 1 (prefill): process [1000 tokens] → cache K,V → "The"</text>
+<text x="605" y="75" text-anchor="middle" fill="#bbb" font-size="8">Step 2 (decode): process [1 token] vs cache → "cat"</text>
+<text x="605" y="90" text-anchor="middle" fill="#bbb" font-size="8">Step 3 (decode): process [1 token] vs cache → "sat"</text>
+<text x="605" y="108" text-anchor="middle" fill="#00e676" font-size="7">Total work: 1000 + 1 + 1 + 1 + ... = O(n) ⚡</text>
+
+<!-- Why first token is slow -->
+<rect x="20" y="140" width="760" height="80" rx="6" fill="#0d0d1a" stroke="#444"/>
+<text x="400" y="162" text-anchor="middle" fill="#ffc107" font-size="10" font-weight="bold">This is WHY:</text>
+<text x="200" y="185" text-anchor="middle" fill="#bbb" font-size="9">First token (TTFT): 1-3 seconds</text>
+<text x="200" y="200" text-anchor="middle" fill="#888" font-size="7">Must process entire prompt (prefill)</text>
+<text x="550" y="185" text-anchor="middle" fill="#bbb" font-size="9">Subsequent tokens: 20-50ms each</text>
+<text x="550" y="200" text-anchor="middle" fill="#888" font-size="7">Just 1 token against cached K,V (decode)</text>
+<text x="400" y="215" text-anchor="middle" fill="#00e676" font-size="8">This is why streaming FEELS fast — you see tokens appearing quickly after the first one.</text>
+</svg>
+</div>
+</section>
+
+<section id="training">
+<h2>5. The Training Pipeline (How Models Are Made)</h2>
+<div class="diagram">
+<svg width="800" height="180" viewBox="0 0 800 180">
+<defs><marker id="a2" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="#7b2ff7"/></marker></defs>
+<!-- 3 stages -->
+<rect x="20" y="40" width="220" height="80" rx="8" fill="#ff6b6b10" stroke="#ff6b6b"/>
+<text x="130" y="62" text-anchor="middle" fill="#ff6b6b" font-size="9" font-weight="bold">Stage 1: Pre-training</text>
+<text x="130" y="80" text-anchor="middle" fill="#bbb" font-size="7">"Predict next token" on internet text</text>
+<text x="130" y="93" text-anchor="middle" fill="#888" font-size="7">Trillions of tokens, months of GPU time</text>
+<text x="130" y="108" text-anchor="middle" fill="#555" font-size="6">Result: knows language but is chaotic</text>
+<line x1="240" y1="80" x2="270" y2="80" stroke="#7b2ff7" stroke-width="2" marker-end="url(#a2)"/>
+
+<rect x="275" y="40" width="220" height="80" rx="8" fill="#ffc10710" stroke="#ffc107"/>
+<text x="385" y="62" text-anchor="middle" fill="#ffc107" font-size="9" font-weight="bold">Stage 2: Fine-Tuning (SFT)</text>
+<text x="385" y="80" text-anchor="middle" fill="#bbb" font-size="7">Train on (instruction, response) pairs</text>
+<text x="385" y="93" text-anchor="middle" fill="#888" font-size="7">~100K examples, hours of GPU time</text>
+<text x="385" y="108" text-anchor="middle" fill="#555" font-size="6">Result: follows instructions but inconsistent</text>
+<line x1="495" y1="80" x2="525" y2="80" stroke="#7b2ff7" stroke-width="2" marker-end="url(#a2)"/>
+
+<rect x="530" y="40" width="240" height="80" rx="8" fill="#00e67610" stroke="#00e676"/>
+<text x="650" y="62" text-anchor="middle" fill="#00e676" font-size="9" font-weight="bold">Stage 3: Alignment (RLHF/DPO)</text>
+<text x="650" y="80" text-anchor="middle" fill="#bbb" font-size="7">Learn human preferences (which response is BETTER)</text>
+<text x="650" y="93" text-anchor="middle" fill="#888" font-size="7">~50K preference pairs</text>
+<text x="650" y="108" text-anchor="middle" fill="#555" font-size="6">Result: helpful, harmless, honest (the final model)</text>
+
+<!-- You label -->
+<text x="400" y="145" text-anchor="middle" fill="#7b2ff7" font-size="9" font-weight="bold">When YOU fine-tune (LoRA/QLoRA):</text>
+<text x="400" y="163" text-anchor="middle" fill="#888" font-size="8">You're doing a TINY version of Stage 2 — adapting behavior with 50-500 examples, taking 10-30 minutes. Not Stage 1 (that costs $10M+).</text>
+</svg>
+</div>
+</section>
+
+<section id="alignment">
+<h2>6. RLHF vs DPO — Why Models Follow Instructions</h2>
+<div class="comparison">
+<div style="border-color:#ffc107;background:#ffc10708;padding:1rem;border-radius:8px">
+<h4 style="color:#ffc107;font-size:.9rem">RLHF (Old Way — 2022-2023)</h4>
+<p style="font-size:.8rem">1. Generate 2 responses<br>2. Human picks better one<br>3. Train a REWARD MODEL<br>4. Use reward model to fine-tune LLM (PPO)</p>
+<p style="font-size:.78rem;color:#ffc107">Complex: 3 models involved (LLM + reward + reference). Unstable training.</p>
+</div>
+<div style="border-color:#00e676;background:#00e67608;padding:1rem;border-radius:8px">
+<h4 style="color:#00e676;font-size:.9rem">DPO (New Way — 2024-2026)</h4>
+<p style="font-size:.8rem">1. Generate 2 responses<br>2. Human picks better one<br>3. Directly optimize LLM to prefer the better one<br>4. No reward model needed!</p>
+<p style="font-size:.78rem;color:#00e676">Simple: just the LLM + preference data. Stable training. Same quality. Used by Meta (Llama 3), Anthropic.</p>
+</div>
+</div>
+<div class="layer" style="border-color:#7b2ff7" onclick="this.classList.toggle('open')">
+<strong>🎯 Interview Answer: "How does alignment work?"</strong>
+<div class="detail"><p>"Pre-trained models predict next tokens but don't follow instructions reliably. Alignment teaches them human preferences through ranked outputs. DPO replaced RLHF at most labs because it's simpler (no separate reward model), more stable during training, and achieves comparable quality. The key input is preference pairs — 'response A is better than B for this prompt' — and the model learns to assign higher probability to preferred responses."</p></div>
+</div>
+</section>
+
+<section id="quantization">
+<h2>7. Quantization — Running 70B Models on Your Laptop</h2>
+<div class="analogy">
+<h3>🎨 Analogy: Photo Quality Settings</h3>
+<p><strong>Full precision (FP32):</strong> RAW photo — perfect quality, massive file size (280GB for 70B model).</p>
+<p><strong>4-bit quantization (INT4):</strong> JPEG at 85% quality — barely visible difference, 8x smaller (35GB). This is what Ollama uses!</p>
+</div>
+<div class="diagram">
+<svg width="750" height="180" viewBox="0 0 750 180">
+<!-- Size comparison -->
+<text x="375" y="20" text-anchor="middle" fill="#7b2ff7" font-size="10" font-weight="bold">Llama 70B Model Size at Different Quantizations</text>
+<!-- Bars -->
+<rect x="50" y="40" width="600" height="24" rx="4" fill="#ff6b6b20" stroke="#ff6b6b"/>
+<text x="660" y="56" fill="#ff6b6b" font-size="8">FP32: 280 GB</text>
+<rect x="50" y="72" width="300" height="24" rx="4" fill="#ffc10720" stroke="#ffc107"/>
+<text x="360" y="88" fill="#ffc107" font-size="8">FP16: 140 GB</text>
+<rect x="50" y="104" width="150" height="24" rx="4" fill="#00d2ff20" stroke="#00d2ff"/>
+<text x="210" y="120" fill="#00d2ff" font-size="8">INT8: 70 GB</text>
+<rect x="50" y="136" width="75" height="24" rx="4" fill="#00e67620" stroke="#00e676"/>
+<text x="135" y="152" fill="#00e676" font-size="8" font-weight="bold">INT4: 35 GB ← Ollama uses this!</text>
+<!-- Quality labels -->
+<text x="50" y="175" fill="#888" font-size="7">Quality loss: FP32→FP16: ~0% | FP16→INT8: ~1% | INT8→INT4: ~3-5% | Barely noticeable for most tasks</text>
+</svg>
+</div>
+<p><strong>QLoRA = Quantization + LoRA:</strong> Load base model at 4-bit (35GB → fits in GPU memory) but train the LoRA adapters at full precision (16-bit). Best of both: memory-efficient + accurate training.</p>
+</section>
+
+<section id="inference">
+<h2>8. Inference Optimization Techniques</h2>
+<div class="card-grid">
+<div class="card" style="border-color:#00e676"><h4 style="color:#00e676">KV Cache</h4><p style="font-size:.82rem">Cache past computations. First token slow (prefill), rest fast (decode). 10-50x speedup. Used by everyone.</p></div>
+<div class="card" style="border-color:#00d2ff"><h4 style="color:#00d2ff">Flash Attention</h4><p style="font-size:.82rem">Memory-efficient attention: O(n) memory instead of O(n²). Enables longer contexts without OOM. Used by vLLM, HuggingFace.</p></div>
+<div class="card" style="border-color:#7b2ff7"><h4 style="color:#7b2ff7">Continuous Batching</h4><p style="font-size:.82rem">Don't wait for batch to fill. Add new requests dynamically. 2-3x throughput over static batching. Used by vLLM, TGI.</p></div>
+<div class="card" style="border-color:#ffc107"><h4 style="color:#ffc107">Speculative Decoding</h4><p style="font-size:.82rem">Small fast model DRAFTS 5 tokens → large model VERIFIES in one pass. If correct, you got 5 tokens for the cost of 1 large-model call. 2-3x speed.</p></div>
+<div class="card" style="border-color:#ff6b6b"><h4 style="color:#ff6b6b">Prefix Caching</h4><p style="font-size:.82rem">If 1000 users share the same system prompt, cache the KV for that prefix. Each new request only computes the unique part. Saves 30-50% compute.</p></div>
+<div class="card" style="border-color:#e040fb"><h4 style="color:#e040fb">Quantization (INT8/INT4)</h4><p style="font-size:.82rem">Fewer bits per parameter = less memory = more requests per GPU = cheaper. 4-bit loses ~5% quality but saves 8x memory.</p></div>
+</div>
+</section>
+
+<section id="practical">
+<h2>9. Practical Impact — How This Affects YOUR Decisions</h2>
+<div class="layer" style="border-color:#00e676" onclick="this.classList.toggle('open')">
+<strong>Why are long prompts expensive?</strong>
+<div class="detail"><p>Attention is O(n²). Doubling your prompt from 2K to 4K tokens costs 4x more compute. This is why token-efficient prompting matters. Your ContentMind's prompt optimization (12 calls → 5) isn't just about cost — it's about physics.</p></div>
+</div>
+<div class="layer" style="border-color:#ffc107" onclick="this.classList.toggle('open')">
+<strong>Why does RAG beat stuffing all docs in context?</strong>
+<div class="detail"><p>Three reasons: (1) Quadratic attention cost with long contexts. (2) Lost-in-the-middle problem. (3) Knowledge can be updated without retraining. Retrieving 3 chunks (500 tokens) costs 100x less than stuffing 50K tokens of docs into context.</p></div>
+</div>
+<div class="layer" style="border-color:#7b2ff7" onclick="this.classList.toggle('open')">
+<strong>Why is streaming important for UX?</strong>
+<div class="detail"><p>First token (prefill) takes 1-3 seconds. But once cached, each subsequent token takes ~30ms. Streaming shows tokens as they arrive — the user sees "thinking..." for 2 seconds then rapid text appearing. Without streaming, they wait the TOTAL time (2s + 100 tokens × 30ms = 5s of nothing).</p></div>
+</div>
+<div class="layer" style="border-color:#00d2ff" onclick="this.classList.toggle('open')">
+<strong>Why can Groq serve responses so fast?</strong>
+<div class="detail"><p>Groq uses custom LPU (Language Processing Unit) chips designed specifically for the sequential decode step. Traditional GPUs are optimized for parallel training, but generation is sequential. Groq's hardware matches the workload pattern, achieving 500+ tokens/second vs ~50 on GPU.</p></div>
+</div>
+<div class="layer" style="border-color:#ff6b6b" onclick="this.classList.toggle('open')">
+<strong>🎯 Interview: "How would you optimize LLM serving?"</strong>
+<div class="detail"><p>"Depends on the bottleneck. For latency: speculative decoding with a small draft model, or move to Groq's LPUs. For throughput: continuous batching (vLLM). For memory: INT4 quantization. For cost: prefix caching for shared system prompts, plus routing simple queries to smaller models. In my pipeline, architectural changes (fewer LLM calls, shorter prompts) gave 60% cost reduction — more impactful than inference-level tricks."</p></div>
+</div>
+</section>
+
+<div style="text-align:center;padding:3rem 0;border-top:1px solid #222;margin-top:3rem">
+<p style="color:#7b2ff7;font-size:1.1rem">🎉 Transformer Internals Complete — You now understand the black box.</p>
+<p style="color:#888;margin-top:.5rem"><a href="index.html" style="color:#00d2ff">🏠 Back to Course Home</a></p>
+<p style="color:#555;margin-top:1rem;font-size:.8rem">Remaining topics: Embeddings Deep Dive, Prompt Engineering, LLMOps, Evaluation & Safety</p>
+</div>
+<script>document.querySelectorAll('.nav a[href^="#"]').forEach(a=>{a.addEventListener('click',e=>{e.preventDefault();document.querySelector(a.getAttribute('href')).scrollIntoView({behavior:'smooth'});document.querySelectorAll('.nav a').forEach(x=>x.classList.remove('active'));a.classList.add('active')})});</script>

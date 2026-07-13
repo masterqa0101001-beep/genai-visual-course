@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AI Agents — Visual Deep Dive</title>
+<link rel="stylesheet" href="fix_readability.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0a0a14;color:#e0e0e0;overflow-x:hidden}
+.nav{position:fixed;top:0;width:100%;background:#0a0a14ee;backdrop-filter:blur(8px);z-index:100;padding:.7rem 2rem;display:flex;gap:1rem;overflow-x:auto;border-bottom:1px solid #222}
+.nav a{color:#888;text-decoration:none;font-size:.8rem;white-space:nowrap;padding:4px 12px;border-radius:20px;transition:.3s}
+.nav a:hover,.nav a.active{color:#fff;background:#7b2ff730}
+main{max-width:1100px;margin:0 auto;padding:5rem 1.5rem 4rem}
+h1{font-size:2.2rem;text-align:center;margin-bottom:.3rem;background:linear-gradient(90deg,#00d2ff,#7b2ff7);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sub{text-align:center;color:#666;margin-bottom:3rem}
+section{margin-bottom:4rem;scroll-margin-top:4rem}
+h2{font-size:1.4rem;color:#00d2ff;margin-bottom:1rem;padding-left:.5rem;border-left:3px solid #7b2ff7}
+h3{color:#ffc107;margin:.8rem 0 .4rem;font-size:1rem}
+p{line-height:1.7;color:#bbb;margin-bottom:.8rem;font-size:.92rem}
+.diagram{background:#0d0d1a;border-radius:12px;padding:1.5rem;margin:1.2rem 0;overflow-x:auto}
+.analogy{background:#12121f;border:1px solid #7b2ff730;border-radius:12px;padding:1.5rem;margin:1.2rem 0}
+.analogy h3{color:#ffc107;margin-bottom:.5rem}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem;margin:1rem 0}
+.card{background:#12121f;border:1px solid #222;border-radius:10px;padding:1.2rem;transition:.3s}
+.card:hover{border-color:#7b2ff7;transform:translateY(-2px)}
+.card h4{margin-bottom:.4rem;font-size:.95rem}
+.tag{display:inline-block;font-size:.65rem;padding:2px 8px;border-radius:10px;margin-right:4px}
+.layer{margin:.8rem 0;padding:1rem 1.2rem;border-radius:8px;border-left:4px solid;cursor:pointer;transition:.3s;background:#12121f}
+.layer:hover{transform:translateX(4px)}
+.layer .detail{max-height:0;overflow:hidden;transition:max-height .5s;color:#999;font-size:.85rem;line-height:1.6}
+.layer.open .detail{max-height:800px;margin-top:.5rem}
+.comparison{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1rem 0}
+.comparison>div{padding:1rem;border-radius:8px;border:1px solid #222}
+.code-block{background:#0a0a12;border:1px solid #222;border-radius:8px;padding:1rem;margin:1rem 0;font-family:'Cascadia Code',monospace;font-size:.8rem;line-height:1.6;color:#bbb;overflow-x:auto}
+.code-block .kw{color:#c792ea}.code-block .fn{color:#82aaff}.code-block .str{color:#c3e88d}.code-block .cm{color:#546e7a}
+</style>
+</head>
+<body>
+<nav class="nav">
+<a href="index.html">🏠 Home</a>
+<a href="#what" class="active">What?</a>
+<a href="#loop">The Loop</a>
+<a href="#patterns">4 Patterns</a>
+<a href="#tools">Tool Calling</a>
+<a href="#mcp">MCP</a>
+<a href="#multi">Multi-Agent</a>
+<a href="#failures">Failures</a>
+<a href="#industry">Industry</a>
+<a href="#you">Your Code</a>
+<a href="#interview">Interview</a>
+<a href="agents_advanced.html" style="color:#7b2ff7;font-weight:bold">Part 2 →</a>
+</nav>
+<main>
+<h1>🤖 AI Agents — Visual Deep Dive</h1>
+<p class="sub">How agents think, decide, act & iterate — from basics to your 14-agent pipeline</p>
+</main>
+</body>
+</html>
+<section id="what">
+<h2>1. What is an AI Agent?</h2>
+<div class="analogy">
+<h3>👨‍🍳 School Kid Analogy: A Chef With a Recipe Book</h3>
+<p>A normal LLM = someone who answers ONE question and stops. Like asking a friend: "What should I cook?" → "Pasta!" Done.</p>
+<p>An <strong>Agent</strong> = a CHEF who: thinks what to cook → checks the fridge (tool) → finds a recipe (tool) → cooks step by step → tastes and adjusts → serves the dish.</p>
+<p style="color:#00e676">Key difference: Agents take MULTIPLE ACTIONS and DECIDE what to do next based on results.</p>
+</div>
+<div class="diagram">
+<svg width="800" height="160" viewBox="0 0 800 160">
+<defs><marker id="a" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#7b2ff7"/></marker></defs>
+<!-- Normal LLM -->
+<rect x="20" y="20" width="340" height="55" rx="6" fill="#ff525210" stroke="#ff5252"/>
+<text x="190" y="35" text-anchor="middle" fill="#ff5252" font-size="9">❌ Normal LLM (one-shot)</text>
+<text x="70" y="55" fill="#bbb" font-size="9">Question →</text>
+<rect x="140" y="42" width="70" height="25" rx="4" fill="#1a1a2e" stroke="#ff5252"/><text x="175" y="59" text-anchor="middle" fill="#ff5252" font-size="8">LLM</text>
+<text x="225" y="55" fill="#bbb" font-size="9">→ Answer</text>
+<text x="300" y="55" fill="#888" font-size="8">(done, no actions)</text>
+<!-- Agent -->
+<rect x="20" y="90" width="760" height="55" rx="6" fill="#00e67610" stroke="#00e676"/>
+<text x="400" y="105" text-anchor="middle" fill="#00e676" font-size="9">✅ Agent (multi-step reasoning + actions)</text>
+<text x="55" y="128" fill="#bbb" font-size="8">Goal →</text>
+<rect x="85" y="115" width="55" height="22" rx="3" fill="#1a1a2e" stroke="#7b2ff7"/><text x="112" y="130" text-anchor="middle" fill="#7b2ff7" font-size="7">Think</text>
+<line x1="140" y1="126" x2="155" y2="126" stroke="#7b2ff7" marker-end="url(#a)"/>
+<rect x="160" y="115" width="55" height="22" rx="3" fill="#1a1a2e" stroke="#ffc107"/><text x="187" y="130" text-anchor="middle" fill="#ffc107" font-size="7">Act</text>
+<line x1="215" y1="126" x2="230" y2="126" stroke="#7b2ff7" marker-end="url(#a)"/>
+<rect x="235" y="115" width="65" height="22" rx="3" fill="#1a1a2e" stroke="#00d2ff"/><text x="267" y="130" text-anchor="middle" fill="#00d2ff" font-size="7">Observe</text>
+<line x1="300" y1="126" x2="315" y2="126" stroke="#7b2ff7" marker-end="url(#a)"/>
+<rect x="320" y="115" width="55" height="22" rx="3" fill="#1a1a2e" stroke="#7b2ff7"/><text x="347" y="130" text-anchor="middle" fill="#7b2ff7" font-size="7">Think</text>
+<line x1="375" y1="126" x2="390" y2="126" stroke="#7b2ff7" marker-end="url(#a)"/>
+<rect x="395" y="115" width="55" height="22" rx="3" fill="#1a1a2e" stroke="#ffc107"/><text x="422" y="130" text-anchor="middle" fill="#ffc107" font-size="7">Act</text>
+<line x1="450" y1="126" x2="465" y2="126" stroke="#7b2ff7" marker-end="url(#a)"/>
+<rect x="470" y="115" width="65" height="22" rx="3" fill="#1a1a2e" stroke="#00d2ff"/><text x="502" y="130" text-anchor="middle" fill="#00d2ff" font-size="7">Observe</text>
+<line x1="535" y1="126" x2="550" y2="126" stroke="#7b2ff7" marker-end="url(#a)"/>
+<text x="570" y="130" fill="#888" font-size="8">... →</text>
+<rect x="600" y="115" width="70" height="22" rx="3" fill="#00e67620" stroke="#00e676"/><text x="635" y="130" text-anchor="middle" fill="#00e676" font-size="7">✅ Done!</text>
+</svg>
+</div>
+</section>
+
+<section id="loop">
+<h2>2. The Core Loop — ReAct (Reasoning + Acting)</h2>
+<p>EVERY agent framework (LangChain, LangGraph, CrewAI, AutoGen) is just this loop with more abstractions:</p>
+<div class="diagram">
+<svg width="500" height="380" viewBox="0 0 500 380">
+<defs><marker id="a2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#7b2ff7"/></marker></defs>
+<!-- Central loop -->
+<circle cx="250" cy="190" r="130" fill="none" stroke="#222" stroke-width="1" stroke-dasharray="5"/>
+<!-- THINK -->
+<rect x="195" y="40" width="110" height="50" rx="8" fill="#7b2ff720" stroke="#7b2ff7" stroke-width="2"/>
+<text x="250" y="62" text-anchor="middle" fill="#7b2ff7" font-size="11" font-weight="bold">🧠 THINK</text>
+<text x="250" y="78" text-anchor="middle" fill="#bbb" font-size="8">LLM reasons about</text>
+<text x="250" y="88" text-anchor="middle" fill="#bbb" font-size="8">what to do next</text>
+<!-- ACT -->
+<rect x="340" y="160" width="110" height="50" rx="8" fill="#ffc10720" stroke="#ffc107" stroke-width="2"/>
+<text x="395" y="182" text-anchor="middle" fill="#ffc107" font-size="11" font-weight="bold">⚡ ACT</text>
+<text x="395" y="198" text-anchor="middle" fill="#bbb" font-size="8">Call a tool or</text>
+<text x="395" y="208" text-anchor="middle" fill="#bbb" font-size="8">give final answer</text>
+<!-- OBSERVE -->
+<rect x="195" y="280" width="110" height="50" rx="8" fill="#00d2ff20" stroke="#00d2ff" stroke-width="2"/>
+<text x="250" y="302" text-anchor="middle" fill="#00d2ff" font-size="11" font-weight="bold">👁️ OBSERVE</text>
+<text x="250" y="318" text-anchor="middle" fill="#bbb" font-size="8">See tool result,</text>
+<text x="250" y="328" text-anchor="middle" fill="#bbb" font-size="8">add to memory</text>
+<!-- DONE -->
+<rect x="50" y="160" width="100" height="50" rx="8" fill="#00e67620" stroke="#00e676" stroke-width="2"/>
+<text x="100" y="182" text-anchor="middle" fill="#00e676" font-size="11" font-weight="bold">✅ DONE</text>
+<text x="100" y="198" text-anchor="middle" fill="#bbb" font-size="8">Return answer</text>
+<!-- Arrows (clockwise) -->
+<path d="M 290 85 Q 350 100 345 160" fill="none" stroke="#7b2ff7" stroke-width="2" marker-end="url(#a2)"/>
+<path d="M 380 210 Q 350 260 305 285" fill="none" stroke="#7b2ff7" stroke-width="2" marker-end="url(#a2)"/>
+<path d="M 210 285 Q 170 220 200 95" fill="none" stroke="#7b2ff7" stroke-width="2" marker-end="url(#a2)"/>
+<!-- Done arrow -->
+<path d="M 200 70 Q 140 90 140 160" fill="none" stroke="#00e676" stroke-width="2" marker-end="url(#a2)" stroke-dasharray="4"/>
+<text x="130" y="130" fill="#00e676" font-size="7">if goal</text>
+<text x="130" y="140" fill="#00e676" font-size="7">achieved</text>
+<!-- Labels on arrows -->
+<text x="340" y="120" fill="#888" font-size="7">"I need to search"</text>
+<text x="350" y="255" fill="#888" font-size="7">"Result: found 3 jobs"</text>
+<text x="130" y="240" fill="#888" font-size="7">"Now I know more,</text>
+<text x="130" y="252" fill="#888" font-size="7"> let me think again"</text>
+<!-- Bottom text -->
+<text x="250" y="370" text-anchor="middle" fill="#555" font-size="10">This loop runs 1-10 times until the agent has enough info to answer.</text>
+</svg>
+</div>
+<div class="code-block">
+<span class="cm"># The ENTIRE agent in pseudocode (this IS the loop):</span><br>
+<span class="kw">while not</span> done:<br>
+&nbsp;&nbsp;thought = LLM(history + tools_description) &nbsp;<span class="cm"># THINK</span><br>
+&nbsp;&nbsp;action = parse(thought) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="cm"># DECIDE</span><br>
+&nbsp;&nbsp;<span class="kw">if</span> action == <span class="str">"done"</span>: <span class="kw">return</span> answer &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="cm"># DONE?</span><br>
+&nbsp;&nbsp;result = execute_tool(action) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="cm"># ACT</span><br>
+&nbsp;&nbsp;history.append(result) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="cm"># OBSERVE</span>
+</div>
+</section>
+
+<section id="patterns">
+<h2>3. The 4 Agent Architectures (Cover 95% of Use Cases)</h2>
+<div class="card-grid">
+<div class="card" style="border-color:#7b2ff7">
+<h4 style="color:#7b2ff7">① ReAct (Single Agent + Tools)</h4>
+<span class="tag" style="background:#7b2ff720;color:#7b2ff7">MOST COMMON</span>
+<p style="font-size:.82rem">One agent, multiple tools. Thinks → picks a tool → uses it → thinks again. Your <code>trend_ranker</code> does this.</p>
+<div class="diagram" style="padding:.8rem">
+<svg width="280" height="60" viewBox="0 0 280 60">
+<rect x="5" y="15" width="50" height="30" rx="4" fill="#7b2ff715" stroke="#7b2ff7"/><text x="30" y="34" text-anchor="middle" fill="#7b2ff7" font-size="7">Agent</text>
+<line x1="55" y1="30" x2="75" y2="20" stroke="#ffc107"/><line x1="55" y1="30" x2="75" y2="30" stroke="#ffc107"/><line x1="55" y1="30" x2="75" y2="40" stroke="#ffc107"/>
+<rect x="80" y="5" width="50" height="20" rx="3" fill="#ffc10710" stroke="#ffc107"/><text x="105" y="18" text-anchor="middle" fill="#ffc107" font-size="6">Tool 1</text>
+<rect x="80" y="28" width="50" height="20" rx="3" fill="#ffc10710" stroke="#ffc107"/><text x="105" y="41" text-anchor="middle" fill="#ffc107" font-size="6">Tool 2</text>
+<text x="200" y="34" fill="#888" font-size="7">Agent picks which tool</text>
+</svg>
+</div>
+</div>
+<div class="card" style="border-color:#00d2ff">
+<h4 style="color:#00d2ff">② Plan-and-Execute</h4>
+<span class="tag" style="background:#00d2ff20;color:#00d2ff">COMPLEX TASKS</span>
+<p style="font-size:.82rem">First create a PLAN (list of steps), then execute each step. Can re-plan if something fails. Your full ContentMind pipeline is this.</p>
+<div class="diagram" style="padding:.8rem">
+<svg width="280" height="60" viewBox="0 0 280 60">
+<rect x="5" y="15" width="55" height="30" rx="4" fill="#00d2ff15" stroke="#00d2ff"/><text x="32" y="34" text-anchor="middle" fill="#00d2ff" font-size="7">Planner</text>
+<line x1="60" y1="30" x2="75" y2="30" stroke="#7b2ff7" marker-end="url(#a2)"/>
+<rect x="80" y="20" width="30" height="20" rx="3" fill="#1a1a2e" stroke="#444"/><text x="95" y="33" text-anchor="middle" fill="#bbb" font-size="6">S1</text>
+<rect x="115" y="20" width="30" height="20" rx="3" fill="#1a1a2e" stroke="#444"/><text x="130" y="33" text-anchor="middle" fill="#bbb" font-size="6">S2</text>
+<rect x="150" y="20" width="30" height="20" rx="3" fill="#1a1a2e" stroke="#444"/><text x="165" y="33" text-anchor="middle" fill="#bbb" font-size="6">S3</text>
+<text x="220" y="34" fill="#888" font-size="7">Steps executed in order</text>
+</svg>
+</div>
+</div>
+<div class="card" style="border-color:#00e676">
+<h4 style="color:#00e676">③ Multi-Agent Debate</h4>
+<span class="tag" style="background:#00e67620;color:#00e676">YOUR COUNCIL</span>
+<p style="font-size:.82rem">Multiple agents with different perspectives evaluate/critique. A moderator aggregates. Your quality council IS this pattern.</p>
+<div class="diagram" style="padding:.8rem">
+<svg width="280" height="70" viewBox="0 0 280 70">
+<rect x="100" y="5" width="70" height="22" rx="3" fill="#00e67615" stroke="#00e676"/><text x="135" y="19" text-anchor="middle" fill="#00e676" font-size="6">Moderator</text>
+<rect x="20" y="40" width="55" height="20" rx="3" fill="#1a1a2e" stroke="#ffc107"/><text x="47" y="53" text-anchor="middle" fill="#ffc107" font-size="6">Critic</text>
+<rect x="85" y="40" width="55" height="20" rx="3" fill="#1a1a2e" stroke="#ffc107"/><text x="112" y="53" text-anchor="middle" fill="#ffc107" font-size="6">Fact-Chk</text>
+<rect x="150" y="40" width="55" height="20" rx="3" fill="#1a1a2e" stroke="#ffc107"/><text x="177" y="53" text-anchor="middle" fill="#ffc107" font-size="6">Virality</text>
+<line x1="110" y1="27" x2="50" y2="40" stroke="#7b2ff7"/><line x1="135" y1="27" x2="112" y2="40" stroke="#7b2ff7"/><line x1="155" y1="27" x2="177" y2="40" stroke="#7b2ff7"/>
+</svg>
+</div>
+</div>
+<div class="card" style="border-color:#ff6b6b">
+<h4 style="color:#ff6b6b">④ Supervisor (Router)</h4>
+<span class="tag" style="background:#ff6b6b20;color:#ff6b6b">YOUR ROUTER</span>
+<p style="font-size:.82rem">A supervisor decides WHICH worker agent to call based on the task. Your <code>content_router.py</code> (story vs tech mode) is exactly this.</p>
+<div class="diagram" style="padding:.8rem">
+<svg width="280" height="70" viewBox="0 0 280 70">
+<rect x="90" y="5" width="80" height="22" rx="3" fill="#ff6b6b15" stroke="#ff6b6b"/><text x="130" y="19" text-anchor="middle" fill="#ff6b6b" font-size="6">Supervisor</text>
+<rect x="20" y="42" width="70" height="20" rx="3" fill="#1a1a2e" stroke="#444"/><text x="55" y="55" text-anchor="middle" fill="#bbb" font-size="6">Tech Worker</text>
+<rect x="105" y="42" width="70" height="20" rx="3" fill="#1a1a2e" stroke="#444"/><text x="140" y="55" text-anchor="middle" fill="#bbb" font-size="6">Story Worker</text>
+<line x1="110" y1="27" x2="55" y2="42" stroke="#7b2ff7" stroke-dasharray="3"/><line x1="150" y1="27" x2="140" y2="42" stroke="#7b2ff7"/>
+<text x="220" y="55" fill="#888" font-size="7">Routes by condition</text>
+</svg>
+</div>
+</div>
+</div>
+</section>
+<section id="tools">
+<h2>4. Tool Calling — How Agents Use Tools</h2>
+<div class="analogy">
+<h3>📱 Analogy: A Person With a Smartphone</h3>
+<p>You (the brain) DECIDE to check the weather. You open the weather APP (tool). You READ the result. You DECIDE what to wear based on that.</p>
+<p>An agent does the same: DECIDES which tool to use → CALLS it → READS the result → DECIDES next action.</p>
+</div>
+<div class="comparison">
+<div style="border-color:#ff5252;background:#ff525208;padding:1rem;border-radius:8px">
+<h4 style="color:#ff5252;font-size:.9rem">❌ Old Way: Text Parsing</h4>
+<div class="code-block" style="font-size:.75rem">
+LLM outputs: "ACTION: search\nINPUT: AI jobs"<br>
+<span class="cm"># You parse this with regex (fragile!)</span><br>
+action = re.search(r'ACTION: (\w+)', text)
+</div>
+<p style="font-size:.78rem;color:#ff5252">Breaks if LLM formats differently.</p>
+</div>
+<div style="border-color:#00e676;background:#00e67608;padding:1rem;border-radius:8px">
+<h4 style="color:#00e676;font-size:.9rem">✅ New Way: Function Calling API</h4>
+<div class="code-block" style="font-size:.75rem">
+<span class="cm"># LLM returns STRUCTURED JSON:</span><br>
+{"tool": "search", "args": {"query": "AI jobs"}}<br>
+<span class="cm"># No parsing needed! Type-safe.</span>
+</div>
+<p style="font-size:.78rem;color:#00e676">Built into OpenAI, Groq, Anthropic APIs.</p>
+</div>
+</div>
+<div class="diagram">
+<svg width="750" height="180" viewBox="0 0 750 180">
+<defs><marker id="a3" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="#7b2ff7"/></marker></defs>
+<!-- Flow -->
+<rect x="20" y="60" width="130" height="60" rx="6" fill="#1a1a2e" stroke="#7b2ff7"/>
+<text x="85" y="82" text-anchor="middle" fill="#7b2ff7" font-size="9">🧠 LLM</text>
+<text x="85" y="98" text-anchor="middle" fill="#bbb" font-size="7">"I need to search"</text>
+<text x="85" y="110" text-anchor="middle" fill="#ffc107" font-size="7">→ {tool: "search"}</text>
+<line x1="150" y1="90" x2="190" y2="90" stroke="#7b2ff7" stroke-width="2" marker-end="url(#a3)"/>
+<!-- Router -->
+<rect x="195" y="65" width="100" height="50" rx="6" fill="#1a1a2e" stroke="#ffc107"/>
+<text x="245" y="85" text-anchor="middle" fill="#ffc107" font-size="9">🔀 Router</text>
+<text x="245" y="100" text-anchor="middle" fill="#888" font-size="7">Matches tool name</text>
+<line x1="295" y1="75" x2="340" y2="50" stroke="#ffc107" marker-end="url(#a3)"/>
+<line x1="295" y1="90" x2="340" y2="90" stroke="#ffc107" marker-end="url(#a3)"/>
+<line x1="295" y1="105" x2="340" y2="130" stroke="#ffc107" marker-end="url(#a3)"/>
+<!-- Tools -->
+<rect x="345" y="35" width="110" height="30" rx="4" fill="#00d2ff10" stroke="#00d2ff"/><text x="400" y="54" text-anchor="middle" fill="#00d2ff" font-size="8">🔍 search_jobs()</text>
+<rect x="345" y="75" width="110" height="30" rx="4" fill="#00e67610" stroke="#00e676"/><text x="400" y="94" text-anchor="middle" fill="#00e676" font-size="8">📊 score_job()</text>
+<rect x="345" y="115" width="110" height="30" rx="4" fill="#e040fb10" stroke="#e040fb"/><text x="400" y="134" text-anchor="middle" fill="#e040fb" font-size="8">💰 get_salary()</text>
+<!-- Result back -->
+<line x1="455" y1="50" x2="530" y2="90" stroke="#00e676"/><line x1="455" y1="90" x2="530" y2="90" stroke="#00e676"/><line x1="455" y1="130" x2="530" y2="90" stroke="#00e676"/>
+<rect x="535" y="65" width="120" height="50" rx="6" fill="#00e67610" stroke="#00e676"/>
+<text x="595" y="85" text-anchor="middle" fill="#00e676" font-size="9">📋 Result</text>
+<text x="595" y="100" text-anchor="middle" fill="#bbb" font-size="7">"Found: AI Engineer</text>
+<text x="595" y="110" text-anchor="middle" fill="#bbb" font-size="7">at TCS, ₹25-35L"</text>
+<!-- Back to LLM -->
+<path d="M 595 115 Q 595 155 85 155 Q 30 155 30 120" fill="none" stroke="#7b2ff750" stroke-width="1" stroke-dasharray="4"/>
+<text x="350" y="165" text-anchor="middle" fill="#555" font-size="8">Result fed back → LLM thinks again with new info</text>
+</svg>
+</div>
+</section>
+
+<section id="mcp">
+<h2>5. MCP — Model Context Protocol (The Future Standard)</h2>
+<div class="analogy">
+<h3>🔌 Analogy: USB-C for AI</h3>
+<p>Before USB-C: every phone had a different charger. Nightmare.</p>
+<p>Before MCP: every LLM had different tool-calling formats. Each integration was custom-built.</p>
+<p><strong>MCP = USB-C for AI tools.</strong> One standard protocol. Any LLM can use any tool through MCP. 97 million monthly SDK downloads in 2026.</p>
+<p style="color:#00e676"><strong>YOU ALREADY BUILT AN MCP SERVER (job_search_mcp.py). This is rare and impressive.</strong></p>
+</div>
+<div class="diagram">
+<svg width="750" height="200" viewBox="0 0 750 200">
+<!-- Host -->
+<rect x="20" y="60" width="140" height="80" rx="8" fill="#7b2ff720" stroke="#7b2ff7"/>
+<text x="90" y="85" text-anchor="middle" fill="#7b2ff7" font-size="10" font-weight="bold">MCP Host</text>
+<text x="90" y="102" text-anchor="middle" fill="#bbb" font-size="8">(Kiro, Claude, Cursor)</text>
+<text x="90" y="118" text-anchor="middle" fill="#888" font-size="7">The AI app that</text>
+<text x="90" y="130" text-anchor="middle" fill="#888" font-size="7">needs tools</text>
+<!-- Client -->
+<rect x="210" y="60" width="120" height="80" rx="8" fill="#ffc10720" stroke="#ffc107"/>
+<text x="270" y="85" text-anchor="middle" fill="#ffc107" font-size="10" font-weight="bold">MCP Client</text>
+<text x="270" y="102" text-anchor="middle" fill="#bbb" font-size="8">JSON-RPC 2.0</text>
+<text x="270" y="118" text-anchor="middle" fill="#888" font-size="7">Discovers &</text>
+<text x="270" y="130" text-anchor="middle" fill="#888" font-size="7">calls tools</text>
+<!-- Servers -->
+<rect x="390" y="20" width="160" height="45" rx="6" fill="#00e67610" stroke="#00e676"/>
+<text x="470" y="40" text-anchor="middle" fill="#00e676" font-size="8" font-weight="bold">🔍 Your Job Search MCP Server</text>
+<text x="470" y="55" text-anchor="middle" fill="#888" font-size="7">search_jobs, score_job, get_report</text>
+<rect x="390" y="80" width="160" height="45" rx="6" fill="#00d2ff10" stroke="#00d2ff"/>
+<text x="470" y="100" text-anchor="middle" fill="#00d2ff" font-size="8">📁 File System Server</text>
+<text x="470" y="115" text-anchor="middle" fill="#888" font-size="7">read_file, write_file, list_dir</text>
+<rect x="390" y="140" width="160" height="45" rx="6" fill="#e040fb10" stroke="#e040fb"/>
+<text x="470" y="160" text-anchor="middle" fill="#e040fb" font-size="8">🌐 Web Search Server</text>
+<text x="470" y="175" text-anchor="middle" fill="#888" font-size="7">search, fetch_url</text>
+<!-- Connections -->
+<line x1="160" y1="100" x2="210" y2="100" stroke="#7b2ff7" stroke-width="2" marker-end="url(#a3)"/>
+<line x1="330" y1="85" x2="390" y2="42" stroke="#ffc107" marker-end="url(#a3)"/>
+<line x1="330" y1="100" x2="390" y2="100" stroke="#ffc107" marker-end="url(#a3)"/>
+<line x1="330" y1="115" x2="390" y2="160" stroke="#ffc107" marker-end="url(#a3)"/>
+<!-- Protocol labels -->
+<text x="600" y="100" fill="#555" font-size="8">Each server is</text>
+<text x="600" y="112" fill="#555" font-size="8">independent &</text>
+<text x="600" y="124" fill="#555" font-size="8">pluggable</text>
+</svg>
+</div>
+</section>
+
+<section id="multi">
+<h2>6. Multi-Agent — Your ContentMind Pipeline</h2>
+<p>Your 14-agent LangGraph pipeline visualized:</p>
+<div class="diagram">
+<svg width="900" height="320" viewBox="0 0 900 320">
+<!-- Layer labels -->
+<text x="10" y="30" fill="#888" font-size="9">Layer 1: Intelligence</text>
+<text x="10" y="100" fill="#888" font-size="9">Layer 2: RAG</text>
+<text x="10" y="170" fill="#888" font-size="9">Layer 3: Generation</text>
+<text x="10" y="240" fill="#888" font-size="9">Layer 4: Quality</text>
+<text x="10" y="300" fill="#888" font-size="9">Layer 5: Publish</text>
+<!-- Layer 1 -->
+<rect x="130" y="15" width="90" height="30" rx="4" fill="#ff6b6b15" stroke="#ff6b6b"/><text x="175" y="34" text-anchor="middle" fill="#ff6b6b" font-size="7">Trend Fetcher</text>
+<rect x="240" y="15" width="90" height="30" rx="4" fill="#ff6b6b15" stroke="#ff6b6b"/><text x="285" y="34" text-anchor="middle" fill="#ff6b6b" font-size="7">Trend Ranker</text>
+<!-- Layer 2 -->
+<rect x="130" y="85" width="90" height="30" rx="4" fill="#ffc10715" stroke="#ffc107"/><text x="175" y="104" text-anchor="middle" fill="#ffc107" font-size="7">RAG Retriever</text>
+<!-- Router -->
+<rect x="360" y="50" width="80" height="50" rx="6" fill="#e040fb15" stroke="#e040fb"/>
+<text x="400" y="72" text-anchor="middle" fill="#e040fb" font-size="7">Content</text>
+<text x="400" y="84" text-anchor="middle" fill="#e040fb" font-size="7">Router</text>
+<text x="400" y="96" text-anchor="middle" fill="#888" font-size="6">tech/story</text>
+<!-- Layer 3 -->
+<rect x="130" y="155" width="80" height="30" rx="4" fill="#00e67615" stroke="#00e676"/><text x="170" y="174" text-anchor="middle" fill="#00e676" font-size="7">Script Writer</text>
+<rect x="230" y="155" width="80" height="30" rx="4" fill="#00e67615" stroke="#00e676"/><text x="270" y="174" text-anchor="middle" fill="#00e676" font-size="7">Title/SEO</text>
+<rect x="330" y="155" width="80" height="30" rx="4" fill="#00e67615" stroke="#00e676"/><text x="370" y="174" text-anchor="middle" fill="#00e676" font-size="7">Narration</text>
+<rect x="430" y="155" width="80" height="30" rx="4" fill="#00e67615" stroke="#00e676"/><text x="470" y="174" text-anchor="middle" fill="#00e676" font-size="7">Visual Fetch</text>
+<rect x="530" y="155" width="80" height="30" rx="4" fill="#00e67615" stroke="#00e676"/><text x="570" y="174" text-anchor="middle" fill="#00e676" font-size="7">Video Build</text>
+<!-- Layer 4 -->
+<rect x="130" y="225" width="100" height="30" rx="4" fill="#7b2ff715" stroke="#7b2ff7"/><text x="180" y="244" text-anchor="middle" fill="#7b2ff7" font-size="7">Quality Council</text>
+<rect x="250" y="225" width="100" height="30" rx="4" fill="#7b2ff715" stroke="#7b2ff7"/><text x="300" y="244" text-anchor="middle" fill="#7b2ff7" font-size="7">Improvement Loop</text>
+<!-- Cycle arrow -->
+<path d="M 300 255 Q 250 270 180 255" fill="none" stroke="#ff6b6b" stroke-dasharray="3" marker-end="url(#a3)"/>
+<text x="240" y="275" text-anchor="middle" fill="#ff6b6b" font-size="6">retry if score &lt; 75</text>
+<!-- Layer 5 -->
+<rect x="130" y="285" width="100" height="30" rx="4" fill="#00d2ff15" stroke="#00d2ff"/><text x="180" y="304" text-anchor="middle" fill="#00d2ff" font-size="7">YouTube Upload</text>
+<!-- Connecting lines (simplified) -->
+<line x1="285" y1="45" x2="360" y2="70" stroke="#7b2ff750"/>
+<line x1="400" y1="100" x2="170" y2="155" stroke="#7b2ff750"/>
+<line x1="175" y1="115" x2="175" y2="155" stroke="#7b2ff750"/>
+<line x1="610" y1="170" x2="180" y2="225" stroke="#7b2ff750"/>
+<line x1="300" y1="255" x2="180" y2="285" stroke="#7b2ff750"/>
+<!-- Labels -->
+<text x="700" y="170" fill="#888" font-size="8">14 agents</text>
+<text x="700" y="185" fill="#888" font-size="8">7 layers</text>
+<text x="700" y="200" fill="#888" font-size="8">5 Groq calls/run</text>
+<text x="700" y="215" fill="#888" font-size="8">₹0/month</text>
+</svg>
+</div>
+</section>
+
+<section id="failures">
+<h2>7. Agent Failure Modes</h2>
+<div class="layer" style="border-color:#ff5252" onclick="this.classList.toggle('open')">
+<strong>💀 Infinite Loop</strong> — Agent keeps calling the same tool forever
+<div class="detail"><p><strong>Cause:</strong> LLM doesn't recognize the goal is achieved, or tool returns unhelpful results.</p><p><strong>Fix:</strong> Max step limit (your pipeline uses this). Also: detect repeated actions and force termination.</p></div>
+</div>
+<div class="layer" style="border-color:#ffc107" onclick="this.classList.toggle('open')">
+<strong>💀 Wrong Tool Selected</strong> — Agent calls "search" when it should "score"
+<div class="detail"><p><strong>Cause:</strong> Tool descriptions are ambiguous or too similar.</p><p><strong>Fix:</strong> Better tool descriptions. Add few-shot examples of correct tool use in system prompt.</p></div>
+</div>
+<div class="layer" style="border-color:#00d2ff" onclick="this.classList.toggle('open')">
+<strong>💀 Hallucinated Tool</strong> — Agent tries to call a tool that doesn't exist
+<div class="detail"><p><strong>Cause:</strong> Text-parsing agents can invent tool names. LLM "imagines" tools.</p><p><strong>Fix:</strong> Use function calling API (enforces valid tool names). Or validate against TOOLS dict before execution.</p></div>
+</div>
+<div class="layer" style="border-color:#00e676" onclick="this.classList.toggle('open')">
+<strong>💀 Context Overflow</strong> — Too many observations fill the context window
+<div class="detail"><p><strong>Cause:</strong> Each loop iteration adds messages. After 10 steps, context is full.</p><p><strong>Fix:</strong> Summarize history periodically. Keep only last 3 observations + summary of earlier ones.</p></div>
+</div>
+<div class="layer" style="border-color:#e040fb" onclick="this.classList.toggle('open')">
+<strong>💀 Cascading Errors</strong> — One bad tool result derails everything
+<div class="detail"><p><strong>Cause:</strong> Tool returns error, agent doesn't know how to recover.</p><p><strong>Fix:</strong> Your approach: fallback chains (TTS: primary → 3 backups → gTTS). Also: let agent "skip" failed tools.</p></div>
+</div>
+</section>
+
+<section id="industry">
+<h2>8. Industry Agents</h2>
+<div class="card-grid">
+<div class="card" style="border-color:#7b2ff7"><h4 style="color:#7b2ff7">ChatGPT (Tool Use)</h4><p style="font-size:.8rem">Decides whether to search web, run code, or generate images. Agentic RAG + code interpreter + DALL-E. All via function calling.</p></div>
+<div class="card" style="border-color:#00d2ff"><h4 style="color:#00d2ff">Devin (AI Developer)</h4><p style="font-size:.8rem">Plans → writes code → runs tests → debugs → fixes. Full Plan-and-Execute pattern with self-correction loop. 50+ step agent.</p></div>
+<div class="card" style="border-color:#00e676"><h4 style="color:#00e676">AutoGPT / BabyAGI</h4><p style="font-size:.8rem">Autonomous goal-pursuing agents. Create sub-tasks, execute them, evaluate results. Pioneered the "AI that gives itself tasks" pattern.</p></div>
+<div class="card" style="border-color:#ffc107"><h4 style="color:#ffc107">Customer Support Bots</h4><p style="font-size:.8rem">Supervisor pattern: classify intent → route to specialist agent (billing, shipping, technical). Escalate to human if confidence low.</p></div>
+</div>
+</section>
+
+<section id="you">
+<h2>9. Your Code — Agent Patterns You've Already Built</h2>
+<div class="diagram">
+<svg width="600" height="150" viewBox="0 0 600 150">
+<rect x="20" y="30" width="130" height="35" rx="4" fill="#00e67615" stroke="#00e676"/><text x="85" y="52" text-anchor="middle" fill="#00e676" font-size="8">✅ ReAct (trend_ranker)</text>
+<rect x="170" y="30" width="140" height="35" rx="4" fill="#00e67615" stroke="#00e676"/><text x="240" y="52" text-anchor="middle" fill="#00e676" font-size="8">✅ Multi-Agent (council)</text>
+<rect x="330" y="30" width="130" height="35" rx="4" fill="#00e67615" stroke="#00e676"/><text x="395" y="52" text-anchor="middle" fill="#00e676" font-size="8">✅ Supervisor (router)</text>
+<rect x="20" y="80" width="130" height="35" rx="4" fill="#00e67615" stroke="#00e676"/><text x="85" y="102" text-anchor="middle" fill="#00e676" font-size="8">✅ Plan-Execute (pipeline)</text>
+<rect x="170" y="80" width="140" height="35" rx="4" fill="#00e67615" stroke="#00e676"/><text x="240" y="102" text-anchor="middle" fill="#00e676" font-size="8">✅ MCP Server (job search)</text>
+<rect x="330" y="80" width="130" height="35" rx="4" fill="#ffc10715" stroke="#ffc107"/><text x="395" y="102" text-anchor="middle" fill="#ffc107" font-size="8">⚠️ Function Calling API</text>
+<text x="300" y="140" text-anchor="middle" fill="#888" font-size="9">You have 5/6 agent patterns in production. Only function calling API needs explicit practice.</text>
+</svg>
+</div>
+</section>
+
+<section id="interview">
+<h2>10. Interview Answers</h2>
+<div class="layer" style="border-color:#7b2ff7" onclick="this.classList.toggle('open')">
+<strong>Q: "How does an agent work under the hood?"</strong>
+<div class="detail"><p>"An agent is a Think→Act→Observe loop. The LLM reasons about the task, selects a tool via function calling, executes it, observes the result, and loops until the goal is met or max steps reached. I can build one in 40 lines without any framework — frameworks add state management, error handling, and routing on top of this core loop."</p></div>
+</div>
+<div class="layer" style="border-color:#00d2ff" onclick="this.classList.toggle('open')">
+<strong>Q: "When would you use multi-agent vs single agent?"</strong>
+<div class="detail"><p>"Single agent with multiple tools for straightforward tasks (search + score + apply). Multi-agent when you need OPPOSING perspectives — like my quality council where a critic, fact-checker, and virality scorer evaluate the same content from different angles. The debate structure catches blind spots a single agent misses."</p></div>
+</div>
+<div class="layer" style="border-color:#00e676" onclick="this.classList.toggle('open')">
+<strong>Q: "What is MCP and why does it matter?"</strong>
+<div class="detail"><p>"MCP standardizes how LLMs discover and call external tools — like REST APIs but for AI agents. Instead of custom integrations per model, you build one MCP server and ANY MCP-compatible client (Claude, Kiro, Cursor) can use your tools. I built an MCP server for job search that exposes search, scoring, and reporting as structured tools. It's adopted by OpenAI, Google, Microsoft — 97M monthly SDK downloads."</p></div>
+</div>
+</section>
+
+<div style="text-align:center;padding:3rem 0;border-top:1px solid #222;margin-top:3rem">
+<p style="color:#7b2ff7;font-size:1.1rem">🎉 Agents Complete — From Loop to Production Multi-Agent Systems</p>
+<p style="color:#888;margin-top:.5rem"><a href="index.html" style="color:#00d2ff">🏠 Back to Course Home</a></p>
+</div>
+<script>
+document.querySelectorAll('.nav a[href^="#"]').forEach(a=>{a.addEventListener('click',e=>{e.preventDefault();document.querySelector(a.getAttribute('href')).scrollIntoView({behavior:'smooth'});document.querySelectorAll('.nav a').forEach(x=>x.classList.remove('active'));a.classList.add('active')})});
+</script>

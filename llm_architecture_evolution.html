@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LLM Architecture Evolution — 2017 to 2026</title>
+<link rel="stylesheet" href="fix_readability.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0a0a14;color:#e0e0e0;overflow-x:hidden}
+.nav{position:fixed;top:0;width:100%;background:#0a0a14ee;backdrop-filter:blur(8px);z-index:100;padding:.7rem 2rem;display:flex;gap:1rem;overflow-x:auto;border-bottom:1px solid #222}
+.nav a{color:#888;text-decoration:none;font-size:.8rem;white-space:nowrap;padding:4px 12px;border-radius:20px;transition:.3s}
+.nav a:hover,.nav a.active{color:#fff;background:#7b2ff730}
+main{max-width:1100px;margin:0 auto;padding:5rem 1.5rem 4rem}
+h1{font-size:2rem;text-align:center;margin-bottom:.3rem;background:linear-gradient(90deg,#ff6b6b,#ffc107,#00e676,#00d2ff,#7b2ff7);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sub{text-align:center;color:#666;margin-bottom:3rem;font-size:.9rem}
+section{margin-bottom:4rem;scroll-margin-top:4rem}
+h2{font-size:1.4rem;color:#00d2ff;margin-bottom:1rem;padding-left:.5rem;border-left:3px solid #7b2ff7}
+p{line-height:1.7;color:#bbb;margin-bottom:.8rem;font-size:.92rem}
+.diagram{background:#0d0d1a;border-radius:12px;padding:1.5rem;margin:1.2rem 0;overflow-x:auto}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1rem;margin:1rem 0}
+.card{background:#12121f;border:1px solid #222;border-radius:10px;padding:1.2rem;transition:.3s}
+.card:hover{border-color:#7b2ff7;transform:translateY(-2px)}
+.card h4{margin-bottom:.4rem;font-size:.95rem}
+.tag{display:inline-block;font-size:.65rem;padding:2px 8px;border-radius:10px;margin-right:4px}
+.layer{margin:.8rem 0;padding:1rem 1.2rem;border-radius:8px;border-left:4px solid;cursor:pointer;transition:.3s;background:#12121f}
+.layer:hover{transform:translateX(4px)}
+.layer .detail{max-height:0;overflow:hidden;transition:max-height .5s;color:#999;font-size:.85rem;line-height:1.6}
+.layer.open .detail{max-height:800px;margin-top:.5rem}
+.timeline{position:relative;padding-left:30px;border-left:2px solid #333;margin:1.5rem 0}
+.timeline-item{position:relative;margin-bottom:2rem;padding-left:20px}
+.timeline-item::before{content:'';position:absolute;left:-36px;top:5px;width:12px;height:12px;border-radius:50%;border:2px solid}
+.timeline-item h4{margin-bottom:.3rem;font-size:.95rem}
+.timeline-item p{font-size:.82rem;color:#999}
+</style>
+</head>
+<body>
+<nav class="nav">
+<a href="index.html">🏠 Home</a>
+<a href="transformers_complete.html">← Transformers P1</a>
+<a href="transformers_advanced.html">← Transformers P2</a>
+<a href="llm_architecture_evolution.html" style="color:#ffc107;font-weight:bold">LLM Evolution →</a>
+<a href="#timeline" class="active">Timeline</a>
+<a href="#claude">Claude Architecture</a>
+<a href="#comparison">LLM Comparison</a>
+<a href="#shifts">Major Shifts</a>
+<a href="#future">What's Next</a>
+</nav>
+<main>
+<h1>🧬 LLM Architecture Evolution</h1>
+<p class="sub">From "Attention is All You Need" (2017) → Claude Sonnet 4 (2025) → Where it's heading</p>
+</main>
+</body>
+</html>
+<section id="timeline">
+<h2>1. The Timeline — From 2017 to 2026</h2>
+<p>Each era introduced KEY architectural changes that we still use today:</p>
+<div class="timeline">
+<div class="timeline-item" style="--c:#ff6b6b"><div style="position:absolute;left:-36px;top:5px;width:12px;height:12px;border-radius:50%;background:#ff6b6b"></div>
+<h4 style="color:#ff6b6b">2017 — "Attention Is All You Need" (Google)</h4>
+<p>The original Transformer paper. Replaced RNNs/LSTMs with self-attention. Everything since is built on this. Key innovations: multi-head attention, positional encoding, encoder-decoder structure.</p>
+</div>
+<div class="timeline-item"><div style="position:absolute;left:-36px;top:5px;width:12px;height:12px;border-radius:50%;background:#ffc107"></div>
+<h4 style="color:#ffc107">2018 — GPT-1 + BERT (OpenAI + Google)</h4>
+<p><strong>GPT-1:</strong> Decoder-only transformer. "Just predict next token" on books. 117M params. <strong>BERT:</strong> Encoder-only, bidirectional. Best for understanding (not generating). These two approaches define the split that persists today.</p>
+</div>
+<div class="timeline-item"><div style="position:absolute;left:-36px;top:5px;width:12px;height:12px;border-radius:50%;background:#ffc107"></div>
+<h4 style="color:#ffc107">2019 — GPT-2 (OpenAI)</h4>
+<p>1.5B params. "Too dangerous to release" (lol). Proved: bigger = better. Same architecture as GPT-1, just SCALED UP. This launched the "scaling era."</p>
+</div>
+<div class="timeline-item"><div style="position:absolute;left:-36px;top:5px;width:12px;height:12px;border-radius:50%;background:#00e676"></div>
+<h4 style="color:#00e676">2020 — GPT-3 (OpenAI)</h4>
+<p>175B params. In-context learning emerged (few-shot prompting works without fine-tuning!). Decoder-only became dominant. Same architecture, 100x bigger. APIs launched.</p>
+</div>
+<div class="timeline-item"><div style="position:absolute;left:-36px;top:5px;width:12px;height:12px;border-radius:50%;background:#00d2ff"></div>
+<h4 style="color:#00d2ff">2022 — ChatGPT + InstructGPT (OpenAI)</h4>
+<p>Same GPT-3 architecture + RLHF alignment. THIS is when "just scale it" met "make it follow instructions." RLHF was the missing piece. Architecture didn't change — training did.</p>
+</div>
+<div class="timeline-item"><div style="position:absolute;left:-36px;top:5px;width:12px;height:12px;border-radius:50%;background:#7b2ff7"></div>
+<h4 style="color:#7b2ff7">2023 — GPT-4 + Llama + Mixtral (Major Shift Year)</h4>
+<p><strong>GPT-4:</strong> Rumored MoE (Mixture of Experts), multimodal (text+image input). <strong>Llama:</strong> Meta open-sources competitive models — RoPE position encoding, GQA attention, SwiGLU activation. <strong>Mixtral:</strong> Open MoE proving sparse experts work at scale.</p>
+</div>
+<div class="timeline-item"><div style="position:absolute;left:-36px;top:5px;width:12px;height:12px;border-radius:50%;background:#e040fb"></div>
+<h4 style="color:#e040fb">2024 — Llama 3 + Claude 3 + Reasoning Models</h4>
+<p><strong>Llama 3:</strong> 15T training tokens (7x more than Llama 2). Proves Chinchilla scaling. <strong>Claude 3:</strong> 200K context. <strong>o1 (OpenAI):</strong> Chain-of-thought reasoning built INTO the model (not just prompting). New capability tier emerges.</p>
+</div>
+<div class="timeline-item"><div style="position:absolute;left:-36px;top:5px;width:12px;height:12px;border-radius:50%;background:#00e676"></div>
+<h4 style="color:#00e676">2025 — Claude 4 + Hybrid Reasoning + Open-Source Parity</h4>
+<p><strong>Claude Sonnet 4:</strong> Hybrid reasoning (instant mode + extended thinking mode). <strong>Llama 4:</strong> Matches frontier quality. <strong>Key shift:</strong> Open-source caught up. The gap between open and closed models collapsed from 12 months to 6 weeks.</p>
+</div>
+<div class="timeline-item"><div style="position:absolute;left:-36px;top:5px;width:12px;height:12px;border-radius:50%;background:#ff6b6b"></div>
+<h4 style="color:#ff6b6b">2026 — Agentic Era + MCP Standard + Context Extension</h4>
+<p>Models are no longer just "chat." They're agent backbones. MCP standardizes tool use. Context windows hit 1M+ tokens (Gemini). The focus shifted from "better models" to "better systems around models." YOUR work (agents, MCP, RAG) is where the industry IS.</p>
+</div>
+</div>
+</section>
+
+<section id="claude">
+<h2>2. Claude Sonnet 4 — Architecture Deep Dive</h2>
+<p>Anthropic doesn't publish exact param counts, but here's what we know from their papers and analysis:</p>
+<div class="diagram">
+<svg width="850" height="380" viewBox="0 0 850 380">
+<text x="425" y="20" text-anchor="middle" fill="#7b2ff7" font-size="11" font-weight="bold">Claude Sonnet 4 Architecture (Inferred from Public Info)</text>
+<!-- Input -->
+<rect x="300" y="340" width="250" height="30" rx="4" fill="#ffc10710" stroke="#ffc107"/>
+<text x="425" y="360" text-anchor="middle" fill="#ffc107" font-size="8">Input Tokens (200K context window) + Absolute Position Embeddings</text>
+<!-- Transformer blocks -->
+<rect x="250" y="180" width="350" height="140" rx="8" fill="#7b2ff708" stroke="#7b2ff7"/>
+<text x="425" y="200" text-anchor="middle" fill="#7b2ff7" font-size="9" font-weight="bold">Dense Transformer Stack (estimated 60-80 layers)</text>
+<!-- Layer detail -->
+<rect x="270" y="215" width="150" height="45" rx="4" fill="#0d0d1a" stroke="#444"/>
+<text x="345" y="232" text-anchor="middle" fill="#00d2ff" font-size="7" font-weight="bold">Multi-Head Attention</text>
+<text x="345" y="247" text-anchor="middle" fill="#888" font-size="6">(standard MHA, not GQA)</text>
+<text x="345" y="258" text-anchor="middle" fill="#555" font-size="6">Absolute position embeddings</text>
+
+<rect x="440" y="215" width="140" height="45" rx="4" fill="#0d0d1a" stroke="#444"/>
+<text x="510" y="232" text-anchor="middle" fill="#00e676" font-size="7" font-weight="bold">Feed-Forward Network</text>
+<text x="510" y="247" text-anchor="middle" fill="#888" font-size="6">SwiGLU activation</text>
+<text x="510" y="258" text-anchor="middle" fill="#555" font-size="6">+ Layer Normalization</text>
+
+<rect x="270" y="270" width="310" height="35" rx="4" fill="#e040fb08" stroke="#e040fb"/>
+<text x="425" y="285" text-anchor="middle" fill="#e040fb" font-size="7" font-weight="bold">🆕 Hybrid Reasoning Module (Extended Thinking)</text>
+<text x="425" y="298" text-anchor="middle" fill="#888" font-size="6">Can engage multi-step reasoning chains when task is complex</text>
+
+<!-- Arrow up -->
+<line x1="425" y1="340" x2="425" y2="325" stroke="#7b2ff7" marker-end="url(#a)"/>
+<line x1="425" y1="180" x2="425" y2="165" stroke="#7b2ff7" marker-end="url(#a)"/>
+<!-- Output -->
+<rect x="270" y="110" width="310" height="50" rx="6" fill="#00e67610" stroke="#00e676"/>
+<text x="425" y="130" text-anchor="middle" fill="#00e676" font-size="9">Output: Up to 64K tokens</text>
+<text x="425" y="148" text-anchor="middle" fill="#888" font-size="7">Pricing: $3/M input, $15/M output tokens</text>
+<!-- Specs on sides -->
+<rect x="20" y="180" width="200" height="140" rx="6" fill="#12121f" stroke="#333"/>
+<text x="120" y="200" text-anchor="middle" fill="#ffc107" font-size="9" font-weight="bold">Key Specs</text>
+<text x="120" y="220" text-anchor="middle" fill="#bbb" font-size="7">Params: ~50-100B (estimated)</text>
+<text x="120" y="237" text-anchor="middle" fill="#bbb" font-size="7">Context: 200,000 tokens</text>
+<text x="120" y="254" text-anchor="middle" fill="#bbb" font-size="7">Max output: 64,000 tokens</text>
+<text x="120" y="271" text-anchor="middle" fill="#bbb" font-size="7">Attention: Multi-Head (MHA)</text>
+<text x="120" y="288" text-anchor="middle" fill="#bbb" font-size="7">Position: Absolute embeddings</text>
+<text x="120" y="305" text-anchor="middle" fill="#bbb" font-size="7">Activation: SwiGLU</text>
+
+<rect x="630" y="180" width="200" height="140" rx="6" fill="#12121f" stroke="#333"/>
+<text x="730" y="200" text-anchor="middle" fill="#00d2ff" font-size="9" font-weight="bold">What Makes Claude Different</text>
+<text x="730" y="220" text-anchor="middle" fill="#bbb" font-size="7">1. Hybrid reasoning (fast + deep)</text>
+<text x="730" y="237" text-anchor="middle" fill="#bbb" font-size="7">2. Constitutional AI alignment</text>
+<text x="730" y="254" text-anchor="middle" fill="#bbb" font-size="7">3. Extremely long output (64K!)</text>
+<text x="730" y="271" text-anchor="middle" fill="#bbb" font-size="7">4. Strong instruction following</text>
+<text x="730" y="288" text-anchor="middle" fill="#bbb" font-size="7">5. Code specialization (SWE)</text>
+<text x="730" y="305" text-anchor="middle" fill="#bbb" font-size="7">6. Multimodal (text + images)</text>
+<!-- Note -->
+<text x="425" y="50" text-anchor="middle" fill="#555" font-size="8">Note: Anthropic doesn't publish exact architecture details. This is reconstructed from papers, API specs, and technical analysis.</text>
+<text x="425" y="65" text-anchor="middle" fill="#555" font-size="8">Source: anthropic.com, aiwiki.ai, expertbeacon.com architectural analyses (2025)</text>
+</svg>
+</div>
+</section>
+<section id="comparison">
+<h2>3. Architecture Comparison — GPT vs Llama vs Claude vs Gemini</h2>
+<div class="diagram">
+<svg width="900" height="320" viewBox="0 0 900 320">
+<text x="450" y="20" text-anchor="middle" fill="#7b2ff7" font-size="10" font-weight="bold">Architectural Choices Across Major LLM Families (2024-2026)</text>
+<!-- Table header -->
+<rect x="20" y="35" width="120" height="25" rx="3" fill="#222"/><text x="80" y="52" text-anchor="middle" fill="#888" font-size="7" font-weight="bold">Component</text>
+<rect x="150" y="35" width="160" height="25" rx="3" fill="#00e67615"/><text x="230" y="52" text-anchor="middle" fill="#00e676" font-size="7" font-weight="bold">GPT-4 (OpenAI)</text>
+<rect x="320" y="35" width="160" height="25" rx="3" fill="#7b2ff715"/><text x="400" y="52" text-anchor="middle" fill="#7b2ff7" font-size="7" font-weight="bold">Llama 3 (Meta)</text>
+<rect x="490" y="35" width="160" height="25" rx="3" fill="#00d2ff15"/><text x="570" y="52" text-anchor="middle" fill="#00d2ff" font-size="7" font-weight="bold">Claude 4 (Anthropic)</text>
+<rect x="660" y="35" width="160" height="25" rx="3" fill="#ffc10715"/><text x="740" y="52" text-anchor="middle" fill="#ffc107" font-size="7" font-weight="bold">Gemini (Google)</text>
+<!-- Rows -->
+<!-- Type -->
+<text x="80" y="80" text-anchor="middle" fill="#888" font-size="7">Type</text>
+<text x="230" y="80" text-anchor="middle" fill="#bbb" font-size="7">Decoder-only (MoE?)</text>
+<text x="400" y="80" text-anchor="middle" fill="#bbb" font-size="7">Decoder-only (dense)</text>
+<text x="570" y="80" text-anchor="middle" fill="#bbb" font-size="7">Decoder-only (dense)</text>
+<text x="740" y="80" text-anchor="middle" fill="#bbb" font-size="7">Decoder-only (MoE)</text>
+<!-- Params -->
+<text x="80" y="102" text-anchor="middle" fill="#888" font-size="7">Parameters</text>
+<text x="230" y="102" text-anchor="middle" fill="#bbb" font-size="7">~1.8T total (rumored MoE)</text>
+<text x="400" y="102" text-anchor="middle" fill="#bbb" font-size="7">8B / 70B / 405B</text>
+<text x="570" y="102" text-anchor="middle" fill="#bbb" font-size="7">~50-100B (Sonnet est.)</text>
+<text x="740" y="102" text-anchor="middle" fill="#bbb" font-size="7">~1T+ (Ultra, MoE)</text>
+<!-- Attention -->
+<text x="80" y="124" text-anchor="middle" fill="#888" font-size="7">Attention</text>
+<text x="230" y="124" text-anchor="middle" fill="#bbb" font-size="7">MHA (Multi-Head)</text>
+<text x="400" y="124" text-anchor="middle" fill="#00e676" font-size="7">GQA (Grouped-Query) ✨</text>
+<text x="570" y="124" text-anchor="middle" fill="#bbb" font-size="7">MHA (Multi-Head)</text>
+<text x="740" y="124" text-anchor="middle" fill="#bbb" font-size="7">MQA (Multi-Query)</text>
+<!-- Position -->
+<text x="80" y="146" text-anchor="middle" fill="#888" font-size="7">Position Encoding</text>
+<text x="230" y="146" text-anchor="middle" fill="#bbb" font-size="7">Learned absolute</text>
+<text x="400" y="146" text-anchor="middle" fill="#00e676" font-size="7">RoPE (Rotary) ✨</text>
+<text x="570" y="146" text-anchor="middle" fill="#bbb" font-size="7">Absolute embeddings</text>
+<text x="740" y="146" text-anchor="middle" fill="#bbb" font-size="7">RoPE</text>
+<!-- Activation -->
+<text x="80" y="168" text-anchor="middle" fill="#888" font-size="7">Activation</text>
+<text x="230" y="168" text-anchor="middle" fill="#bbb" font-size="7">GELU</text>
+<text x="400" y="168" text-anchor="middle" fill="#00e676" font-size="7">SwiGLU ✨</text>
+<text x="570" y="168" text-anchor="middle" fill="#bbb" font-size="7">SwiGLU</text>
+<text x="740" y="168" text-anchor="middle" fill="#bbb" font-size="7">GeGLU</text>
+<!-- Context -->
+<text x="80" y="190" text-anchor="middle" fill="#888" font-size="7">Context Window</text>
+<text x="230" y="190" text-anchor="middle" fill="#bbb" font-size="7">128K tokens</text>
+<text x="400" y="190" text-anchor="middle" fill="#bbb" font-size="7">128K tokens</text>
+<text x="570" y="190" text-anchor="middle" fill="#bbb" font-size="7">200K tokens</text>
+<text x="740" y="190" text-anchor="middle" fill="#ffc107" font-size="7">1M+ tokens ✨</text>
+<!-- Open source -->
+<text x="80" y="212" text-anchor="middle" fill="#888" font-size="7">Open Source</text>
+<text x="230" y="212" text-anchor="middle" fill="#ff5252" font-size="7">❌ Closed</text>
+<text x="400" y="212" text-anchor="middle" fill="#00e676" font-size="7">✅ Open weights</text>
+<text x="570" y="212" text-anchor="middle" fill="#ff5252" font-size="7">❌ Closed</text>
+<text x="740" y="212" text-anchor="middle" fill="#ffc107" font-size="7">⚠️ Gemma only (small)</text>
+<!-- Alignment -->
+<text x="80" y="234" text-anchor="middle" fill="#888" font-size="7">Alignment</text>
+<text x="230" y="234" text-anchor="middle" fill="#bbb" font-size="7">RLHF (PPO)</text>
+<text x="400" y="234" text-anchor="middle" fill="#bbb" font-size="7">DPO + RLHF</text>
+<text x="570" y="234" text-anchor="middle" fill="#00d2ff" font-size="7">Constitutional AI ✨</text>
+<text x="740" y="234" text-anchor="middle" fill="#bbb" font-size="7">RLHF</text>
+<!-- Special -->
+<text x="80" y="256" text-anchor="middle" fill="#888" font-size="7">Special Sauce</text>
+<text x="230" y="256" text-anchor="middle" fill="#bbb" font-size="7">Reasoning chains (o1)</text>
+<text x="400" y="256" text-anchor="middle" fill="#bbb" font-size="7">Open + scaling data</text>
+<text x="570" y="256" text-anchor="middle" fill="#bbb" font-size="7">Hybrid thinking modes</text>
+<text x="740" y="256" text-anchor="middle" fill="#bbb" font-size="7">Multimodal native</text>
+<!-- Key takeaway -->
+<rect x="50" y="275" width="800" height="35" rx="6" fill="#7b2ff708" stroke="#7b2ff730"/>
+<text x="450" y="293" text-anchor="middle" fill="#7b2ff7" font-size="8" font-weight="bold">Key insight: Llama's choices (GQA + RoPE + SwiGLU) became the INDUSTRY STANDARD that others adopted.</text>
+<text x="450" y="306" text-anchor="middle" fill="#888" font-size="7">YOUR Groq serves Llama 3.3 70B — you're using the most well-understood open architecture available.</text>
+</svg>
+</div>
+</section>
+
+<section id="shifts">
+<h2>4. The 5 Major Architecture Shifts (What Changed Everything)</h2>
+<div class="layer" style="border-color:#ff6b6b" onclick="this.classList.toggle('open')">
+<strong>Shift 1: MHA → GQA → MQA (Attention Efficiency)</strong> <span class="tag" style="background:#ff6b6b20;color:#ff6b6b">2023-2024</span>
+<div class="detail">
+<p><strong>Multi-Head Attention (MHA):</strong> Each head has its own Q, K, V. Full quality but expensive KV cache (scales with # of heads).</p>
+<p><strong>Grouped-Query Attention (GQA):</strong> Multiple query heads share one K/V head. Llama 3 uses 8 KV heads for 64 query heads. 8x less KV cache memory!</p>
+<p><strong>Multi-Query Attention (MQA):</strong> ALL query heads share ONE K/V head. Maximum efficiency but slight quality loss.</p>
+<p style="color:#00e676"><strong>Impact:</strong> GQA is why Llama 3 70B can serve with reasonable memory. Without it, KV cache for 128K context would need 128GB!</p>
+</div>
+</div>
+<div class="layer" style="border-color:#ffc107" onclick="this.classList.toggle('open')">
+<strong>Shift 2: Absolute Position → RoPE (Context Extension)</strong> <span class="tag" style="background:#ffc10720;color:#ffc107">2023</span>
+<div class="detail">
+<p><strong>Old (GPT-2/3):</strong> Learned position embeddings. Model only knows positions it was trained on. Can't generalize to longer sequences.</p>
+<p><strong>New (RoPE):</strong> Rotary Position Embedding. Encodes position as ROTATION in the embedding space. Key property: can be SCALED to longer contexts than training data without retraining.</p>
+<p style="color:#00e676"><strong>Impact:</strong> This is how Llama went from 4K training context → 128K deployment context. RoPE can be stretched with techniques like YaRN/NTK scaling.</p>
+</div>
+</div>
+<div class="layer" style="border-color:#00e676" onclick="this.classList.toggle('open')">
+<strong>Shift 3: GELU → SwiGLU (Better Activation)</strong> <span class="tag" style="background:#00e67620;color:#00e676">2022-2023</span>
+<div class="detail">
+<p><strong>Old:</strong> GELU (Gaussian Error Linear Unit). Standard activation function since GPT-2.</p>
+<p><strong>New:</strong> SwiGLU = Swish activation + Gated Linear Unit. Uses 50% more params per layer BUT each layer is more expressive. Net effect: better quality per total compute.</p>
+<p style="color:#00e676"><strong>Impact:</strong> Every new model (Llama, Mistral, Claude) uses SwiGLU now. It's one of those "strictly better" improvements.</p>
+</div>
+</div>
+<div class="layer" style="border-color:#7b2ff7" onclick="this.classList.toggle('open')">
+<strong>Shift 4: Dense → MoE (Mixture of Experts)</strong> <span class="tag" style="background:#7b2ff720;color:#7b2ff7">2024-2025</span>
+<div class="detail">
+<p><strong>Dense:</strong> Every parameter is used for every token. 70B params = 70B active. Simple but expensive.</p>
+<p><strong>MoE:</strong> Split feed-forward into 8 "expert" networks. A router picks 2 experts per token. 70B total but only 14B active per token = 70B quality at 14B speed.</p>
+<p><strong>Models using MoE:</strong> Mixtral 8x7B, GPT-4 (rumored 8x220B), DeepSeek, Grok.</p>
+<p style="color:#00e676"><strong>Impact:</strong> Enables much larger models at practical serving costs. The "8x" in Mixtral means 8 experts.</p>
+</div>
+</div>
+<div class="layer" style="border-color:#00d2ff" onclick="this.classList.toggle('open')">
+<strong>Shift 5: Predict-Only → Hybrid Reasoning (2025-2026)</strong> <span class="tag" style="background:#00d2ff20;color:#00d2ff">LATEST</span>
+<div class="detail">
+<p><strong>Before:</strong> Model generates answer immediately (System 1 thinking — fast, intuitive).</p>
+<p><strong>Now (Claude 4, o1, DeepSeek-R1):</strong> Model can choose to THINK DEEPLY before answering (System 2 — slow, deliberate). It generates a hidden chain of reasoning, then synthesizes the final answer.</p>
+<p><strong>How it works:</strong> The model outputs "thinking tokens" that the user doesn't see. These tokens let it reason through complex problems step by step before committing to an answer.</p>
+<p style="color:#00e676"><strong>Impact:</strong> Massively better at math, code, logic. But more expensive (thinking tokens cost money). This is why Claude has "extended thinking" mode — it's this feature.</p>
+</div>
+</div>
+</section>
+
+<section id="future">
+<h2>5. Where Architecture is Heading (2026-2027)</h2>
+<div class="card-grid">
+<div class="card" style="border-color:#ff6b6b">
+<h4 style="color:#ff6b6b">State Space Models (Mamba)</h4>
+<p style="font-size:.82rem">Alternative to attention that's O(n) not O(n²). Could enable million-token contexts cheaply. Still experimental but watch this space.</p>
+</div>
+<div class="card" style="border-color:#ffc107">
+<h4 style="color:#ffc107">Deeper Reasoning (o3-style)</h4>
+<p style="font-size:.82rem">Models that "think for minutes" on hard problems. Compute at inference time instead of just training time. More thinking tokens = better answer (at higher cost).</p>
+</div>
+<div class="card" style="border-color:#00e676">
+<h4 style="color:#00e676">Smaller + Smarter (Distillation)</h4>
+<p style="font-size:.82rem">3B models matching 70B quality through better training data and distillation. Phi-3, Gemma 2B. Enables on-device AI.</p>
+</div>
+<div class="card" style="border-color:#7b2ff7">
+<h4 style="color:#7b2ff7">Native Tool Use in Architecture</h4>
+<p style="font-size:.82rem">Instead of prompting models to use tools, build tool-calling INTO the architecture. MCP becoming a first-class model capability, not a prompt hack.</p>
+</div>
+</div>
+<div class="layer" style="border-color:#7b2ff7" onclick="this.classList.toggle('open')">
+<strong>🎯 Interview: "How have LLM architectures evolved and where are they going?"</strong>
+<div class="detail"><p>"The core transformer hasn't changed since 2017 — it's still self-attention + feed-forward layers. What evolved: (1) attention efficiency — GQA reduced KV cache 8x, (2) position encoding — RoPE enabled context extension from 4K to 128K+, (3) Mixture of Experts — 70B quality at 14B cost, (4) hybrid reasoning — models can now 'think slowly' on hard problems using hidden chain-of-thought tokens. The biggest shift in 2025-2026 is architectural convergence — everyone landed on decoder-only + GQA + RoPE + SwiGLU as the standard recipe. The differentiation moved from architecture to training data, alignment techniques, and inference infrastructure."</p></div>
+</div>
+</section>
+
+<div style="text-align:center;padding:3rem 0;border-top:1px solid #222;margin-top:3rem">
+<p style="color:#7b2ff7;font-size:1.1rem">🎉 LLM Architecture Evolution — From 2017 to today's frontier.</p>
+<p style="color:#888;margin-top:.5rem"><a href="transformers_complete.html" style="color:#00d2ff">← Transformers Part 1</a> &nbsp;|&nbsp; <a href="transformers_advanced.html" style="color:#00d2ff">← Part 2</a> &nbsp;|&nbsp; <a href="index.html" style="color:#00d2ff">🏠 Home</a></p>
+</div>
+<script>document.querySelectorAll('.nav a[href^="#"]').forEach(a=>{a.addEventListener('click',e=>{e.preventDefault();document.querySelector(a.getAttribute('href')).scrollIntoView({behavior:'smooth'});document.querySelectorAll('.nav a').forEach(x=>x.classList.remove('active'));a.classList.add('active')})});</script>
