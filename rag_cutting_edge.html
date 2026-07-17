@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RAG Cutting Edge — Self-RAG, CRAG, GraphRAG, Long Context Debate</title>
+<link rel="stylesheet" href="fix_readability.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0a0a14;color:#e0e0e0;overflow-x:hidden}
+.nav{position:fixed;top:0;width:100%;background:#0a0a14ee;backdrop-filter:blur(8px);z-index:100;padding:.7rem 2rem;display:flex;gap:1rem;overflow-x:auto;border-bottom:1px solid #222}
+.nav a{color:#888;text-decoration:none;font-size:.8rem;white-space:nowrap;padding:4px 12px;border-radius:20px;transition:.3s}
+.nav a:hover,.nav a.active{color:#fff;background:#7b2ff730}
+main{max-width:1100px;margin:0 auto;padding:5rem 1.5rem 4rem}
+h1{font-size:2rem;text-align:center;margin-bottom:.3rem;background:linear-gradient(90deg,#ff6b6b,#ffc107,#00e676,#00d2ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sub{text-align:center;color:#666;margin-bottom:3rem;font-size:.9rem}
+section{margin-bottom:4rem;scroll-margin-top:4rem}
+h2{font-size:1.4rem;color:#00d2ff;margin-bottom:1rem;padding-left:.5rem;border-left:3px solid #7b2ff7}
+p{line-height:1.7;color:#bbb;margin-bottom:.8rem;font-size:.92rem}
+.diagram{background:#0d0d1a;border-radius:12px;padding:1.5rem;margin:1.2rem 0;overflow-x:auto}
+.analogy{background:#12121f;border:1px solid #7b2ff730;border-radius:12px;padding:1.5rem;margin:1.2rem 0}
+.analogy h3{color:#ffc107;margin-bottom:.5rem}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1rem;margin:1rem 0}
+.card{background:#12121f;border:1px solid #222;border-radius:10px;padding:1.2rem;transition:.3s}
+.card:hover{border-color:#7b2ff7;transform:translateY(-2px)}
+.card h4{margin-bottom:.4rem;font-size:.95rem}
+.tag{display:inline-block;font-size:.65rem;padding:2px 8px;border-radius:10px;margin-right:4px}
+.layer{margin:.8rem 0;padding:1rem 1.2rem;border-radius:8px;border-left:4px solid;cursor:pointer;transition:.3s;background:#12121f}
+.layer:hover{transform:translateX(4px)}
+.layer .detail{max-height:0;overflow:hidden;transition:max-height .5s;color:#999;font-size:.85rem;line-height:1.6}
+.layer.open .detail{max-height:1500px;margin-top:.5rem}
+.highlight-box{background:linear-gradient(135deg,#7b2ff710,#00e67610);border:1px solid #7b2ff740;border-radius:12px;padding:1.5rem;margin:1.5rem 0}
+.code-block{background:#0a0a12;border:1px solid #222;border-radius:8px;padding:1rem;margin:1rem 0;font-family:'Cascadia Code',monospace;font-size:.82rem;line-height:1.7;color:#bbb;overflow-x:auto}
+.comparison{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1rem 0}
+.comparison>div{padding:1rem;border-radius:8px;border:1px solid #222}
+</style>
+</head>
+<body>
+<nav class="nav">
+<a href="index.html">🏠 Home</a>
+<a href="rag_complete.html">← Part 1</a>
+<a href="rag_advanced.html">← Part 2</a>
+<a href="#selfrag" class="active">Self-RAG</a>
+<a href="#crag">CRAG</a>
+<a href="#raptor">RAPTOR</a>
+<a href="#graphrag">GraphRAG</a>
+<a href="#longcontext">Long Context Debate</a>
+<a href="#contextual">Contextual Retrieval</a>
+<a href="#compression">Compression</a>
+<a href="#agentic">Agentic RAG</a>
+<a href="#runtime">Knowledge Runtime</a>
+<a href="#antipatterns">Anti-Patterns</a>
+</nav>
+<main>
+<h1>📚 RAG Part 3 — Cutting Edge (2025-2026)</h1>
+<p class="sub">Self-RAG • CRAG • RAPTOR • GraphRAG • Long Context Debate • The patterns interviewers WILL ask about</p>
+</main>
+</body>
+</html>
+<section id="selfrag">
+<h2>1. Self-RAG — The Model Becomes Its Own Quality Gate</h2>
+<div class="analogy">
+<h3>🧑‍⚖️ Analogy: A Student Who Checks Their Own Work</h3>
+<p>Normal RAG = student looks up answer in textbook and writes it down (no self-checking).</p>
+<p>Self-RAG = student (1) decides IF they need the textbook, (2) looks up relevant pages, (3) checks if the pages are actually helpful, (4) writes answer, (5) verifies answer matches the pages. Self-correcting at every step.</p>
+</div>
+<div class="diagram">
+<svg width="800" height="200" viewBox="0 0 800 200">
+<text x="400" y="18" text-anchor="middle" fill="#7b2ff7" font-size="11" font-weight="bold">Self-RAG Flow (4 Reflection Tokens)</text>
+<!-- Steps -->
+<rect x="20" y="50" width="140" height="50" rx="6" fill="#ffc10710" stroke="#ffc107"/>
+<text x="90" y="70" text-anchor="middle" fill="#ffc107" font-size="9" font-weight="bold">① Retrieve?</text>
+<text x="90" y="85" text-anchor="middle" fill="#888" font-size="7">Model decides IF it</text>
+<text x="90" y="95" text-anchor="middle" fill="#888" font-size="7">needs external info</text>
+<rect x="185" y="50" width="140" height="50" rx="6" fill="#00d2ff10" stroke="#00d2ff"/>
+<text x="255" y="70" text-anchor="middle" fill="#00d2ff" font-size="9" font-weight="bold">② IsRelevant?</text>
+<text x="255" y="85" text-anchor="middle" fill="#888" font-size="7">Checks if retrieved</text>
+<text x="255" y="95" text-anchor="middle" fill="#888" font-size="7">chunk is useful</text>
+<rect x="350" y="50" width="140" height="50" rx="6" fill="#00e67610" stroke="#00e676"/>
+<text x="420" y="70" text-anchor="middle" fill="#00e676" font-size="9" font-weight="bold">③ Generate</text>
+<text x="420" y="85" text-anchor="middle" fill="#888" font-size="7">Create answer using</text>
+<text x="420" y="95" text-anchor="middle" fill="#888" font-size="7">validated context</text>
+<rect x="515" y="50" width="150" height="50" rx="6" fill="#7b2ff710" stroke="#7b2ff7"/>
+<text x="590" y="70" text-anchor="middle" fill="#7b2ff7" font-size="9" font-weight="bold">④ IsSupported?</text>
+<text x="590" y="85" text-anchor="middle" fill="#888" font-size="7">Verify answer is</text>
+<text x="590" y="95" text-anchor="middle" fill="#888" font-size="7">grounded in context</text>
+<rect x="690" y="50" width="90" height="50" rx="6" fill="#e040fb10" stroke="#e040fb"/>
+<text x="735" y="70" text-anchor="middle" fill="#e040fb" font-size="9" font-weight="bold">⑤ IsUseful?</text>
+<text x="735" y="85" text-anchor="middle" fill="#888" font-size="7">Final quality</text>
+<text x="735" y="95" text-anchor="middle" fill="#888" font-size="7">check</text>
+<!-- Key insight -->
+<rect x="100" y="130" width="600" height="40" rx="6" fill="#0d0d1a" stroke="#444"/>
+<text x="400" y="148" text-anchor="middle" fill="#00e676" font-size="9" font-weight="bold">Key: The model generates SPECIAL TOKENS ([Retrieve], [IsRel], [IsSup], [IsUse]) that trigger each check.</text>
+<text x="400" y="164" text-anchor="middle" fill="#888" font-size="8">These tokens are trained INTO the model. It's not prompting — it's architectural. The model self-reflects.</text>
+</svg>
+</div>
+<p><strong>Why this matters:</strong> Normal RAG always retrieves (even when unnecessary). Self-RAG retrieves ONLY when needed, validates retrieved content, and self-checks its output. 3 quality gates built into one model.</p>
+<p><strong>YOUR connection:</strong> Your quality council is an EXTERNAL self-check. Self-RAG builds the check INTO the model itself. Same concept, different layer.</p>
+</section>
+
+<section id="crag">
+<h2>2. Corrective RAG (CRAG) — Self-Healing Retrieval</h2>
+<div class="analogy">
+<h3>🏥 Analogy: Doctor With a Second Opinion Protocol</h3>
+<p>Normal doctor: checks your file, gives diagnosis. If the file is wrong → wrong diagnosis.</p>
+<p>CRAG doctor: checks file → evaluates "is this file reliable?" → if NO → gets a SECOND OPINION (web search) → combines both → gives diagnosis.</p>
+</div>
+<div class="layer" style="border-color:#ff6b6b" onclick="this.classList.toggle('open')">
+<strong>The 3-State Retrieval Evaluator</strong>
+<div class="detail">
+<p>After retrieving documents, CRAG evaluates them with a lightweight classifier:</p>
+<p><strong>CORRECT:</strong> Retrieved docs are relevant → proceed to generation normally.</p>
+<p><strong>INCORRECT:</strong> Retrieved docs are completely wrong → DISCARD them → trigger web search as fallback → use web results instead.</p>
+<p><strong>AMBIGUOUS:</strong> Some docs relevant, some not → trigger BOTH knowledge refinement (extract useful sentences) AND web search → combine.</p>
+<p><strong>The flow:</strong></p>
+<div class="code-block">query → retrieve from KB → evaluate(retrieved_docs)<br>&nbsp;&nbsp;if CORRECT → generate(query + docs)<br>&nbsp;&nbsp;if INCORRECT → web_search(query) → generate(query + web_results)<br>&nbsp;&nbsp;if AMBIGUOUS → refine(docs) + web_search(query) → generate(query + refined + web)</div>
+<p><strong>Why it's powerful:</strong> Most RAG systems blindly trust whatever the vector DB returns. CRAG says "wait, let me verify these are actually good results." If not → it has a FALLBACK. Production resilience.</p>
+</div>
+</div>
+</section>
+
+<section id="raptor">
+<h2>3. RAPTOR — Hierarchical Summarization RAG</h2>
+<div class="analogy">
+<h3>📚 Analogy: Book → Chapters → Section Summaries → Table of Contents</h3>
+<p>Normal RAG can answer "What did paragraph 3 say?" (specific). But it CAN'T answer "What is the overall theme?" (big picture) because no single chunk contains the full picture.</p>
+<p>RAPTOR builds a TREE: raw chunks → cluster similar → summarize clusters → summarize summaries. Query matches at the RIGHT level of abstraction.</p>
+</div>
+<div class="diagram">
+<svg width="700" height="200" viewBox="0 0 700 200">
+<text x="350" y="18" text-anchor="middle" fill="#7b2ff7" font-size="10" font-weight="bold">RAPTOR: Recursive Abstractive Processing Tree</text>
+<!-- Bottom: raw chunks -->
+<rect x="30" y="150" width="640" height="30" rx="4" fill="#ffc10708" stroke="#ffc107"/>
+<text x="350" y="170" text-anchor="middle" fill="#ffc107" font-size="9">Layer 0: Raw chunks (hundreds of paragraphs) — answers SPECIFIC questions</text>
+<!-- Middle: cluster summaries -->
+<rect x="100" y="95" width="500" height="30" rx="4" fill="#00d2ff08" stroke="#00d2ff"/>
+<text x="350" y="115" text-anchor="middle" fill="#00d2ff" font-size="9">Layer 1: Cluster summaries (groups of related chunks) — answers TOPIC questions</text>
+<!-- Top: high-level summaries -->
+<rect x="200" y="40" width="300" height="30" rx="4" fill="#00e67608" stroke="#00e676"/>
+<text x="350" y="60" text-anchor="middle" fill="#00e676" font-size="9">Layer 2: High-level summaries — answers BIG PICTURE questions</text>
+<!-- Arrows -->
+<line x1="350" y1="150" x2="350" y2="130" stroke="#7b2ff750"/>
+<line x1="350" y1="95" x2="350" y2="75" stroke="#7b2ff750"/>
+</svg>
+</div>
+<p><strong>Query routing:</strong> "What specific API does the Qdrant client use?" → matches Layer 0 (raw chunk). "How does the RAG pipeline architecture work overall?" → matches Layer 2 (summary). The question's ABSTRACTION LEVEL determines which layer gets queried.</p>
+</section>
+
+<section id="graphrag">
+<h2>4. GraphRAG (Microsoft) — Knowledge Graphs + RAG</h2>
+<div class="analogy">
+<h3>🕸️ Analogy: Wikipedia vs Google</h3>
+<p><strong>Normal RAG (Google):</strong> Find the most relevant PAGE for your query. Works great for factual lookups.</p>
+<p><strong>GraphRAG (Wikipedia):</strong> Navigate CONNECTIONS between entities. "How is X related to Y through Z?" Normal RAG can't answer this because the relationship spans multiple disconnected chunks. A graph CONNECTS them.</p>
+</div>
+<div class="layer" style="border-color:#7b2ff7" onclick="this.classList.toggle('open')">
+<strong>How GraphRAG Works (3 Phases)</strong>
+<div class="detail">
+<p><strong>Phase 1 — Extract:</strong> LLM reads all documents → extracts ENTITIES (people, concepts, tools) and RELATIONSHIPS between them → builds a knowledge graph.</p>
+<p><strong>Phase 2 — Community Detection:</strong> Find clusters of strongly connected entities (communities). Summarize each community. Like finding "neighborhoods" in the graph.</p>
+<p><strong>Phase 3 — Query:</strong> "Global" queries (big picture) → use community summaries. "Local" queries (specific) → traverse graph edges from query entity to find related entities + their original text.</p>
+<p><strong>When to use:</strong> Complex domains with many interconnected entities (legal docs, medical records, research papers). NOT for simple FAQ retrieval — that's overkill.</p>
+<p><strong>Tools:</strong> Microsoft's GraphRAG (open source), Neo4j + LangChain integration, LazyGraphRAG (cheaper variant using community summaries only).</p>
+</div>
+</div>
+</section>
+
+<section id="longcontext">
+<h2>5. RAG vs Long Context — The 2026 Debate</h2>
+<div class="highlight-box" style="border-color:#ff6b6b">
+<h3 style="color:#ff6b6b;margin-bottom:.5rem">⚡ THE #1 Interview Question in 2026: "Is RAG still needed with 1M token context windows?"</h3>
+<p>Gemini has 1M+ tokens. Claude has 200K. GPT-4 has 128K. If you can stuff ALL your docs into context... why bother with RAG?</p>
+</div>
+<div class="comparison">
+<div style="border-color:#ffc107;background:#ffc10708">
+<h4 style="color:#ffc107">When Long Context Wins</h4>
+<p style="font-size:.85rem">• Small corpus (<50K tokens total)<br>• Need to reason ACROSS the entire document<br>• Single-document analysis (summarize a report)<br>• Static content that rarely changes<br>• Simplicity matters more than cost</p>
+</div>
+<div style="border-color:#00e676;background:#00e67608">
+<h4 style="color:#00e676">When RAG Still Wins</h4>
+<p style="font-size:.85rem">• Large corpus (millions of docs)<br>• Content changes frequently (news, tickets)<br>• Cost matters (1M tokens = expensive per query)<br>• Precision matters (attention degrades with length)<br>• Audit trail needed (cite which doc gave the answer)<br>• Privacy (only retrieve what's needed, not expose all)</p>
+</div>
+</div>
+<div class="layer" style="border-color:#00e676" onclick="this.classList.toggle('open')">
+<strong>🎯 The 2026 Answer: HYBRID (Retrieve then Long-Context Reason)</strong>
+<div class="detail">
+<p>The default in 2026 is NOT pure RAG or pure long-context. It's:</p>
+<p><strong>Retrieve 50K-200K relevant tokens → then let the model REASON over them with full context.</strong></p>
+<p>Pure RAG: retrieves 3 chunks (1500 tokens) → may miss context. Pure long context: stuffs 1M tokens → attention degrades, expensive.</p>
+<p><strong>Hybrid:</strong> RAG selects the best 50K tokens → model sees enough context to reason deeply, but not so much that it gets lost. Best of both.</p>
+<p><strong>YOUR interview answer:</strong> "I don't see it as RAG vs long context — it's a per-feature decision. For dynamic, large-scale knowledge (my content pipeline's 5 sources), RAG is essential. For reasoning over a single report, I'd stuff it in context. Most production systems combine both: retrieve broadly, then reason deeply over the retrieved set."</p>
+</div>
+</div>
+</section>
+
+<section id="contextual">
+<h2>6. Contextual Retrieval (Anthropic, 2024)</h2>
+<div class="analogy">
+<h3>📋 Analogy: Sticky Note on Each Page</h3>
+<p>Imagine photocopying pages from a book. Without context, page 47 says "it increases by 15%" — but WHAT increases? You lost the chapter title.</p>
+<p>Contextual Retrieval = before storing each chunk, prepend a "sticky note" explaining WHERE it came from: "This chunk is from Chapter 3: Revenue Metrics. The 'it' refers to Q4 revenue growth."</p>
+</div>
+<div class="layer" style="border-color:#00e676" onclick="this.classList.toggle('open')">
+<strong>How It Works (Simple but 20-67% improvement!)</strong>
+<div class="detail">
+<div class="code-block"><span class="cm"># Before embedding, prepend document context to each chunk</span><br><span class="kw">def</span> add_context(chunk, full_document):<br>&nbsp;&nbsp;context_prompt = f<span class="str">"""Here is the full document:<br>&nbsp;&nbsp;{full_document[:2000]}<br>&nbsp;&nbsp;<br>&nbsp;&nbsp;Here is the chunk:<br>&nbsp;&nbsp;{chunk}<br>&nbsp;&nbsp;<br>&nbsp;&nbsp;Write a short (2-3 sentence) context that explains<br>&nbsp;&nbsp;what this chunk is about within the larger document."""</span><br>&nbsp;&nbsp;<br>&nbsp;&nbsp;context = llm(context_prompt)<br>&nbsp;&nbsp;<span class="kw">return</span> f<span class="str">"{context}\n\n{chunk}"</span>  <span class="cm"># prepend context!</span></div>
+<p><strong>Result:</strong> Each chunk becomes SELF-CONTAINED. When embedded, it captures not just the text but its ROLE in the larger document. Retrieval precision improves 20-67% (Anthropic's measurements).</p>
+<p><strong>Tradeoff:</strong> Requires one LLM call per chunk at ingestion time (not at query time). For 1000 chunks = 1000 LLM calls during bootstrap. Once done, queries are normal speed.</p>
+<p><strong>YOUR upgrade:</strong> In bootstrap_rag.py, before calling embed_and_chunk(), run this contextualization step. Cost: ~$1-5 one-time. Benefit: permanent precision improvement.</p>
+</div>
+</div>
+</section>
+
+<section id="compression">
+<h2>7. Context Compression — Remove Noise Before Generation</h2>
+<div class="layer" style="border-color:#ffc107" onclick="this.classList.toggle('open')">
+<strong>The Problem: Retrieved chunks contain irrelevant sentences</strong>
+<div class="detail">
+<p>You retrieve a 500-token chunk. But only 100 tokens are relevant to the query. The other 400 tokens are noise that:</p>
+<p>• Wastes context window budget<br>• Can distract the LLM (lost-in-the-middle amplified by noise)<br>• Costs money (tokens = $)</p>
+<p><strong>Solution — LLM Compressor:</strong></p>
+<div class="code-block"><span class="cm"># After retrieval, COMPRESS each chunk</span><br><span class="kw">def</span> compress(query, chunk):<br>&nbsp;&nbsp;prompt = f<span class="str">"""Extract ONLY the sentences from this text<br>&nbsp;&nbsp;that are relevant to answering: {query}<br>&nbsp;&nbsp;<br>&nbsp;&nbsp;Text: {chunk}<br>&nbsp;&nbsp;<br>&nbsp;&nbsp;Relevant sentences only (or 'NONE' if nothing relevant):"""</span><br>&nbsp;&nbsp;<span class="kw">return</span> llm(prompt)  <span class="cm"># returns just the relevant parts</span><br><br><span class="cm"># Pipeline: retrieve 10 chunks → compress each → pass 3 best to LLM</span><br>chunks = retrieve(query, k=<span class="num">10</span>)<br>compressed = [compress(query, c) <span class="kw">for</span> c <span class="kw">in</span> chunks]<br>compressed = [c <span class="kw">for</span> c <span class="kw">in</span> compressed <span class="kw">if</span> c != <span class="str">"NONE"</span>]<br>answer = generate(query, compressed[:<span class="num">3</span>])</div>
+<p><strong>Tradeoff:</strong> Extra LLM call per chunk (adds latency). Use CHEAP model for compression (8B is fine for extraction). Alternative: use sentence-level reranking instead of full LLM compression.</p>
+</div>
+</div>
+</section>
+
+<section id="agentic">
+<h2>8. Agentic RAG — Intelligent Routing at Query Time</h2>
+<div class="diagram">
+<svg width="750" height="200" viewBox="0 0 750 200">
+<text x="375" y="18" text-anchor="middle" fill="#7b2ff7" font-size="11" font-weight="bold">Agentic RAG: Agent Decides HOW to Answer</text>
+<!-- Query -->
+<rect x="20" y="70" width="120" height="40" rx="6" fill="#ffc10710" stroke="#ffc107"/>
+<text x="80" y="95" text-anchor="middle" fill="#ffc107" font-size="9">User Query</text>
+<!-- Router agent -->
+<rect x="180" y="55" width="130" height="70" rx="8" fill="#7b2ff710" stroke="#7b2ff7" stroke-width="2"/>
+<text x="245" y="78" text-anchor="middle" fill="#7b2ff7" font-size="9" font-weight="bold">🧠 Router Agent</text>
+<text x="245" y="95" text-anchor="middle" fill="#888" font-size="7">Decides: What does</text>
+<text x="245" y="108" text-anchor="middle" fill="#888" font-size="7">this query NEED?</text>
+<!-- Routes -->
+<rect x="360" y="30" width="140" height="30" rx="4" fill="#00e67610" stroke="#00e676"/><text x="430" y="50" text-anchor="middle" fill="#00e676" font-size="8">Vector DB search</text>
+<rect x="360" y="70" width="140" height="30" rx="4" fill="#00d2ff10" stroke="#00d2ff"/><text x="430" y="90" text-anchor="middle" fill="#00d2ff" font-size="8">Web search (live data)</text>
+<rect x="360" y="110" width="140" height="30" rx="4" fill="#ffc10710" stroke="#ffc107"/><text x="430" y="130" text-anchor="middle" fill="#ffc107" font-size="8">SQL query (structured)</text>
+<rect x="360" y="150" width="140" height="30" rx="4" fill="#e040fb10" stroke="#e040fb"/><text x="430" y="170" text-anchor="middle" fill="#e040fb" font-size="8">Answer from knowledge</text>
+<!-- Arrows from router -->
+<line x1="310" y1="75" x2="360" y2="45" stroke="#7b2ff7"/><line x1="310" y1="90" x2="360" y2="85" stroke="#7b2ff7"/><line x1="310" y1="100" x2="360" y2="125" stroke="#7b2ff7"/><line x1="310" y1="110" x2="360" y2="165" stroke="#7b2ff7"/>
+<!-- Labels -->
+<text x="540" y="50" fill="#888" font-size="7">"What is RAG?" → docs</text>
+<text x="540" y="90" fill="#888" font-size="7">"Latest AI news?" → web</text>
+<text x="540" y="130" fill="#888" font-size="7">"How many jobs scored >80?" → SQL</text>
+<text x="540" y="170" fill="#888" font-size="7">"What's 2+2?" → no retrieval</text>
+</svg>
+</div>
+<p><strong>YOUR code already does this!</strong> Your trend_ranker decides whether to query Qdrant or use fallback. Your content_router decides tech vs story mode. That's agentic routing — the agent CHOOSES its information source.</p>
+</section>
+
+<section id="runtime">
+<h2>9. RAG as a "Knowledge Runtime" (2026 Framing)</h2>
+<div class="highlight-box">
+<h3 style="color:#00d2ff;margin-bottom:.5rem">The Big Picture Shift in 2026</h3>
+<p>RAG is evolving from "retrieve-then-generate" into a <strong>comprehensive knowledge orchestration layer</strong> — like Kubernetes for knowledge. It manages:</p>
+<p>• <strong>Retrieval</strong> (find the right information from multiple sources)<br>
+• <strong>Reasoning</strong> (decide what's relevant, what's conflicting, what's stale)<br>
+• <strong>Verification</strong> (fact-check, ground, cite)<br>
+• <strong>Governance</strong> (access control, audit trail, version tracking)<br>
+• <strong>Freshness</strong> (detect stale data, trigger re-ingestion)</p>
+<p style="color:#ffc107">When interviewers ask "what is RAG?" in 2026, they don't want "retrieve and generate." They want to hear you describe this FULL orchestration system.</p>
+</div>
+</section>
+
+<section id="antipatterns">
+<h2>10. Production RAG Anti-Patterns (What NOT to Do)</h2>
+<div class="card-grid">
+<div class="card" style="border-color:#ff5252">
+<h4 style="color:#ff5252">❌ Over-Retrieving (top-20 chunks)</h4>
+<p style="font-size:.85rem">Stuffing too many chunks causes lost-in-the-middle + token waste. Fix: Retrieve 20 → rerank → keep top 3. Quality over quantity.</p>
+</div>
+<div class="card" style="border-color:#ff5252">
+<h4 style="color:#ff5252">❌ Mixing Embedding Models</h4>
+<p style="font-size:.85rem">Some chunks embedded with MiniLM, others with BGE. Vectors are INCOMPATIBLE. Fix: ONE model per collection. Re-embed everything if you switch.</p>
+</div>
+<div class="card" style="border-color:#ff5252">
+<h4 style="color:#ff5252">❌ No Freshness Management</h4>
+<p style="font-size:.85rem">Index from 6 months ago. World has changed. Fix: Track ingested_at, alert when average age exceeds threshold, schedule re-ingestion.</p>
+</div>
+<div class="card" style="border-color:#ff5252">
+<h4 style="color:#ff5252">❌ No Evaluation (Flying Blind)</h4>
+<p style="font-size:.85rem">Ship RAG without measuring quality. It degrades silently. Fix: Golden test set + weekly RAGAS metrics. Alert on regression.</p>
+</div>
+<div class="card" style="border-color:#ff5252">
+<h4 style="color:#ff5252">❌ Word-Based Chunking (YOUR past)</h4>
+<p style="font-size:.85rem">Fixed 500-word splits cut mid-concept. Fix: Semantic chunking or at minimum sentence-boundary-aware splitting.</p>
+</div>
+<div class="card" style="border-color:#ff5252">
+<h4 style="color:#ff5252">❌ No Citation/Attribution</h4>
+<p style="font-size:.85rem">User can't verify WHERE the answer came from. Fix: Include source metadata in prompt, require LLM to cite chunk IDs. Builds trust + enables debugging.</p>
+</div>
+</div>
+<div class="layer" style="border-color:#7b2ff7" onclick="this.classList.toggle('open')">
+<strong>🎯 Master Interview Answer: "Walk me through how you'd build a production RAG system from scratch"</strong>
+<div class="detail">
+<p>"I'd design it as a knowledge runtime with 5 layers:</p>
+<p><strong>1. Ingestion:</strong> Semantic chunking with contextual headers (Anthropic's technique) — each chunk is self-contained. Dual-indexed: dense vectors in Qdrant + BM25 sparse index for hybrid search.</p>
+<p><strong>2. Retrieval:</strong> Agentic routing decides SOURCE (vector DB, web, SQL). HyDE for query expansion. Hybrid search (BM25 + vector + reciprocal rank fusion). Retrieve 15-20 candidates.</p>
+<p><strong>3. Refinement:</strong> Cross-encoder reranking (top 20 → top 5). Context compression (remove irrelevant sentences). Corrective check: if retrieval confidence low → fallback to web search.</p>
+<p><strong>4. Generation:</strong> Context-grounded prompt with citation requirement. Temperature 0.2 for factual accuracy. Structured output (JSON with sources).</p>
+<p><strong>5. Evaluation:</strong> RAGAS metrics weekly (faithfulness >0.9, precision >0.8). Golden test set regression. LangFuse tracing for per-query debugging. Freshness alerts when content exceeds 30-day age."</p>
+<p style="color:#00e676"><strong>This single answer demonstrates mastery of ALL 10 topics on this page.</strong> Memorize this flow — it's the ₹40L+ answer.</p>
+</div>
+</div>
+</section>
+
+<div style="text-align:center;padding:3rem 0;border-top:1px solid #222;margin-top:3rem">
+<p style="color:#7b2ff7;font-size:1.1rem">📚 RAG Complete (Part 1 + 2 + 3) — From basics to cutting-edge production systems.</p>
+<p style="color:#888;margin-top:.5rem"><a href="rag_complete.html" style="color:#00d2ff">← Part 1 (Basics)</a> &nbsp;|&nbsp; <a href="rag_advanced.html" style="color:#00d2ff">← Part 2 (Types & Failures)</a> &nbsp;|&nbsp; <a href="index.html" style="color:#00d2ff">🏠 Home</a></p>
+<p style="color:#555;margin-top:1rem;font-size:.8rem">You can now talk about RAG at ANY depth — from "what is it" to "Self-RAG vs CRAG vs GraphRAG tradeoffs in production."</p>
+</div>
+<script>document.querySelectorAll('.nav a[href^="#"]').forEach(a=>{a.addEventListener('click',e=>{e.preventDefault();document.querySelector(a.getAttribute('href')).scrollIntoView({behavior:'smooth'});document.querySelectorAll('.nav a').forEach(x=>x.classList.remove('active'));a.classList.add('active')})});</script>
