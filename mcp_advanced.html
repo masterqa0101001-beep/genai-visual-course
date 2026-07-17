@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MCP Advanced — Protocol, Code, Testing, Production</title>
+<link rel="stylesheet" href="fix_readability.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0a0a14;color:#e0e0e0;overflow-x:hidden}
+.nav{position:fixed;top:0;width:100%;background:#0a0a14ee;backdrop-filter:blur(8px);z-index:100;padding:.7rem 2rem;display:flex;gap:1rem;overflow-x:auto;border-bottom:1px solid #222}
+.nav a{color:#888;text-decoration:none;font-size:.8rem;white-space:nowrap;padding:4px 12px;border-radius:20px;transition:.3s}
+.nav a:hover,.nav a.active{color:#fff;background:#7b2ff730}
+main{max-width:1100px;margin:0 auto;padding:5rem 1.5rem 4rem}
+h1{font-size:2rem;text-align:center;margin-bottom:.3rem;background:linear-gradient(90deg,#ffc107,#00e676,#7b2ff7);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sub{text-align:center;color:#666;margin-bottom:3rem;font-size:.9rem}
+section{margin-bottom:4rem;scroll-margin-top:4rem}
+h2{font-size:1.4rem;color:#00d2ff;margin-bottom:1rem;padding-left:.5rem;border-left:3px solid #7b2ff7}
+p{line-height:1.7;color:#bbb;margin-bottom:.8rem;font-size:.92rem}
+.diagram{background:#0d0d1a;border-radius:12px;padding:1.5rem;margin:1.2rem 0;overflow-x:auto}
+.layer{margin:.8rem 0;padding:1rem 1.2rem;border-radius:8px;border-left:4px solid;cursor:pointer;transition:.3s;background:#12121f}
+.layer:hover{transform:translateX(4px)}
+.layer .detail{max-height:0;overflow:hidden;transition:max-height .5s;color:#999;font-size:.85rem;line-height:1.6}
+.layer.open .detail{max-height:1500px;margin-top:.5rem}
+.code-block{background:#0a0a12;border:1px solid #222;border-radius:8px;padding:1rem;margin:1rem 0;font-family:'Cascadia Code',monospace;font-size:.82rem;line-height:1.7;color:#bbb;overflow-x:auto}
+.code-block .cm{color:#546e7a}
+.code-block .kw{color:#c792ea}
+.code-block .fn{color:#82aaff}
+.code-block .str{color:#c3e88d}
+.code-block .num{color:#f78c6c}
+.highlight-box{background:linear-gradient(135deg,#7b2ff710,#00e67610);border:1px solid #7b2ff740;border-radius:12px;padding:1.5rem;margin:1.5rem 0}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem;margin:1rem 0}
+.card{background:#12121f;border:1px solid #222;border-radius:10px;padding:1.2rem;transition:.3s}
+.card:hover{border-color:#7b2ff7;transform:translateY(-2px)}
+.card h4{margin-bottom:.4rem;font-size:.95rem}
+</style>
+</head>
+<body>
+<nav class="nav">
+<a href="index.html">🏠 Home</a>
+<a href="mcp_deep_dive.html">← MCP Part 1</a>
+<a href="#protocol" class="active">Protocol Wire</a>
+<a href="#full-server">Full Server Code</a>
+<a href="#client">Client Side</a>
+<a href="#config">Configuration</a>
+<a href="#errors">Error Handling</a>
+<a href="#testing">Testing</a>
+<a href="#trace">Live Trace</a>
+</nav>
+<main>
+<h1>🔌 MCP Advanced — Part 2</h1>
+<p class="sub">Protocol on the wire • Complete server code • Client building • Config • Errors • Testing • Traces</p>
+</main>
+</body>
+</html>
+<section id="protocol">
+<h2>1. JSON-RPC 2.0 — What Actually Flows on the Wire</h2>
+<p>MCP uses JSON-RPC 2.0. Every interaction is a request → response pair. Here's what the ACTUAL messages look like:</p>
+
+<div class="layer" style="border-color:#ffc107" onclick="this.classList.toggle('open')">
+<strong>Step 1: Initialize (Client → Server handshake)</strong>
+<div class="detail">
+<div class="code-block"><span class="cm">// Client sends initialization request</span><br>{<br>&nbsp;&nbsp;<span class="str">"jsonrpc"</span>: <span class="str">"2.0"</span>,<br>&nbsp;&nbsp;<span class="str">"id"</span>: <span class="num">1</span>,<br>&nbsp;&nbsp;<span class="str">"method"</span>: <span class="str">"initialize"</span>,<br>&nbsp;&nbsp;<span class="str">"params"</span>: {<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"protocolVersion"</span>: <span class="str">"2025-03-26"</span>,<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"capabilities"</span>: { <span class="str">"tools"</span>: {}, <span class="str">"resources"</span>: {} },<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"clientInfo"</span>: { <span class="str">"name"</span>: <span class="str">"kiro"</span>, <span class="str">"version"</span>: <span class="str">"1.0.0"</span> }<br>&nbsp;&nbsp;}<br>}<br><br><span class="cm">// Server responds with its capabilities</span><br>{<br>&nbsp;&nbsp;<span class="str">"jsonrpc"</span>: <span class="str">"2.0"</span>,<br>&nbsp;&nbsp;<span class="str">"id"</span>: <span class="num">1</span>,<br>&nbsp;&nbsp;<span class="str">"result"</span>: {<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"protocolVersion"</span>: <span class="str">"2025-03-26"</span>,<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"capabilities"</span>: { <span class="str">"tools"</span>: { <span class="str">"listChanged"</span>: <span class="kw">true</span> } },<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"serverInfo"</span>: { <span class="str">"name"</span>: <span class="str">"job-search-mcp"</span>, <span class="str">"version"</span>: <span class="str">"1.0.0"</span> }<br>&nbsp;&nbsp;}<br>}</div>
+<p><strong>What's happening:</strong> Client says "hi, I support tools and resources." Server says "hi, I have tools available." Handshake done.</p>
+</div>
+</div>
+
+<div class="layer" style="border-color:#00d2ff" onclick="this.classList.toggle('open')">
+<strong>Step 2: List Tools (Client asks "what can you do?")</strong>
+<div class="detail">
+<div class="code-block"><span class="cm">// Client requests available tools</span><br>{<br>&nbsp;&nbsp;<span class="str">"jsonrpc"</span>: <span class="str">"2.0"</span>,<br>&nbsp;&nbsp;<span class="str">"id"</span>: <span class="num">2</span>,<br>&nbsp;&nbsp;<span class="str">"method"</span>: <span class="str">"tools/list"</span><br>}<br><br><span class="cm">// Server responds with tool schemas (LLM reads these!)</span><br>{<br>&nbsp;&nbsp;<span class="str">"jsonrpc"</span>: <span class="str">"2.0"</span>,<br>&nbsp;&nbsp;<span class="str">"id"</span>: <span class="num">2</span>,<br>&nbsp;&nbsp;<span class="str">"result"</span>: {<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"tools"</span>: [<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"name"</span>: <span class="str">"search_jobs"</span>,<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"description"</span>: <span class="str">"Search for job listings matching a query"</span>,<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"inputSchema"</span>: {<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"type"</span>: <span class="str">"object"</span>,<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"properties"</span>: {<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"query"</span>: { <span class="str">"type"</span>: <span class="str">"string"</span>, <span class="str">"description"</span>: <span class="str">"Search query"</span> },<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"location"</span>: { <span class="str">"type"</span>: <span class="str">"string"</span>, <span class="str">"default"</span>: <span class="str">"India"</span> }<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;},<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"required"</span>: [<span class="str">"query"</span>]<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;},<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"name"</span>: <span class="str">"score_job"</span>,<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"description"</span>: <span class="str">"Score a job against candidate profile"</span>,<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"inputSchema"</span>: { <span class="cm">...</span> }<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;&nbsp;&nbsp;]<br>&nbsp;&nbsp;}<br>}</div>
+<p><strong>Key insight:</strong> The LLM READS these descriptions and schemas. Tool poisoning attacks hide malicious text in the "description" field! This is where security matters.</p>
+</div>
+</div>
+
+<div class="layer" style="border-color:#00e676" onclick="this.classList.toggle('open')">
+<strong>Step 3: Call Tool (LLM decides → Client executes)</strong>
+<div class="detail">
+<div class="code-block"><span class="cm">// Client calls a tool (LLM decided to search)</span><br>{<br>&nbsp;&nbsp;<span class="str">"jsonrpc"</span>: <span class="str">"2.0"</span>,<br>&nbsp;&nbsp;<span class="str">"id"</span>: <span class="num">3</span>,<br>&nbsp;&nbsp;<span class="str">"method"</span>: <span class="str">"tools/call"</span>,<br>&nbsp;&nbsp;<span class="str">"params"</span>: {<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"name"</span>: <span class="str">"search_jobs"</span>,<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"arguments"</span>: { <span class="str">"query"</span>: <span class="str">"AI Engineer"</span>, <span class="str">"location"</span>: <span class="str">"Chennai"</span> }<br>&nbsp;&nbsp;}<br>}<br><br><span class="cm">// Server executes and returns result</span><br>{<br>&nbsp;&nbsp;<span class="str">"jsonrpc"</span>: <span class="str">"2.0"</span>,<br>&nbsp;&nbsp;<span class="str">"id"</span>: <span class="num">3</span>,<br>&nbsp;&nbsp;<span class="str">"result"</span>: {<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"content"</span>: [<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{ <span class="str">"type"</span>: <span class="str">"text"</span>, <span class="str">"text"</span>: <span class="str">"Found 3 jobs: 1) AI Engineer at TCS Chennai ₹25-35L..."</span> }<br>&nbsp;&nbsp;&nbsp;&nbsp;]<br>&nbsp;&nbsp;}<br>}</div>
+<p><strong>Flow:</strong> LLM says "I want to call search_jobs" → Host passes to Client → Client sends JSON-RPC to Server → Server executes function → Returns result → Client passes back to LLM → LLM uses result in response.</p>
+</div>
+</div>
+</section>
+
+<section id="full-server">
+<h2>2. Complete MCP Server (Full Working Code)</h2>
+<p>Here's a COMPLETE server — read top to bottom, understand every line:</p>
+<div class="code-block"><span class="cm">"""<br>Complete MCP Server: Job Search<br>Run: python job_search_server.py<br>Test: mcp dev job_search_server.py<br>"""</span><br><span class="kw">import</span> json<br><span class="kw">from</span> datetime <span class="kw">import</span> datetime<br><span class="kw">from</span> mcp.server.fastmcp <span class="kw">import</span> FastMCP<br><br><span class="cm"># Create server instance (name shows up in tool discovery)</span><br>mcp = FastMCP(<span class="str">"job-search"</span>, version=<span class="str">"1.0.0"</span>)<br><br><span class="cm"># ──── TOOLS (functions the LLM can call) ────────────────────</span><br><br>@mcp.tool()<br><span class="kw">def</span> <span class="fn">search_jobs</span>(query: str, location: str = <span class="str">"India"</span>, num_results: int = <span class="num">5</span>) -> str:<br>&nbsp;&nbsp;<span class="str">"""Search for job listings matching the query.<br>&nbsp;&nbsp;Args:<br>&nbsp;&nbsp;&nbsp;&nbsp;query: Job title or skills to search for<br>&nbsp;&nbsp;&nbsp;&nbsp;location: City or country<br>&nbsp;&nbsp;&nbsp;&nbsp;num_results: How many results to return (max 10)<br>&nbsp;&nbsp;"""</span><br>&nbsp;&nbsp;<span class="cm"># Your actual search logic here</span><br>&nbsp;&nbsp;results = fetch_from_api(query, location, num_results)<br>&nbsp;&nbsp;<span class="kw">return</span> json.dumps(results, indent=<span class="num">2</span>)<br><br>@mcp.tool()<br><span class="kw">def</span> <span class="fn">score_job</span>(title: str, description: str = <span class="str">""</span>) -> str:<br>&nbsp;&nbsp;<span class="str">"""Score how well a job matches the candidate profile.<br>&nbsp;&nbsp;Returns: JSON with score (0-100), tier, matched skills.<br>&nbsp;&nbsp;"""</span><br>&nbsp;&nbsp;score = compute_score(title, description)<br>&nbsp;&nbsp;<span class="kw">return</span> json.dumps({<span class="str">"score"</span>: score, <span class="str">"tier"</span>: get_tier(score)})<br><br>@mcp.tool()<br><span class="kw">def</span> <span class="fn">get_report</span>() -> str:<br>&nbsp;&nbsp;<span class="str">"""Get the latest job search report (pre-built markdown)."""</span><br>&nbsp;&nbsp;<span class="kw">with</span> open(<span class="str">"data/job_report.md"</span>) <span class="kw">as</span> f:<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> f.read()<br><br><span class="cm"># ──── RESOURCES (data the LLM can read) ─────────────────────</span><br><br>@mcp.resource(<span class="str">"profile://current"</span>)<br><span class="kw">def</span> <span class="fn">get_profile</span>() -> str:<br>&nbsp;&nbsp;<span class="str">"""The current candidate profile for matching."""</span><br>&nbsp;&nbsp;<span class="kw">with</span> open(<span class="str">"profile.json"</span>) <span class="kw">as</span> f:<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> f.read()<br><br>@mcp.resource(<span class="str">"results://latest"</span>)<br><span class="kw">def</span> <span class="fn">get_latest_results</span>() -> str:<br>&nbsp;&nbsp;<span class="str">"""Most recent scored job results."""</span><br>&nbsp;&nbsp;<span class="kw">with</span> open(<span class="str">"data/scored_jobs.json"</span>) <span class="kw">as</span> f:<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> f.read()<br><br><span class="cm"># ──── PROMPTS (reusable interaction templates) ──────────────</span><br><br>@mcp.prompt()<br><span class="kw">def</span> <span class="fn">daily_search</span>() -> str:<br>&nbsp;&nbsp;<span class="str">"""Run the full daily job search pipeline."""</span><br>&nbsp;&nbsp;<span class="kw">return</span> (<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"Search for Applied AI Engineer jobs in Chennai and Bangalore. "</span><br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"Score the top 5. Summarize the best matches with salary estimates."</span><br>&nbsp;&nbsp;)<br><br><span class="cm"># ──── RUN ────────────────────────────────────────────────────</span><br><span class="kw">if</span> __name__ == <span class="str">"__main__"</span>:<br>&nbsp;&nbsp;mcp.run()  <span class="cm"># Default: stdio transport</span></div>
+<p><strong>Key patterns to notice:</strong></p>
+<p>1. <strong>@mcp.tool()</strong> — Each decorated function becomes a callable tool. The docstring IS what the LLM reads. Type hints define the JSON schema.</p>
+<p>2. <strong>@mcp.resource()</strong> — Static data exposed via URI (like a read-only API endpoint). LLM can request this data.</p>
+<p>3. <strong>@mcp.prompt()</strong> — Pre-built prompt templates. Like bookmarks for common interactions.</p>
+<p>4. <strong>Return type is always str</strong> — Tools return text/JSON. The server serializes it into the JSON-RPC response.</p>
+</section>
+<section id="client">
+<h2>3. Building an MCP Client (The Other Side)</h2>
+<p>You know how to build SERVERS. Here's how CLIENTS work — the code that CONNECTS to your server:</p>
+<div class="code-block"><span class="cm"># MCP Client — connects to any MCP server and calls tools</span><br><span class="kw">from</span> mcp <span class="kw">import</span> ClientSession, StdioServerParameters<br><span class="kw">from</span> mcp.client.stdio <span class="kw">import</span> stdio_client<br><br><span class="kw">async def</span> <span class="fn">run_client</span>():<br>&nbsp;&nbsp;<span class="cm"># Define which server to connect to</span><br>&nbsp;&nbsp;server_params = StdioServerParameters(<br>&nbsp;&nbsp;&nbsp;&nbsp;command=<span class="str">"python"</span>,<br>&nbsp;&nbsp;&nbsp;&nbsp;args=[<span class="str">"job_search_server.py"</span>]<br>&nbsp;&nbsp;)<br><br>&nbsp;&nbsp;<span class="cm"># Connect (starts server as subprocess)</span><br>&nbsp;&nbsp;<span class="kw">async with</span> stdio_client(server_params) <span class="kw">as</span> (read, write):<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">async with</span> ClientSession(read, write) <span class="kw">as</span> session:<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="cm"># 1. Initialize handshake</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">await</span> session.initialize()<br><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="cm"># 2. Discover available tools</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tools = <span class="kw">await</span> session.list_tools()<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">for</span> tool <span class="kw">in</span> tools.tools:<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print(f<span class="str">"Tool: {tool.name} — {tool.description}"</span>)<br><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="cm"># 3. Call a tool</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;result = <span class="kw">await</span> session.call_tool(<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"search_jobs"</span>,<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;arguments={<span class="str">"query"</span>: <span class="str">"AI Engineer"</span>, <span class="str">"location"</span>: <span class="str">"Chennai"</span>}<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print(f<span class="str">"Result: {result.content[0].text}"</span>)<br><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="cm"># 4. Read a resource</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;profile = <span class="kw">await</span> session.read_resource(<span class="str">"profile://current"</span>)<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print(f<span class="str">"Profile: {profile.contents[0].text}"</span>)<br><br><span class="kw">import</span> asyncio<br>asyncio.run(run_client())</div>
+<p><strong>What this shows:</strong> The client starts the server as a subprocess, handshakes, discovers tools dynamically (no hardcoding!), then calls tools by name with typed arguments. The client is what Claude Desktop, Kiro, or Cursor run internally.</p>
+</section>
+
+<section id="config">
+<h2>4. Configuration — Registering Servers with Hosts</h2>
+<div class="layer" style="border-color:#7b2ff7" onclick="this.classList.toggle('open')">
+<strong>Kiro (your IDE) — .kiro/settings/mcp.json</strong>
+<div class="detail">
+<div class="code-block">{<br>&nbsp;&nbsp;<span class="str">"mcpServers"</span>: {<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"job-search"</span>: {<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"command"</span>: <span class="str">"python"</span>,<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"args"</span>: [<span class="str">"C:/path/to/job_search_server.py"</span>],<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"env"</span>: { <span class="str">"GROQ_API_KEY"</span>: <span class="str">"your_key"</span> },<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"disabled"</span>: <span class="kw">false</span>,<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"autoApprove"</span>: [<span class="str">"search_jobs"</span>, <span class="str">"get_report"</span>]<br>&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;}<br>}</div>
+<p><strong>"command"</strong> = what executable to run. <strong>"args"</strong> = path to your server. <strong>"autoApprove"</strong> = tools that don't need human confirmation.</p>
+</div>
+</div>
+<div class="layer" style="border-color:#00d2ff" onclick="this.classList.toggle('open')">
+<strong>Claude Desktop — claude_desktop_config.json</strong>
+<div class="detail">
+<div class="code-block"><span class="cm">// Location: %APPDATA%/Claude/claude_desktop_config.json (Windows)</span><br>{<br>&nbsp;&nbsp;<span class="str">"mcpServers"</span>: {<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"job-search"</span>: {<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"command"</span>: <span class="str">"python"</span>,<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"args"</span>: [<span class="str">"C:/Users/Hemanth/.../job_search_mcp.py"</span>]<br>&nbsp;&nbsp;&nbsp;&nbsp;},<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"filesystem"</span>: {<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"command"</span>: <span class="str">"npx"</span>,<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"args"</span>: [<span class="str">"-y"</span>, <span class="str">"@modelcontextprotocol/server-filesystem"</span>, <span class="str">"C:/allowed/path"</span>]<br>&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;}<br>}</div>
+<p>Same format. Multiple servers can be listed. Claude starts each as a subprocess when it launches.</p>
+</div>
+</div>
+<div class="layer" style="border-color:#ffc107" onclick="this.classList.toggle('open')">
+<strong>Remote server (HTTP/SSE — for cloud deployment)</strong>
+<div class="detail">
+<div class="code-block"><span class="cm">// For remote MCP servers deployed to Cloud Run etc.</span><br>{<br>&nbsp;&nbsp;<span class="str">"mcpServers"</span>: {<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"job-search-remote"</span>: {<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"url"</span>: <span class="str">"https://job-search-mcp-xxx.run.app/sse"</span>,<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"headers"</span>: { <span class="str">"Authorization"</span>: <span class="str">"Bearer your_api_key"</span> }<br>&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;}<br>}</div>
+<p><strong>This is the future pattern:</strong> Deploy your MCP server to the cloud → connect from anywhere. YOUR server with HTTP transport + Cloud Run = accessible from any MCP client globally.</p>
+</div>
+</div>
+</section>
+
+<section id="errors">
+<h2>5. Error Handling Patterns</h2>
+<div class="layer" style="border-color:#ff6b6b" onclick="this.classList.toggle('open')">
+<strong>What happens when a tool FAILS</strong>
+<div class="detail">
+<div class="code-block"><span class="cm">// Server returns error (tool threw an exception)</span><br>{<br>&nbsp;&nbsp;<span class="str">"jsonrpc"</span>: <span class="str">"2.0"</span>,<br>&nbsp;&nbsp;<span class="str">"id"</span>: <span class="num">3</span>,<br>&nbsp;&nbsp;<span class="str">"result"</span>: {<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"content"</span>: [{ <span class="str">"type"</span>: <span class="str">"text"</span>, <span class="str">"text"</span>: <span class="str">"Error: API rate limited. Try again in 30s."</span> }],<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"isError"</span>: <span class="kw">true</span><br>&nbsp;&nbsp;}<br>}</div>
+<p><strong>The "isError: true" flag</strong> tells the LLM "this tool failed." The LLM can then decide: retry? use a different tool? tell the user? This is how agents handle failures gracefully.</p>
+</div>
+</div>
+<div class="layer" style="border-color:#00e676" onclick="this.classList.toggle('open')">
+<strong>Production error handling in YOUR server</strong>
+<div class="detail">
+<div class="code-block">@mcp.tool()<br><span class="kw">def</span> <span class="fn">search_jobs</span>(query: str, location: str = <span class="str">"India"</span>) -> str:<br>&nbsp;&nbsp;<span class="str">"""Search for jobs."""</span><br>&nbsp;&nbsp;<span class="kw">try</span>:<br>&nbsp;&nbsp;&nbsp;&nbsp;results = fetch_from_api(query, location)<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if not</span> results:<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> <span class="str">"No jobs found for this query. Try broader terms."</span><br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> json.dumps(results)<br>&nbsp;&nbsp;<span class="kw">except</span> RateLimitError:<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> <span class="str">"Rate limited. Please wait 30 seconds and retry."</span><br>&nbsp;&nbsp;<span class="kw">except</span> TimeoutError:<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> <span class="str">"Search timed out. The job API may be down."</span><br>&nbsp;&nbsp;<span class="kw">except</span> Exception <span class="kw">as</span> e:<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> f<span class="str">"Unexpected error: {str(e)}"</span></div>
+<p><strong>Pattern:</strong> Never let exceptions crash the server. Always return a human-readable error string. The LLM reads this and adapts.</p>
+</div>
+</div>
+</section>
+
+<section id="testing">
+<h2>6. Testing MCP Servers</h2>
+<div class="card-grid">
+<div class="card" style="border-color:#7b2ff7">
+<h4 style="color:#7b2ff7">MCP Inspector (Built-in)</h4>
+<p style="font-size:.85rem"><strong>Command:</strong> <code>mcp dev your_server.py</code><br>Opens a web UI where you can: see all tools listed, call them manually with test args, inspect request/response JSON, verify schemas. USE THIS FIRST.</p>
+</div>
+<div class="card" style="border-color:#00e676">
+<h4 style="color:#00e676">Unit Testing (pytest)</h4>
+<div class="code-block" style="font-size:.75rem"><span class="kw">def</span> <span class="fn">test_search_returns_results</span>():<br>&nbsp;&nbsp;result = search_jobs(<span class="str">"AI Engineer"</span>, <span class="str">"Chennai"</span>)<br>&nbsp;&nbsp;data = json.loads(result)<br>&nbsp;&nbsp;<span class="kw">assert</span> len(data) > <span class="num">0</span><br>&nbsp;&nbsp;<span class="kw">assert</span> <span class="str">"title"</span> <span class="kw">in</span> data[<span class="num">0</span>]</div>
+<p style="font-size:.78rem">Test the functions DIRECTLY (not through MCP protocol). Fast, no server needed.</p>
+</div>
+<div class="card" style="border-color:#ffc107">
+<h4 style="color:#ffc107">Integration Testing (full protocol)</h4>
+<div class="code-block" style="font-size:.75rem"><span class="kw">async def</span> <span class="fn">test_mcp_flow</span>():<br>&nbsp;&nbsp;client = <span class="kw">await</span> connect_to_server(<span class="str">"server.py"</span>)<br>&nbsp;&nbsp;tools = <span class="kw">await</span> client.list_tools()<br>&nbsp;&nbsp;<span class="kw">assert</span> <span class="str">"search_jobs"</span> <span class="kw">in</span> [t.name <span class="kw">for</span> t <span class="kw">in</span> tools]<br>&nbsp;&nbsp;result = <span class="kw">await</span> client.call_tool(<span class="str">"search_jobs"</span>, {<span class="str">"query"</span>: <span class="str">"AI"</span>})<br>&nbsp;&nbsp;<span class="kw">assert not</span> result.isError</div>
+<p style="font-size:.78rem">Tests the FULL protocol flow. Catches: broken schemas, serialization bugs, transport issues.</p>
+</div>
+</div>
+</section>
+
+<section id="trace">
+<h2>7. Live Protocol Trace (What a Full Interaction Looks Like)</h2>
+<p>Here's the COMPLETE message sequence when you ask Claude "Find AI jobs in Chennai" and it uses your MCP server:</p>
+<div class="diagram">
+<svg width="800" height="360" viewBox="0 0 800 360">
+<text x="400" y="18" text-anchor="middle" fill="#7b2ff7" font-size="11" font-weight="bold">Complete MCP Interaction Trace</text>
+<!-- Lifelines -->
+<line x1="120" y1="40" x2="120" y2="340" stroke="#7b2ff750" stroke-dasharray="3"/>
+<line x1="400" y1="40" x2="400" y2="340" stroke="#ffc10750" stroke-dasharray="3"/>
+<line x1="650" y1="40" x2="650" y2="340" stroke="#00e67650" stroke-dasharray="3"/>
+<!-- Labels -->
+<text x="120" y="35" text-anchor="middle" fill="#7b2ff7" font-size="10" font-weight="bold">LLM (Claude/GPT)</text>
+<text x="400" y="35" text-anchor="middle" fill="#ffc107" font-size="10" font-weight="bold">MCP Client (Host)</text>
+<text x="650" y="35" text-anchor="middle" fill="#00e676" font-size="10" font-weight="bold">MCP Server (yours)</text>
+<!-- Step 1 -->
+<line x1="400" y1="60" x2="650" y2="60" stroke="#ffc107" stroke-width="1.5"/>
+<text x="525" y="55" text-anchor="middle" fill="#888" font-size="8">1. initialize</text>
+<line x1="650" y1="75" x2="400" y2="75" stroke="#00e676" stroke-width="1.5" stroke-dasharray="4"/>
+<text x="525" y="90" text-anchor="middle" fill="#888" font-size="8">capabilities response</text>
+<!-- Step 2 -->
+<line x1="400" y1="110" x2="650" y2="110" stroke="#ffc107" stroke-width="1.5"/>
+<text x="525" y="105" text-anchor="middle" fill="#888" font-size="8">2. tools/list</text>
+<line x1="650" y1="125" x2="400" y2="125" stroke="#00e676" stroke-width="1.5" stroke-dasharray="4"/>
+<text x="525" y="140" text-anchor="middle" fill="#888" font-size="8">[search_jobs, score_job, get_report]</text>
+<!-- Step 3: LLM decides -->
+<rect x="40" y="155" width="160" height="30" rx="4" fill="#7b2ff710" stroke="#7b2ff7"/>
+<text x="120" y="174" text-anchor="middle" fill="#7b2ff7" font-size="8">LLM decides: call search_jobs</text>
+<line x1="120" y1="185" x2="400" y2="185" stroke="#7b2ff7" stroke-width="1.5"/>
+<text x="260" y="180" text-anchor="middle" fill="#888" font-size="8">3. "call search_jobs(AI Engineer, Chennai)"</text>
+<!-- Step 4: Client → Server -->
+<line x1="400" y1="200" x2="650" y2="200" stroke="#ffc107" stroke-width="1.5"/>
+<text x="525" y="195" text-anchor="middle" fill="#888" font-size="8">4. tools/call {name: search_jobs, args: {...}}</text>
+<!-- Step 5: Server executes -->
+<rect x="570" y="210" width="160" height="25" rx="4" fill="#00e67610" stroke="#00e676"/>
+<text x="650" y="227" text-anchor="middle" fill="#00e676" font-size="8">YOUR function runs!</text>
+<!-- Step 6: Response back -->
+<line x1="650" y1="245" x2="400" y2="245" stroke="#00e676" stroke-width="1.5" stroke-dasharray="4"/>
+<text x="525" y="260" text-anchor="middle" fill="#888" font-size="8">5. result: "Found: AI Engineer at TCS..."</text>
+<line x1="400" y1="270" x2="120" y2="270" stroke="#ffc107" stroke-width="1.5" stroke-dasharray="4"/>
+<text x="260" y="265" text-anchor="middle" fill="#888" font-size="8">6. observation passed to LLM</text>
+<!-- Step 7: LLM generates -->
+<rect x="40" y="280" width="160" height="30" rx="4" fill="#7b2ff710" stroke="#7b2ff7"/>
+<text x="120" y="299" text-anchor="middle" fill="#7b2ff7" font-size="8">LLM generates final answer</text>
+<!-- Time -->
+<text x="400" y="330" text-anchor="middle" fill="#555" font-size="8">Total time: ~2-4 seconds (mostly waiting for YOUR function + LLM generation)</text>
+<text x="400" y="345" text-anchor="middle" fill="#555" font-size="7">This ENTIRE flow happens every time an MCP tool is called. Every. Single. Time.</text>
+</svg>
+</div>
+</section>
+
+<div style="text-align:center;padding:3rem 0;border-top:1px solid #222;margin-top:3rem">
+<p style="color:#7b2ff7;font-size:1.1rem">🔌 MCP Complete (Part 1 + 2) — From concept to production-ready protocol expertise.</p>
+<p style="color:#888;margin-top:.5rem"><a href="mcp_deep_dive.html" style="color:#00d2ff">← Part 1 (Concepts)</a> &nbsp;|&nbsp; <a href="index.html" style="color:#00d2ff">🏠 Home</a></p>
+<p style="color:#555;margin-top:1rem;font-size:.8rem">You now understand MCP at the PROTOCOL level. Most engineers only know it at the "install a server" level.</p>
+</div>
+<script>document.querySelectorAll('.nav a[href^="#"]').forEach(a=>{a.addEventListener('click',e=>{e.preventDefault();document.querySelector(a.getAttribute('href')).scrollIntoView({behavior:'smooth'});document.querySelectorAll('.nav a').forEach(x=>x.classList.remove('active'));a.classList.add('active')})});</script>
