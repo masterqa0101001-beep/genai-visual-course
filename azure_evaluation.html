@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><script src="auth_guard.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Week 3: Azure OpenAI + LLM Evaluation + Advanced RAG</title>
+<link rel="stylesheet" href="fix_readability.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0a0a14;color:#e0e0e0;padding:2rem;line-height:1.7}
+.container{max-width:900px;margin:0 auto}
+h1{font-size:2rem;margin-bottom:.5rem;background:linear-gradient(90deg,#0078d4,#00e676);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+h2{font-size:1.4rem;color:#0078d4;margin:2rem 0 1rem;border-bottom:1px solid #222;padding-bottom:.5rem}
+h3{font-size:1.1rem;color:#00e676;margin:1.5rem 0 .5rem}
+p{margin-bottom:1rem;color:#ccc}
+code{background:#1a1a2e;padding:2px 6px;border-radius:4px;font-size:.9em;color:#00e676}
+pre{background:#0d0d1a;border:1px solid #222;border-radius:8px;padding:1.2rem;overflow-x:auto;margin:1rem 0;font-size:.85rem;line-height:1.6}
+pre code{background:none;padding:0;color:#e0e0e0}
+.diagram{background:#12121f;border:1px solid #333;border-radius:12px;padding:1.5rem;margin:1.5rem 0;font-family:monospace;font-size:.82rem;white-space:pre;overflow-x:auto;color:#0078d4}
+.key-point{background:#1a1a2e;border-left:4px solid #00e676;padding:1rem 1.2rem;margin:1rem 0;border-radius:0 8px 8px 0}
+.key-point strong{color:#00e676}
+.interview-q{background:#1a1a2e;border-left:4px solid #ffc107;padding:1rem 1.2rem;margin:1rem 0;border-radius:0 8px 8px 0}
+.interview-q strong{color:#ffc107}
+.nav{margin-bottom:2rem}
+.nav a{color:#7b2ff7;text-decoration:none;font-size:.9rem}
+table{width:100%;border-collapse:collapse;margin:1rem 0}
+th,td{border:1px solid #333;padding:.6rem;text-align:left;font-size:.85rem}
+th{background:#1a1a2e;color:#0078d4}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="nav"><a href="index.html">← Back to Course Home</a></div>
+<h1>☁️ Week 3: Azure OpenAI + Evaluation + Advanced RAG</h1>
+<p>Enterprise cloud platform + automated quality measurement + patterns beyond basic RAG.</p>
+
+<h2>Part 1: Azure OpenAI Service</h2>
+
+<h3>Why Azure OpenAI (not raw OpenAI)?</h3>
+<p>Enterprise clients (Infosys's customers) use Azure because: data residency guarantees, VNet private access, Microsoft compliance certifications, Active Directory integration, and content filtering built-in. Same GPT-4 models, enterprise wrapper.</p>
+
+<pre><code># pip install openai
+
+from openai import AzureOpenAI
+
+client = AzureOpenAI(
+    api_key="your-azure-key",
+    api_version="2024-06-01",
+    azure_endpoint="https://your-resource.openai.azure.com/"
+)
+
+# Exactly the same as OpenAI — just different client initialization
+response = client.chat.completions.create(
+    model="gpt-4o-mini",  # This is your DEPLOYMENT name, not model name
+    messages=[
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": "Explain RAG in one sentence."}
+    ],
+    temperature=0.3
+)
+print(response.choices[0].message.content)
+</code></pre>
+
+<div class="key-point">
+<strong>Key difference:</strong> In Azure, you deploy a model and give it a deployment NAME. You call the deployment name, not the model name. So <code>model="my-gpt4-deployment"</code> not <code>model="gpt-4o"</code>.
+</div>
+
+<h3>Azure AI Search (Vector + Keyword Hybrid)</h3>
+<pre><code>from azure.search.documents import SearchClient
+from azure.search.documents.models import VectorizableTextQuery
+
+search_client = SearchClient(
+    endpoint="https://your-search.search.windows.net",
+    index_name="documents",
+    credential=credential
+)
+
+# Hybrid search: vector + keyword simultaneously
+results = search_client.search(
+    search_text="refund policy",          # Keyword (BM25)
+    vector_queries=[
+        VectorizableTextQuery(
+            text="refund policy",          # Semantic (embedding)
+            k_nearest_neighbors=5,
+            fields="content_vector"
+        )
+    ],
+    select=["content", "title", "source"],
+    top=5
+)
+</code></pre>
+
+<h2>Part 2: Semantic Kernel (Microsoft's LLM Framework)</h2>
+<p>Infosys's JD explicitly mentions Semantic Kernel. It's Microsoft's alternative to LangChain — tighter Azure integration, enterprise-focused.</p>
+
+<div class="diagram">
+LangChain vs Semantic Kernel:
+
+LangChain                    Semantic Kernel
+├── Chains                   ├── Plugins (functions)
+├── Agents                   ├── Planner (auto-orchestration)
+├── Tools                    ├── Connectors (Azure, OpenAI)
+├── Memory                   ├── Memory (semantic + chat)
+└── Python-first             └── C# + Python + Java
+
+Key difference: SK uses "plugins" (collections of functions)
+that the AI can discover and call. LangChain uses "tools."
+Same concept, different terminology.
+</div>
+
+<pre><code># pip install semantic-kernel
+
+import semantic_kernel as sk
+from semantic_kernel.connectors.ai.open_ai import AzureChatCompletion
+
+# Initialize kernel
+kernel = sk.Kernel()
+
+# Add Azure OpenAI service
+kernel.add_service(AzureChatCompletion(
+    deployment_name="gpt-4o-mini",
+    endpoint="https://your-resource.openai.azure.com/",
+    api_key="your-key"
+))
+
+# Define a plugin (function the AI can use)
+from semantic_kernel.functions import kernel_function
+
+class DocumentPlugin:
+    @kernel_function(description="Search documents for relevant information")
+    def search_docs(self, query: str) -> str:
+        # Your RAG retrieval logic here
+        return f"Found: relevant content for '{query}'"
+
+# Register plugin
+kernel.add_plugin(DocumentPlugin(), "documents")
+
+# Chat with function calling
+result = await kernel.invoke_prompt(
+    "Find information about refund policy",
+    settings={"function_choice_behavior": "auto"}
+)
+</code></pre>
+
+<div class="interview-q">
+<strong>Q: "What's Semantic Kernel and how does it compare to LangChain?"</strong><br>
+A: "Semantic Kernel is Microsoft's LLM orchestration framework — it's to Azure what LangChain is to the broader ecosystem. The key difference: SK uses 'plugins' (grouped functions) that the AI auto-discovers and calls, while LangChain uses 'tools' and explicit chains. SK has tighter Azure integration (native Azure AI Search, Cosmos DB connectors) and supports C#/Java in addition to Python. For Azure-heavy enterprises, SK is the natural choice. For flexibility across providers, LangChain/LangGraph."
+</div>
+
+<h2>Part 3: LLM Evaluation with RAGAS</h2>
+
+<h3>Why Evaluation Matters</h3>
+<p>"How do you know your RAG is working?" Without metrics, you're guessing. RAGAS gives you standardized scores.</p>
+
+<div class="diagram">
+RAG Evaluation Metrics:
+
+┌─────────────────────────────────────────────────────┐
+│                  RAGAS Metrics                        │
+├──────────────┬──────────────┬───────────────────────┤
+│ Faithfulness │ Relevancy    │ Context Precision      │
+│              │              │                        │
+│ "Is answer   │ "Does answer │ "Are the retrieved    │
+│  grounded in │  address the │  chunks actually      │
+│  the context?"│  question?"  │  relevant?"           │
+│              │              │                        │
+│ Detects:     │ Detects:     │ Detects:              │
+│ Hallucination│ Off-topic    │ Bad retrieval         │
+└──────────────┴──────────────┴───────────────────────┘
+</div>
+
+<pre><code># pip install ragas datasets
+
+from ragas import evaluate
+from ragas.metrics import (
+    faithfulness,
+    answer_relevancy,
+    context_precision,
+    context_recall
+)
+from datasets import Dataset
+
+# Prepare evaluation dataset
+eval_data = {
+    "question": [
+        "What is our refund policy?",
+        "How do I reset my password?",
+    ],
+    "answer": [
+        "You can get a full refund within 30 days of purchase.",
+        "Click 'Forgot Password' on the login page.",
+    ],
+    "contexts": [
+        ["Our refund policy allows returns within 30 days. Full refund for unused items."],
+        ["To reset password: go to login page, click 'Forgot Password', enter email."],
+    ],
+    "ground_truth": [
+        "Full refund available within 30 days for unused items.",
+        "Go to login page and click Forgot Password.",
+    ]
+}
+
+dataset = Dataset.from_dict(eval_data)
+
+# Run evaluation
+results = evaluate(
+    dataset=dataset,
+    metrics=[faithfulness, answer_relevancy, context_precision, context_recall]
+)
+
+print(results)
+# {'faithfulness': 0.92, 'answer_relevancy': 0.88, 'context_precision': 0.85, 'context_recall': 0.90}
+</code></pre>
+
+<h3>DeepEval (Alternative — More Granular)</h3>
+<pre><code># pip install deepeval
+
+from deepeval import evaluate
+from deepeval.metrics import FaithfulnessMetric, AnswerRelevancyMetric, GEval
+from deepeval.test_case import LLMTestCase
+
+# Custom metric with G-Eval (LLM-as-judge)
+correctness = GEval(
+    name="Correctness",
+    criteria="Determine if the output is factually correct based on the context",
+    evaluation_params=["input", "actual_output", "retrieval_context"],
+    threshold=0.7
+)
+
+test_case = LLMTestCase(
+    input="What's our refund policy?",
+    actual_output="Full refund within 30 days.",
+    retrieval_context=["Refund policy: 30-day full refund for unused items."]
+)
+
+faithfulness_metric = FaithfulnessMetric(threshold=0.7)
+faithfulness_metric.measure(test_case)
+print(f"Faithfulness: {faithfulness_metric.score}")  # 0.95
+print(f"Reason: {faithfulness_metric.reason}")
+</code></pre>
+
+<h2>Part 4: NeMo Guardrails (Responsible AI)</h2>
+
+<pre><code># pip install nemoguardrails
+
+from nemoguardrails import RailsConfig, LLMRails
+
+# Define rails in YAML
+config = RailsConfig.from_content(
+    yaml_content="""
+models:
+  - type: main
+    engine: openai
+    model: gpt-4o-mini
+
+rails:
+  input:
+    flows:
+      - self check input  # Block prompt injection
+  output:
+    flows:
+      - self check output  # Block toxic/harmful responses
+      - check pii         # Block PII in output
+""",
+    colang_content="""
+define user ask about harmful topics
+  "How to hack a system"
+  "Generate malicious code"
+
+define bot refuse harmful
+  "I can't help with that. I'm designed to assist with legitimate queries only."
+
+define flow
+  user ask about harmful topics
+  bot refuse harmful
+"""
+)
+
+rails = LLMRails(config)
+
+# Now wrap your API with rails
+response = rails.generate(messages=[
+    {"role": "user", "content": "How do I hack into a database?"}
+])
+# Returns: "I can't help with that..."
+</code></pre>
+
+<h2>Part 5: Advanced RAG Patterns</h2>
+
+<h3>Hybrid Search (BM25 + Semantic)</h3>
+<pre><code># Using rank_bm25 for keyword scoring
+from rank_bm25 import BM25Okapi
+import numpy as np
+
+# BM25 keyword scoring
+tokenized_docs = [doc.split() for doc in documents]
+bm25 = BM25Okapi(tokenized_docs)
+bm25_scores = bm25.get_scores(query.split())
+
+# Semantic scoring (from vector DB)
+semantic_scores = [r.score for r in qdrant_results]
+
+# Combine with Reciprocal Rank Fusion (RRF)
+def reciprocal_rank_fusion(rankings: list[list], k=60):
+    """Combine multiple rankings into one."""
+    scores = {}
+    for ranking in rankings:
+        for rank, doc_id in enumerate(ranking):
+            scores[doc_id] = scores.get(doc_id, 0) + 1 / (rank + k)
+    return sorted(scores.items(), key=lambda x: x[1], reverse=True)
+
+# Get top docs from each method, then fuse
+bm25_ranking = np.argsort(bm25_scores)[::-1][:20]
+semantic_ranking = [r.id for r in qdrant_results[:20]]
+fused = reciprocal_rank_fusion([bm25_ranking.tolist(), semantic_ranking])
+</code></pre>
+
+<h3>Agentic RAG (Decide HOW to retrieve)</h3>
+<div class="diagram">
+Basic RAG:  Query → Retrieve → Generate (one shot)
+
+Agentic RAG: Query → Agent DECIDES:
+                      ├── "I need more context" → retrieve again with different query
+                      ├── "This chunk is unclear" → retrieve parent document  
+                      ├── "I need recent data" → call web search tool
+                      └── "I have enough" → generate answer
+</div>
+
+<pre><code># Agentic RAG with LangGraph
+from langgraph.graph import StateGraph
+
+def should_retrieve_more(state):
+    """Agent decides if it needs more context."""
+    if state["confidence"] < 0.7:
+        return "retrieve_more"
+    return "generate"
+
+graph = StateGraph(RAGState)
+graph.add_node("retrieve", retrieve_node)
+graph.add_node("evaluate_context", evaluate_node)
+graph.add_node("retrieve_more", refine_query_and_retrieve)
+graph.add_node("generate", generate_answer)
+
+graph.add_edge("retrieve", "evaluate_context")
+graph.add_conditional_edges("evaluate_context", should_retrieve_more)
+graph.add_edge("retrieve_more", "evaluate_context")  # Loop!
+graph.add_edge("generate", END)
+</code></pre>
+
+<h3>Graph RAG (Knowledge Graph + Vector Search)</h3>
+<div class="diagram">
+Traditional RAG:  Query → flat chunk retrieval → answer
+
+Graph RAG:  Query → extract entities → traverse knowledge graph
+                                        → find connected concepts
+                                        → retrieve related chunks
+                                        → richer context → better answer
+
+Example: "What's the relationship between Project X and Client Y?"
+- Flat RAG: might miss the connection (different documents)
+- Graph RAG: follows edges Project X → Team A → Client Y
+</div>
+
+<pre><code># Simplified Graph RAG concept
+from neo4j import GraphDatabase
+
+def graph_enhanced_retrieval(query: str):
+    # 1. Extract entities from query
+    entities = extract_entities(query)  # LLM call: "Project X", "Client Y"
+    
+    # 2. Query knowledge graph for connections
+    with driver.session() as session:
+        result = session.run("""
+            MATCH path = (a)-[*1..3]-(b)
+            WHERE a.name IN $entities OR b.name IN $entities
+            RETURN path
+        """, entities=entities)
+    
+    # 3. Get related document chunks
+    related_chunks = get_chunks_for_entities(result)
+    
+    # 4. Combine with vector search results
+    vector_chunks = semantic_search(query)
+    all_context = related_chunks + vector_chunks
+    
+    # 5. Generate with enriched context
+    return generate_answer(query, all_context)
+</code></pre>
+
+<h2>Interview Questions</h2>
+
+<div class="interview-q">
+<strong>Q: "How do you evaluate a RAG system in production?"</strong><br>
+A: "I use RAGAS with 4 metrics: Faithfulness (is the answer grounded in context — detects hallucination), Answer Relevancy (does it address the question), Context Precision (are retrieved chunks relevant), Context Recall (did we find all needed info). I maintain a golden test set of 50-100 query-answer pairs and run evaluation in CI/CD — any PR that drops metrics below threshold gets blocked."
+</div>
+
+<div class="interview-q">
+<strong>Q: "When does semantic search fail and what do you do?"</strong><br>
+A: "Semantic fails on: exact identifiers (error codes, IDs), acronyms the embedding model hasn't seen, numbers/dates, and rare proper nouns. Solution: hybrid search (BM25 for keywords + vector for meaning). Combine with Reciprocal Rank Fusion. This improves retrieval quality by 15-20% on enterprise documents."
+</div>
+
+<div class="interview-q">
+<strong>Q: "What is Responsible AI and how do you implement it?"</strong><br>
+A: "Responsible AI means: no harmful outputs, no bias, no PII leakage, full auditability. I implement with: NeMo Guardrails (input/output filtering), content safety classifiers, PII detection before and after LLM, confidence scoring (low confidence → human review), and comprehensive logging of all LLM interactions for audit."
+</div>
+
+<div class="nav" style="margin-top:3rem;text-align:center">
+<a href="fine_tuning_lora.html">← Week 2: Fine-Tuning</a> | <a href="index.html">Course Home</a> | <a href="pytorch_transformer.html">Next: Week 4 — PyTorch →</a>
+</div>
+</div>
+</body>
+</html>

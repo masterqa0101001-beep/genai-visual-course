@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><script src="auth_guard.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Week 4: PyTorch + Build a Transformer from Scratch</title>
+<link rel="stylesheet" href="fix_readability.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0a0a14;color:#e0e0e0;padding:2rem;line-height:1.7}
+.container{max-width:900px;margin:0 auto}
+h1{font-size:2rem;margin-bottom:.5rem;background:linear-gradient(90deg,#ee5a24,#ffc107);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+h2{font-size:1.4rem;color:#ee5a24;margin:2rem 0 1rem;border-bottom:1px solid #222;padding-bottom:.5rem}
+h3{font-size:1.1rem;color:#ffc107;margin:1.5rem 0 .5rem}
+p{margin-bottom:1rem;color:#ccc}
+code{background:#1a1a2e;padding:2px 6px;border-radius:4px;font-size:.9em;color:#00e676}
+pre{background:#0d0d1a;border:1px solid #222;border-radius:8px;padding:1.2rem;overflow-x:auto;margin:1rem 0;font-size:.85rem;line-height:1.6}
+pre code{background:none;padding:0;color:#e0e0e0}
+.diagram{background:#12121f;border:1px solid #333;border-radius:12px;padding:1.5rem;margin:1.5rem 0;font-family:monospace;font-size:.82rem;white-space:pre;overflow-x:auto;color:#ee5a24}
+.key-point{background:#1a1a2e;border-left:4px solid #00e676;padding:1rem 1.2rem;margin:1rem 0;border-radius:0 8px 8px 0}
+.key-point strong{color:#00e676}
+.interview-q{background:#1a1a2e;border-left:4px solid #ffc107;padding:1rem 1.2rem;margin:1rem 0;border-radius:0 8px 8px 0}
+.interview-q strong{color:#ffc107}
+.nav{margin-bottom:2rem}
+.nav a{color:#7b2ff7;text-decoration:none;font-size:.9rem}
+table{width:100%;border-collapse:collapse;margin:1rem 0}
+th,td{border:1px solid #333;padding:.6rem;text-align:left;font-size:.85rem}
+th{background:#1a1a2e;color:#ee5a24}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="nav"><a href="index.html">← Back to Course Home</a></div>
+<h1>🧠 Week 4: PyTorch + Build a Transformer</h1>
+<p>Understand deep learning at the code level. Build the architecture that powers GPT, Llama, Claude — from scratch.</p>
+
+<h2>Part 1: PyTorch Fundamentals</h2>
+
+<h3>Tensors — The Building Block</h3>
+<pre><code>import torch
+
+# Tensors = multi-dimensional arrays (like numpy but GPU-accelerated)
+x = torch.tensor([1.0, 2.0, 3.0])          # 1D
+matrix = torch.randn(3, 4)                   # 3×4 random matrix
+batch = torch.randn(32, 512, 768)            # batch of 32, sequence length 512, hidden dim 768
+                                              # ^ This is what flows through a transformer!
+
+# Key operations
+y = x * 2                                    # Element-wise multiply
+z = matrix @ matrix.T                        # Matrix multiplication (attention core!)
+normalized = torch.nn.functional.softmax(z, dim=-1)  # Softmax (attention weights!)
+
+# GPU acceleration
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+tensor_gpu = x.to(device)  # Move to GPU
+</code></pre>
+
+<h3>Autograd — Automatic Differentiation</h3>
+<pre><code># PyTorch tracks operations and computes gradients automatically
+x = torch.tensor(3.0, requires_grad=True)
+y = x ** 2 + 2 * x + 1  # y = x² + 2x + 1
+y.backward()              # Compute dy/dx
+print(x.grad)             # tensor(8.0) — because dy/dx = 2x + 2 = 2(3) + 2 = 8
+
+# This is how neural networks LEARN:
+# 1. Forward pass: compute output
+# 2. Loss: how wrong is the output?
+# 3. Backward: compute gradients (which direction to adjust weights)
+# 4. Update: weights -= learning_rate × gradients
+</code></pre>
+
+<h3>nn.Module — Building Blocks of Neural Networks</h3>
+<pre><code>import torch.nn as nn
+
+class SimpleClassifier(nn.Module):
+    def __init__(self, input_dim, hidden_dim, num_classes):
+        super().__init__()
+        self.layer1 = nn.Linear(input_dim, hidden_dim)   # weights: hidden × input
+        self.activation = nn.ReLU()                       # non-linearity
+        self.layer2 = nn.Linear(hidden_dim, num_classes)  # weights: classes × hidden
+    
+    def forward(self, x):
+        x = self.layer1(x)       # Linear transform
+        x = self.activation(x)   # Non-linear activation
+        x = self.layer2(x)       # Project to class scores
+        return x
+
+# Usage
+model = SimpleClassifier(768, 256, 10)   # 768-dim input, 10 classes
+output = model(torch.randn(32, 768))      # Batch of 32 inputs
+print(output.shape)                        # torch.Size([32, 10])
+</code></pre>
+
+<h3>Training Loop — The Universal Pattern</h3>
+<pre><code>model = SimpleClassifier(768, 256, 10)
+optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
+loss_fn = nn.CrossEntropyLoss()
+
+for epoch in range(10):
+    for batch_x, batch_y in dataloader:
+        # 1. Forward pass
+        predictions = model(batch_x)
+        
+        # 2. Compute loss
+        loss = loss_fn(predictions, batch_y)
+        
+        # 3. Backward pass (compute gradients)
+        optimizer.zero_grad()   # Reset gradients from last step
+        loss.backward()         # Compute gradients
+        
+        # 4. Update weights
+        optimizer.step()        # weights -= lr × gradients
+    
+    print(f"Epoch {epoch}, Loss: {loss.item():.4f}")
+</code></pre>
+
+<h2>Part 2: Self-Attention from Scratch</h2>
+
+<div class="diagram">
+Self-Attention Intuition:
+
+Input: "The cat sat on the mat"
+
+For the word "sat":
+  Q (Query):  "What am I looking for?" → looking for subject + location
+  K (Key):    Every other word advertises: "Here's what I contain"
+  V (Value):  Every other word says: "Here's my information to share"
+
+Attention("sat") = softmax(Q_sat · K_all^T / √d) × V_all
+
+Result: "sat" now contains weighted information from "cat" (who sat)
+        and "mat" (where), with less weight on "the" (not important).
+</div>
+
+<pre><code>import torch
+import torch.nn as nn
+import math
+
+class SelfAttention(nn.Module):
+    """Single-head self-attention — the core of transformers."""
+    
+    def __init__(self, embed_dim):
+        super().__init__()
+        self.embed_dim = embed_dim
+        
+        # Linear projections for Q, K, V
+        self.W_q = nn.Linear(embed_dim, embed_dim)
+        self.W_k = nn.Linear(embed_dim, embed_dim)
+        self.W_v = nn.Linear(embed_dim, embed_dim)
+    
+    def forward(self, x, mask=None):
+        # x shape: (batch, seq_len, embed_dim)
+        Q = self.W_q(x)  # What am I looking for?
+        K = self.W_k(x)  # What do I contain?
+        V = self.W_v(x)  # What info should I pass?
+        
+        # Compute attention scores: Q · K^T / √d
+        scores = torch.matmul(Q, K.transpose(-2, -1)) / math.sqrt(self.embed_dim)
+        # scores shape: (batch, seq_len, seq_len) — every token attends to every token
+        
+        # Apply causal mask (for decoder — can't look at future tokens)
+        if mask is not None:
+            scores = scores.masked_fill(mask == 0, float('-inf'))
+        
+        # Softmax → attention weights (sum to 1)
+        attention_weights = torch.softmax(scores, dim=-1)
+        
+        # Weighted sum of values
+        output = torch.matmul(attention_weights, V)
+        return output
+</code></pre>
+
+<h3>Multi-Head Attention</h3>
+<pre><code>class MultiHeadAttention(nn.Module):
+    """Multiple attention heads — each learns different relationships."""
+    
+    def __init__(self, embed_dim, num_heads):
+        super().__init__()
+        assert embed_dim % num_heads == 0
+        
+        self.num_heads = num_heads
+        self.head_dim = embed_dim // num_heads
+        
+        self.W_qkv = nn.Linear(embed_dim, 3 * embed_dim)  # Combined Q,K,V projection
+        self.W_out = nn.Linear(embed_dim, embed_dim)       # Output projection
+    
+    def forward(self, x, mask=None):
+        B, T, C = x.shape  # batch, seq_len, embed_dim
+        
+        # Project to Q, K, V simultaneously
+        qkv = self.W_qkv(x).reshape(B, T, 3, self.num_heads, self.head_dim)
+        qkv = qkv.permute(2, 0, 3, 1, 4)  # (3, B, heads, T, head_dim)
+        Q, K, V = qkv[0], qkv[1], qkv[2]
+        
+        # Scaled dot-product attention per head
+        scores = (Q @ K.transpose(-2, -1)) / math.sqrt(self.head_dim)
+        if mask is not None:
+            scores = scores.masked_fill(mask == 0, float('-inf'))
+        attn = torch.softmax(scores, dim=-1)
+        
+        # Apply attention to values
+        out = (attn @ V).transpose(1, 2).reshape(B, T, C)
+        return self.W_out(out)
+</code></pre>
+
+<h2>Part 3: Complete Mini-GPT</h2>
+
+<pre><code>class TransformerBlock(nn.Module):
+    """One transformer decoder block: attention + FFN + residual + norm."""
+    
+    def __init__(self, embed_dim, num_heads, ff_dim, dropout=0.1):
+        super().__init__()
+        self.attention = MultiHeadAttention(embed_dim, num_heads)
+        self.norm1 = nn.LayerNorm(embed_dim)
+        self.ffn = nn.Sequential(
+            nn.Linear(embed_dim, ff_dim),
+            nn.GELU(),
+            nn.Linear(ff_dim, embed_dim),
+            nn.Dropout(dropout)
+        )
+        self.norm2 = nn.LayerNorm(embed_dim)
+        self.dropout = nn.Dropout(dropout)
+    
+    def forward(self, x, mask=None):
+        # Self-attention with residual connection + layer norm
+        attn_out = self.attention(self.norm1(x), mask)
+        x = x + self.dropout(attn_out)          # Residual connection
+        
+        # Feed-forward with residual connection + layer norm
+        ffn_out = self.ffn(self.norm2(x))
+        x = x + ffn_out                          # Residual connection
+        return x
+
+
+class MiniGPT(nn.Module):
+    """A small GPT-style language model."""
+    
+    def __init__(self, vocab_size, embed_dim=256, num_heads=4, 
+                 num_layers=4, max_seq_len=512, ff_dim=1024):
+        super().__init__()
+        self.token_embedding = nn.Embedding(vocab_size, embed_dim)
+        self.position_embedding = nn.Embedding(max_seq_len, embed_dim)
+        
+        self.blocks = nn.ModuleList([
+            TransformerBlock(embed_dim, num_heads, ff_dim)
+            for _ in range(num_layers)
+        ])
+        
+        self.ln_final = nn.LayerNorm(embed_dim)
+        self.head = nn.Linear(embed_dim, vocab_size, bias=False)  # Project to vocab
+        
+        self.max_seq_len = max_seq_len
+    
+    def forward(self, idx, targets=None):
+        B, T = idx.shape
+        
+        # Embeddings
+        tok_emb = self.token_embedding(idx)           # (B, T, embed_dim)
+        pos_emb = self.position_embedding(torch.arange(T, device=idx.device))  # (T, embed_dim)
+        x = tok_emb + pos_emb
+        
+        # Causal mask (lower triangular — can't see future)
+        mask = torch.tril(torch.ones(T, T, device=idx.device)).unsqueeze(0).unsqueeze(0)
+        
+        # Pass through transformer blocks
+        for block in self.blocks:
+            x = block(x, mask)
+        
+        x = self.ln_final(x)
+        logits = self.head(x)  # (B, T, vocab_size)
+        
+        # Compute loss if targets provided
+        loss = None
+        if targets is not None:
+            loss = nn.functional.cross_entropy(
+                logits.view(-1, logits.size(-1)), 
+                targets.view(-1)
+            )
+        
+        return logits, loss
+    
+    @torch.no_grad()
+    def generate(self, idx, max_new_tokens, temperature=1.0):
+        """Autoregressive generation — one token at a time."""
+        for _ in range(max_new_tokens):
+            # Crop to max_seq_len
+            idx_crop = idx[:, -self.max_seq_len:]
+            # Forward pass
+            logits, _ = self(idx_crop)
+            # Get last token's predictions
+            logits = logits[:, -1, :] / temperature
+            # Sample from distribution
+            probs = torch.softmax(logits, dim=-1)
+            next_token = torch.multinomial(probs, num_samples=1)
+            # Append
+            idx = torch.cat([idx, next_token], dim=1)
+        return idx
+</code></pre>
+
+<div class="key-point">
+<strong>That's it.</strong> The model above — with 4 layers, 4 heads, 256 embed dim — is ~10M parameters. Train it on Shakespeare text for 30 minutes on a Colab T4 and it will generate Shakespeare-like text. The same architecture (scaled to 70B+ params, 80 layers, 8192 embed dim) is what powers Llama and GPT-4.
+</div>
+
+<h2>Part 4: Key Concepts for Interviews</h2>
+
+<h3>KV-Cache (Why Inference is Faster)</h3>
+<div class="diagram">
+Without KV-Cache:
+  Generate token 1: process [prompt]
+  Generate token 2: process [prompt, token1]      ← recomputes prompt!
+  Generate token 3: process [prompt, token1, token2]  ← recomputes everything!
+  Cost: O(n²) per token
+
+With KV-Cache:
+  Generate token 1: process [prompt], CACHE K,V for all tokens
+  Generate token 2: only compute Q for new token, attend to CACHED K,V
+  Generate token 3: only compute Q for new token, attend to CACHED K,V
+  Cost: O(n) per token — MUCH faster!
+</div>
+
+<h3>Positional Encoding — Why Order Matters</h3>
+<p>Attention is permutation-invariant — "cat sat mat" scores same as "mat cat sat". We add position information so the model knows word ORDER. Two approaches:</p>
+<table>
+<tr><th>Method</th><th>How</th><th>Used By</th></tr>
+<tr><td>Learned embeddings</td><td>Train a position embedding table</td><td>GPT-2, Original Transformers</td></tr>
+<tr><td>RoPE (Rotary)</td><td>Rotate Q,K vectors by position angle</td><td>Llama, GPT-NeoX, Mistral</td></tr>
+<tr><td>ALiBi</td><td>Add linear bias to attention scores</td><td>BLOOM, MPT</td></tr>
+</table>
+
+<h2>Interview Questions</h2>
+
+<div class="interview-q">
+<strong>Q: "Explain the attention mechanism. Write the formula."</strong><br>
+A: "Attention(Q,K,V) = softmax(QK^T / √d_k) × V. Each token creates Query (what it looks for), Key (what it contains), Value (what it shares). QK^T computes similarity between all pairs. Divide by √d_k to prevent extreme values that kill gradients in softmax. Softmax normalizes to weights summing to 1. Multiply by V gives a weighted combination of all relevant information."
+</div>
+
+<div class="interview-q">
+<strong>Q: "Why does the transformer use Layer Normalization, not Batch Normalization?"</strong><br>
+A: "Batch Norm normalizes across the batch dimension — works well for fixed-size inputs (images) but fails for variable-length sequences. Layer Norm normalizes across the feature dimension within each sample — works for any sequence length and doesn't depend on batch statistics (important for inference with batch=1)."
+</div>
+
+<div class="interview-q">
+<strong>Q: "What's the computational complexity of self-attention?"</strong><br>
+A: "O(n² × d) where n is sequence length and d is embedding dimension. The n² comes from every token attending to every other token (n×n attention matrix). This is why long-context models are expensive — 128K tokens means 128K² = 16 billion attention computations per layer."
+</div>
+
+<div class="nav" style="margin-top:3rem;text-align:center">
+<a href="azure_evaluation.html">← Week 3: Azure + Evaluation</a> | <a href="index.html">Course Home</a> | <a href="kubernetes_llmops.html">Next: Week 5 — K8s + vLLM →</a>
+</div>
+</div>
+</body>
+</html>

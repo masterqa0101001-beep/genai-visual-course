@@ -21,6 +21,18 @@ h1{font-size:2.2rem;text-align:center;margin-bottom:.3rem;background:linear-grad
 </style>
 </head>
 <body>
+<script>
+// Auth guard — redirect to login if not authenticated
+(function() {
+    const auth = localStorage.getItem('genai_course_auth') || sessionStorage.getItem('genai_course_auth');
+    if (auth !== 'authenticated') {
+        window.location.href = 'login.html';
+    }
+})();
+</script>
+<div style="text-align:right;margin-bottom:1rem">
+<button onclick="localStorage.removeItem('genai_course_auth');sessionStorage.removeItem('genai_course_auth');window.location.href='login.html'" style="background:none;border:1px solid #333;color:#888;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:.75rem">🔒 Logout</button>
+</div>
 <h1>🧬 GenAI Visual Course</h1>
 <p class="sub">Click any topic to start learning visually</p>
 <div class="grid">
@@ -79,15 +91,65 @@ h1{font-size:2.2rem;text-align:center;margin-bottom:.3rem;background:linear-grad
 <p>FastAPI, Docker, Cloud Run, CI/CD, streaming, versioning, scaling, monitoring — complete production stack.</p>
 <span class="status done">✅ READY</span>
 </a>
+<a href="fastapi_docker_deployment.html" class="card" style="border-color:#00d2ff">
+<h2>⚡ Career Week 1: FastAPI + Docker + Cloud</h2>
+<p>Build a production RAG API, containerize it, deploy to Cloud Run. The #1 skill every Gen AI JD demands.</p>
+<span class="status done">✅ READY — GAP FILLER</span>
+</a>
+<a href="fine_tuning_lora.html" class="card" style="border-color:#ff6b6b">
+<h2>🔥 Career Week 2: Fine-Tuning (LoRA/QLoRA)</h2>
+<p>Fine-tune Llama on Colab for free. LoRA, QLoRA, PEFT, HuggingFace Trainer. Your biggest resume gap — FIXED.</p>
+<span class="status done">✅ READY — CRITICAL GAP</span>
+</a>
+<a href="azure_evaluation.html" class="card" style="border-color:#0078d4">
+<h2>☁️ Career Week 3: Azure + Evaluation + Advanced RAG</h2>
+<p>Azure OpenAI, Semantic Kernel, RAGAS evaluation, NeMo Guardrails, Hybrid Search, Graph RAG, Agentic RAG.</p>
+<span class="status done">✅ READY — ENTERPRISE</span>
+</a>
+<a href="pytorch_transformer.html" class="card" style="border-color:#ee5a24">
+<h2>🧠 Career Week 4: PyTorch + Build Transformer</h2>
+<p>Tensors, autograd, nn.Module, self-attention from scratch, multi-head attention, mini-GPT, KV-cache, RoPE.</p>
+<span class="status done">✅ READY — DEEP UNDERSTANDING</span>
+</a>
+<a href="kubernetes_llmops.html" class="card" style="opacity:.5;pointer-events:none">
+<h2>☸️ Career Week 5: Kubernetes + vLLM + MLflow</h2>
+<p>Model serving at scale. K8s deployment, experiment tracking, LangFuse observability.</p>
+<span class="status soon">🔜 COMING NEXT</span>
+</a>
 <a href="langchain_langgraph.html" class="card" style="border-color:#00e676">
 <h2>⛓️ LangChain & LangGraph (YOUR Framework)</h2>
 <p>Ecosystem, LCEL, StateGraph, nodes/edges, advanced patterns, YOUR pipeline mapped, decision framework, code comparisons.</p>
 <span class="status done">✅ READY — YOUR PRIMARY TOOL</span>
 </a>
-<a href="#" class="card" style="opacity:.5;pointer-events:none">
-<h2>📏 Evaluation & Safety</h2>
-<p>Guardrails, prompt injection defense, RAGAS, LLM-as-judge, content moderation, observability patterns.</p>
-<span class="status soon">🔜 COMING NEXT</span>
+<a href="agents_advanced.html" class="card">
+<h2>🤖 Agents — Advanced Patterns</h2>
+<p>Multi-agent orchestration, planning strategies, memory architectures, tool-use optimization, agent evaluation.</p>
+<span class="status done">✅ READY</span>
+</a>
+<a href="embeddings_advanced.html" class="card">
+<h2>🔍 Embeddings — Advanced</h2>
+<p>Fine-tuning embeddings, cross-encoders, matryoshka representations, domain adaptation, benchmarking retrieval.</p>
+<span class="status done">✅ READY</span>
+</a>
+<a href="mcp_advanced.html" class="card">
+<h2>🔌 MCP — Advanced Patterns</h2>
+<p>Multi-server orchestration, auth flows, SSE transport, custom middleware, production security hardening.</p>
+<span class="status done">✅ READY</span>
+</a>
+<a href="transformers_advanced.html" class="card">
+<h2>🧠 Transformers — Advanced</h2>
+<p>Flash Attention, GQA, MoE, speculative decoding, context window extension, efficient inference techniques.</p>
+<span class="status done">✅ READY</span>
+</a>
+<a href="llm_architecture_evolution.html" class="card">
+<h2>📐 LLM Architecture Evolution</h2>
+<p>GPT → Llama → Mistral → Mixtral → Claude → Gemini. How architectures evolved and why. Key innovations per model family.</p>
+<span class="status done">✅ READY</span>
+</a>
+<a href="evaluation_safety.html" class="card" style="border-color:#ff6b6b">
+<h2>📏 Evaluation & Safety (NEW — July 2026)</h2>
+<p>LLM-as-Judge, RAGAS triad, DeepEval, OWASP LLM Top 10, red teaming, NeMo Guardrails, Constitutional AI, EU AI Act compliance. The complete 2026 playbook.</p>
+<span class="status done">✅ READY — CUTTING EDGE</span>
 </a>
 <a href="#" class="card" style="opacity:.5;pointer-events:none">
 <h2>🏗️ AI System Design Interview</h2>

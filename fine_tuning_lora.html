@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><script src="auth_guard.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Week 2: Fine-Tuning with LoRA/QLoRA</title>
+<link rel="stylesheet" href="fix_readability.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0a0a14;color:#e0e0e0;padding:2rem;line-height:1.7}
+.container{max-width:900px;margin:0 auto}
+h1{font-size:2rem;margin-bottom:.5rem;background:linear-gradient(90deg,#ff6b6b,#ffc107);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+h2{font-size:1.4rem;color:#ff6b6b;margin:2rem 0 1rem;border-bottom:1px solid #222;padding-bottom:.5rem}
+h3{font-size:1.1rem;color:#ffc107;margin:1.5rem 0 .5rem}
+p{margin-bottom:1rem;color:#ccc}
+code{background:#1a1a2e;padding:2px 6px;border-radius:4px;font-size:.9em;color:#00e676}
+pre{background:#0d0d1a;border:1px solid #222;border-radius:8px;padding:1.2rem;overflow-x:auto;margin:1rem 0;font-size:.85rem;line-height:1.6}
+pre code{background:none;padding:0;color:#e0e0e0}
+.diagram{background:#12121f;border:1px solid #333;border-radius:12px;padding:1.5rem;margin:1.5rem 0;font-family:monospace;font-size:.85rem;white-space:pre;overflow-x:auto;color:#ff6b6b}
+.key-point{background:#1a1a2e;border-left:4px solid #00e676;padding:1rem 1.2rem;margin:1rem 0;border-radius:0 8px 8px 0}
+.key-point strong{color:#00e676}
+.interview-q{background:#1a1a2e;border-left:4px solid #ffc107;padding:1rem 1.2rem;margin:1rem 0;border-radius:0 8px 8px 0}
+.interview-q strong{color:#ffc107}
+.warning{background:#2a1a1a;border-left:4px solid #ff6b6b;padding:1rem 1.2rem;margin:1rem 0;border-radius:0 8px 8px 0}
+.warning strong{color:#ff6b6b}
+.nav{margin-bottom:2rem}
+.nav a{color:#7b2ff7;text-decoration:none;font-size:.9rem}
+table{width:100%;border-collapse:collapse;margin:1rem 0}
+th,td{border:1px solid #333;padding:.6rem;text-align:left;font-size:.85rem}
+th{background:#1a1a2e;color:#ff6b6b}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="nav"><a href="index.html">← Back to Course Home</a></div>
+<h1>🔥 Week 2: Fine-Tuning with LoRA & QLoRA</h1>
+<p>Your biggest resume gap. After this week, you can say "I've fine-tuned LLMs" with proof on HuggingFace Hub.</p>
+
+<h2>The Big Picture: When to Fine-Tune vs RAG vs Prompt Engineering</h2>
+
+<table>
+<tr><th>Approach</th><th>Changes</th><th>Best For</th><th>Cost</th></tr>
+<tr><td>Prompt Engineering</td><td>Nothing (just instructions)</td><td>Behavior tweaks, format control</td><td>Free</td></tr>
+<tr><td>RAG</td><td>Adds external knowledge</td><td>Current data, citations, domain facts</td><td>Low (embedding + storage)</td></tr>
+<tr><td>Fine-tuning</td><td>Changes model weights</td><td>Style, domain language, new tasks</td><td>Medium (GPU hours)</td></tr>
+<tr><td>Pre-training</td><td>Trains from scratch</td><td>New language, entirely new domain</td><td>Very High ($M+)</td></tr>
+</table>
+
+<div class="key-point">
+<strong>Decision Framework:</strong> Try prompt engineering first → if not enough, try RAG → if model doesn't "speak your domain" or needs a specific behavior pattern, fine-tune → only pre-train if nothing else works.
+</div>
+
+<h2>What is LoRA?</h2>
+
+<h3>The Problem</h3>
+<p>A 7B parameter model has 7 billion weights. Full fine-tuning means updating ALL of them. That needs 28GB+ GPU RAM (FP32) or 14GB+ (FP16). Expensive and slow.</p>
+
+<h3>The LoRA Solution</h3>
+<p>Instead of updating the full weight matrix W (size d×d), add a small trainable "adapter" beside it: ΔW = A × B where A is (d×r) and B is (r×d), and r is tiny (4-64).</p>
+
+<div class="diagram">
+Full Fine-Tuning:               LoRA:
+
+┌─────────────┐              ┌─────────────┐     ┌───┐
+│   W (7B)    │  ← update    │   W (7B)    │     │ A │ (d×r)
+│   ALL       │  ALL params  │   FROZEN    │  +  │   │
+│   params    │              │   ❄️         │     └─┬─┘
+└─────────────┘              └─────────────┘       │
+                                                   ↓
+Training: 7B params             ┌───┐           output
+Memory: 28GB+                   │ B │ (r×d)
+Time: hours                     └───┘
+                                
+                             Training: ~0.1% params (r=16 → ~4M)
+                             Memory: ~8GB (4-bit)
+                             Time: minutes on Colab T4
+</div>
+
+<h3>Intuition</h3>
+<p>Think of it like this: the pre-trained model already knows language. You just need to "steer" it slightly toward your domain. LoRA adds small "steering wheels" to specific layers without touching the main engine.</p>
+
+<h2>What is QLoRA?</h2>
+
+<p>QLoRA = Quantized LoRA. The base model is compressed to 4-bit precision (QLoRA) while the adapter matrices stay in 16-bit (for training stability).</p>
+
+<table>
+<tr><th>Method</th><th>Base Model</th><th>Adapters</th><th>Memory (7B model)</th></tr>
+<tr><td>Full fine-tuning</td><td>FP16</td><td>N/A (update all)</td><td>~28GB</td></tr>
+<tr><td>LoRA</td><td>FP16 (frozen)</td><td>FP16 (small)</td><td>~16GB</td></tr>
+<tr><td>QLoRA</td><td>4-bit (frozen)</td><td>FP16 (small)</td><td>~6-8GB ✅ Colab T4!</td></tr>
+</table>
+
+<div class="key-point">
+<strong>Why QLoRA matters for you:</strong> Google Colab free tier gives you a T4 GPU (16GB VRAM). QLoRA lets you fine-tune a 7B model on it. No paid GPU needed.
+</div>
+
+<h2>Complete Fine-Tuning Code (Colab-Ready)</h2>
+
+<h3>Step 1: Install Dependencies</h3>
+<pre><code>!pip install transformers datasets peft trl bitsandbytes accelerate -q</code></pre>
+
+<h3>Step 2: Load Model in 4-bit</h3>
+<pre><code>import torch
+from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+
+model_name = "meta-llama/Llama-3.1-8B-Instruct"
+
+# 4-bit quantization config
+bnb_config = BitsAndBytesConfig(
+    load_in_4bit=True,
+    bnb_4bit_quant_type="nf4",           # NormalFloat4 — best quality
+    bnb_4bit_compute_dtype=torch.float16, # Compute in FP16
+    bnb_4bit_use_double_quant=True        # Quantize the quantization constants too
+)
+
+# Load model (will be ~4GB instead of 16GB)
+model = AutoModelForCausalLM.from_pretrained(
+    model_name,
+    quantization_config=bnb_config,
+    device_map="auto"
+)
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+tokenizer.pad_token = tokenizer.eos_token
+</code></pre>
+
+<h3>Step 3: Configure LoRA</h3>
+<pre><code>from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
+
+# Prepare model for training (freeze + enable gradient checkpointing)
+model = prepare_model_for_kbit_training(model)
+
+# LoRA configuration
+lora_config = LoraConfig(
+    r=16,                    # Rank — higher = more capacity, more memory
+    lora_alpha=32,           # Scaling factor (usually 2×r)
+    target_modules=[         # Which layers to add adapters to
+        "q_proj", "k_proj", "v_proj", "o_proj",  # Attention
+        "gate_proj", "up_proj", "down_proj"       # FFN
+    ],
+    lora_dropout=0.05,       # Regularization
+    bias="none",
+    task_type="CAUSAL_LM"
+)
+
+# Apply LoRA to model
+model = get_peft_model(model, lora_config)
+model.print_trainable_parameters()
+# Output: trainable params: 3,407,872 || all params: 8,030,000,000 || trainable%: 0.04%
+</code></pre>
+
+<h3>Step 4: Prepare Training Data</h3>
+<pre><code>from datasets import Dataset
+
+# Your training data — instruction/input/output format
+training_data = [
+    {
+        "instruction": "Score this YouTube script for quality",
+        "input": "Top 5 AI tools that will blow your mind in 2026...",
+        "output": '{"critic": 6, "virality": 7, "seo": 5, "total": 62, "feedback": "Hook is weak. Add a specific claim in first sentence."}'
+    },
+    {
+        "instruction": "Score this YouTube script for quality",
+        "input": "In 2024, a single line of code deleted 1.2 billion user records...",
+        "output": '{"critic": 9, "virality": 9, "seo": 7, "total": 88, "feedback": "Excellent hook. Specific, creates curiosity, stakes are clear."}'
+    },
+    # ... 500+ examples
+]
+
+def format_prompt(example):
+    """Format into chat template."""
+    text = f"""### Instruction: {example['instruction']}
+
+### Input: {example['input']}
+
+### Response: {example['output']}"""
+    return {"text": text}
+
+dataset = Dataset.from_list(training_data)
+dataset = dataset.map(format_prompt)
+</code></pre>
+
+<h3>Step 5: Train!</h3>
+<pre><code>from trl import SFTTrainer
+from transformers import TrainingArguments
+
+training_args = TrainingArguments(
+    output_dir="./results",
+    num_train_epochs=3,
+    per_device_train_batch_size=4,
+    gradient_accumulation_steps=4,     # Effective batch = 16
+    learning_rate=2e-4,
+    warmup_steps=10,
+    logging_steps=10,
+    save_strategy="epoch",
+    fp16=True,                         # Mixed precision
+    optim="paged_adamw_8bit",          # Memory-efficient optimizer
+    report_to="none"
+)
+
+trainer = SFTTrainer(
+    model=model,
+    train_dataset=dataset,
+    args=training_args,
+    tokenizer=tokenizer,
+    dataset_text_field="text",
+    max_seq_length=512,
+    packing=True                       # Pack multiple examples per sequence
+)
+
+# GO!
+trainer.train()
+# ~20-40 minutes on Colab T4 for 500 examples × 3 epochs
+</code></pre>
+
+<h3>Step 6: Save & Push to HuggingFace</h3>
+<pre><code># Save locally
+model.save_pretrained("./content-scorer-lora")
+tokenizer.save_pretrained("./content-scorer-lora")
+
+# Push to HuggingFace Hub
+model.push_to_hub("hemanth/content-scorer-lora")
+tokenizer.push_to_hub("hemanth/content-scorer-lora")
+</code></pre>
+
+<h3>Step 7: Inference with Fine-Tuned Model</h3>
+<pre><code>from peft import PeftModel
+
+# Load base model + LoRA adapter
+base_model = AutoModelForCausalLM.from_pretrained(model_name, quantization_config=bnb_config, device_map="auto")
+model = PeftModel.from_pretrained(base_model, "hemanth/content-scorer-lora")
+
+# Generate
+prompt = "### Instruction: Score this YouTube script for quality\n\n### Input: The future of AI is here and it's amazing...\n\n### Response:"
+inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
+outputs = model.generate(**inputs, max_new_tokens=200, temperature=0.3)
+print(tokenizer.decode(outputs[0], skip_special_tokens=True))
+</code></pre>
+
+<h2>Key Concepts for Interviews</h2>
+
+<div class="interview-q">
+<strong>Q: "Explain LoRA. Why does it work?"</strong><br>
+A: "LoRA exploits the fact that weight updates during fine-tuning have low intrinsic rank — meaning the 'change' needed to adapt a model is much smaller than the model itself. We decompose this change into two small matrices (A and B) with rank r. Instead of updating 7B parameters, we train ~4M. This gives 90-95% of full fine-tuning quality at a fraction of the cost."
+</div>
+
+<div class="interview-q">
+<strong>Q: "What is r (rank) in LoRA? How do you choose it?"</strong><br>
+A: "r controls the capacity of the adapter. Higher r = more expressiveness but more memory. Typical values: r=8 for simple tasks (classification), r=16 for medium (instruction following), r=64 for complex (domain adaptation). Start with r=16, increase if training loss plateaus."
+</div>
+
+<div class="interview-q">
+<strong>Q: "What's the difference between LoRA and full fine-tuning quality?"</strong><br>
+A: "For most tasks, LoRA achieves 95%+ of full fine-tuning performance. The gap widens only when: (1) the task is extremely different from pre-training, (2) you have millions of examples, or (3) you need to change very deep behavior. For instruction tuning and domain adaptation, LoRA is practically equivalent."
+</div>
+
+<div class="interview-q">
+<strong>Q: "Which layers should you apply LoRA to?"</strong><br>
+A: "Attention layers (q_proj, v_proj) are the minimum and work well for most tasks. Adding k_proj, o_proj, and FFN layers (gate_proj, up_proj, down_proj) improves quality marginally but costs more memory. I typically target all attention + FFN for best results on Colab T4."
+</div>
+
+<div class="warning">
+<strong>Common Mistake:</strong> Don't fine-tune on too few examples (<100) or your model will overfit and produce gibberish on unseen inputs. 500-5000 high-quality examples is the sweet spot.
+</div>
+
+<h2>Evaluation: Comparing Base vs Fine-Tuned</h2>
+
+<pre><code>from datasets import load_dataset
+
+# Hold out 20% of your data as test set
+test_set = dataset.select(range(100))  # 100 test examples
+
+correct = 0
+for example in test_set:
+    prediction = generate(model, example["input"])
+    expected = example["output"]
+    # Compare (exact match or semantic similarity)
+    if score_match(prediction, expected) > 0.8:
+        correct += 1
+
+accuracy = correct / len(test_set)
+print(f"Fine-tuned model accuracy: {accuracy:.1%}")
+# Compare with base model (no fine-tuning) on same test set
+</code></pre>
+
+<div class="nav" style="margin-top:3rem;text-align:center">
+<a href="fastapi_docker_deployment.html">← Week 1: FastAPI + Docker</a> | <a href="index.html">Course Home</a> | <a href="azure_evaluation.html">Next: Week 3 — Azure + Evaluation →</a>
+</div>
+</div>
+</body>
+</html>

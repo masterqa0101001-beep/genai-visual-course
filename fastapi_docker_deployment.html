@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><script src="auth_guard.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Week 1: FastAPI + Docker + Cloud Deployment</title>
+<link rel="stylesheet" href="fix_readability.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0a0a14;color:#e0e0e0;padding:2rem;line-height:1.7}
+.container{max-width:900px;margin:0 auto}
+h1{font-size:2rem;margin-bottom:.5rem;background:linear-gradient(90deg,#00d2ff,#7b2ff7);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+h2{font-size:1.4rem;color:#00d2ff;margin:2rem 0 1rem;border-bottom:1px solid #222;padding-bottom:.5rem}
+h3{font-size:1.1rem;color:#7b2ff7;margin:1.5rem 0 .5rem}
+p{margin-bottom:1rem;color:#ccc}
+code{background:#1a1a2e;padding:2px 6px;border-radius:4px;font-size:.9em;color:#00e676}
+pre{background:#0d0d1a;border:1px solid #222;border-radius:8px;padding:1.2rem;overflow-x:auto;margin:1rem 0;font-size:.85rem;line-height:1.6}
+pre code{background:none;padding:0;color:#e0e0e0}
+.diagram{background:#12121f;border:1px solid #333;border-radius:12px;padding:1.5rem;margin:1.5rem 0;font-family:monospace;font-size:.85rem;white-space:pre;overflow-x:auto;color:#7b2ff7}
+.key-point{background:#1a1a2e;border-left:4px solid #00e676;padding:1rem 1.2rem;margin:1rem 0;border-radius:0 8px 8px 0}
+.key-point strong{color:#00e676}
+.interview-q{background:#1a1a2e;border-left:4px solid #ffc107;padding:1rem 1.2rem;margin:1rem 0;border-radius:0 8px 8px 0}
+.interview-q strong{color:#ffc107}
+.nav{margin-bottom:2rem}
+.nav a{color:#7b2ff7;text-decoration:none;font-size:.9rem}
+table{width:100%;border-collapse:collapse;margin:1rem 0}
+th,td{border:1px solid #333;padding:.6rem;text-align:left;font-size:.85rem}
+th{background:#1a1a2e;color:#00d2ff}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="nav"><a href="index.html">← Back to Course Home</a></div>
+<h1>🚀 Week 1: FastAPI + Docker + Cloud Deployment</h1>
+<p>Build a production RAG API, containerize it, deploy to the cloud. The skill every single Gen AI job requires.</p>
+
+<h2>Why This Matters</h2>
+<p>Every Gen AI JD says "deploy to production" and "create REST APIs." FastAPI + Docker is the universal production stack for Python AI applications in 2026. Without this, you're stuck in notebook-land.</p>
+
+<div class="diagram">
+Your Current Gap:          What You'll Build:
+
+ContentMind                 RAG API
+(GitHub Actions)     →     (FastAPI + Docker + Cloud Run)
+                           
+✓ Pipeline runs             ✓ Anyone can query via HTTP
+✗ No API endpoint           ✓ Dockerized + portable
+✗ No external access        ✓ Deployed to cloud
+✗ No REST interface         ✓ Scales automatically
+</div>
+
+<h2>Part 1: FastAPI Fundamentals</h2>
+
+<h3>What is FastAPI?</h3>
+<p>Python web framework for building APIs. It's fast (async), auto-generates docs, and uses type hints for validation. It's what Flask wished it was.</p>
+
+<pre><code># Install
+pip install fastapi uvicorn pydantic
+
+# app.py — Your first API
+from fastapi import FastAPI
+from pydantic import BaseModel
+
+app = FastAPI(title="Gen AI RAG API")
+
+class QueryRequest(BaseModel):
+    question: str
+    top_k: int = 3
+
+class QueryResponse(BaseModel):
+    answer: str
+    sources: list[str]
+    confidence: float
+
+@app.post("/query", response_model=QueryResponse)
+async def query_documents(req: QueryRequest):
+    # Your RAG logic goes here
+    return QueryResponse(
+        answer="FastAPI is a modern Python web framework",
+        sources=["doc1.pdf", "doc2.pdf"],
+        confidence=0.92
+    )
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy", "version": "1.0.0"}
+
+# Run: uvicorn app:app --reload --port 8000
+# Docs auto-generated at: http://localhost:8000/docs
+</code></pre>
+
+<div class="key-point">
+<strong>Key Insight:</strong> FastAPI auto-generates interactive API docs (Swagger UI) at /docs. Interviewers love seeing this — it shows "production-ready" thinking.
+</div>
+
+<h3>Adding RAG to the API</h3>
+
+<pre><code>from sentence_transformers import SentenceTransformer
+from qdrant_client import QdrantClient
+from groq import Groq
+
+# Initialize (do this ONCE at startup, not per request)
+embed_model = SentenceTransformer("all-MiniLM-L6-v2")
+qdrant = QdrantClient(url="http://localhost:6333")
+llm = Groq()
+
+@app.post("/query", response_model=QueryResponse)
+async def query_documents(req: QueryRequest):
+    # 1. Embed the question
+    query_vector = embed_model.encode(req.question).tolist()
+    
+    # 2. Search Qdrant
+    results = qdrant.search(
+        collection_name="documents",
+        query_vector=query_vector,
+        limit=req.top_k
+    )
+    
+    # 3. Build context from retrieved chunks
+    context = "\n".join([r.payload["text"] for r in results])
+    sources = [r.payload["source"] for r in results]
+    
+    # 4. Generate answer with LLM
+    response = llm.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[
+            {"role": "system", "content": "Answer based on context only. If unsure, say so."},
+            {"role": "user", "content": f"Context:\n{context}\n\nQuestion: {req.question}"}
+        ],
+        temperature=0.3
+    )
+    
+    return QueryResponse(
+        answer=response.choices[0].message.content,
+        sources=sources,
+        confidence=results[0].score if results else 0.0
+    )
+</code></pre>
+
+<h3>Adding Streaming Responses (SSE)</h3>
+
+<pre><code>from fastapi.responses import StreamingResponse
+
+@app.post("/query/stream")
+async def query_stream(req: QueryRequest):
+    async def generate():
+        # Same retrieval as above...
+        stream = llm.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[...],
+            stream=True  # Enable streaming
+        )
+        for chunk in stream:
+            if chunk.choices[0].delta.content:
+                yield f"data: {chunk.choices[0].delta.content}\n\n"
+        yield "data: [DONE]\n\n"
+    
+    return StreamingResponse(generate(), media_type="text/event-stream")
+</code></pre>
+
+<h2>Part 2: Docker — Containerize Everything</h2>
+
+<h3>Why Docker?</h3>
+<p>"Works on my machine" is not production. Docker packages your app + dependencies into a portable container that runs identically everywhere.</p>
+
+<div class="diagram">
+Without Docker:              With Docker:
+                            
+"pip install broke"         "docker run" → works
+"Python version wrong"      Same environment everywhere
+"Missing system library"    Deploy to any cloud
+"Works on my machine"       Reproducible builds
+</div>
+
+<h3>Dockerfile</h3>
+<pre><code># Dockerfile
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install dependencies first (cached layer)
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY . .
+
+# Expose port
+EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s \
+  CMD curl -f http://localhost:8000/health || exit 1
+
+# Run with uvicorn
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+</code></pre>
+
+<h3>Docker Compose (app + Qdrant together)</h3>
+<pre><code># docker-compose.yml
+version: '3.8'
+services:
+  qdrant:
+    image: qdrant/qdrant:latest
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+  rag-api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - QDRANT_URL=http://qdrant:6333
+    depends_on:
+      - qdrant
+
+volumes:
+  qdrant_data:
+</code></pre>
+
+<pre><code># Build and run everything:
+docker-compose up --build
+
+# Your API: http://localhost:8000
+# Qdrant: http://localhost:6333
+# Swagger docs: http://localhost:8000/docs
+</code></pre>
+
+<h2>Part 3: Deploy to Google Cloud Run</h2>
+
+<div class="diagram">
+Local Docker → Google Container Registry → Cloud Run
+                                            │
+                                     Auto-scales 0→N
+                                     Pay per request
+                                     Free tier: 2M req/month
+</div>
+
+<pre><code># Step 1: Build and push to Google Container Registry
+gcloud builds submit --tag gcr.io/YOUR_PROJECT/rag-api
+
+# Step 2: Deploy to Cloud Run
+gcloud run deploy rag-api \
+  --image gcr.io/YOUR_PROJECT/rag-api \
+  --platform managed \
+  --region asia-south1 \
+  --allow-unauthenticated \
+  --set-env-vars GROQ_API_KEY=your-key
+
+# Done! You get a public URL: https://rag-api-xxxxx.run.app
+</code></pre>
+
+<div class="key-point">
+<strong>Resume line after completing this:</strong> "Deployed production RAG API (FastAPI + Qdrant + Cloud Run) with streaming responses, auto-scaling, and interactive API documentation"
+</div>
+
+<h2>Part 4: Production Additions</h2>
+
+<h3>Rate Limiting</h3>
+<pre><code>from slowapi import Limiter
+from slowapi.util import get_remote_address
+
+limiter = Limiter(key_func=get_remote_address)
+
+@app.post("/query")
+@limiter.limit("10/minute")  # 10 requests per minute per IP
+async def query_documents(req: QueryRequest):
+    ...
+</code></pre>
+
+<h3>Error Handling</h3>
+<pre><code>from fastapi import HTTPException
+
+@app.post("/query")
+async def query_documents(req: QueryRequest):
+    try:
+        # ... RAG logic
+    except RateLimitError:
+        raise HTTPException(status_code=429, detail="LLM rate limit. Retry in 60s.")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal error: {str(e)}")
+</code></pre>
+
+<h3>Middleware (logging, CORS, timing)</h3>
+<pre><code>import time
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"])
+
+@app.middleware("http")
+async def add_timing(request, call_next):
+    start = time.time()
+    response = await call_next(request)
+    response.headers["X-Process-Time"] = str(time.time() - start)
+    return response
+</code></pre>
+
+<h2>Interview Questions on This Topic</h2>
+
+<div class="interview-q">
+<strong>Q: "How would you deploy an LLM application to production?"</strong><br>
+A: "I'd containerize it with Docker (reproducible builds), serve via FastAPI (async, auto-docs, type-safe), and deploy to a managed platform like Cloud Run or ECS. Key additions: health checks, rate limiting, CORS, structured logging, and environment-based config. I'd add a CI/CD pipeline that runs evaluation tests before deploying."
+</div>
+
+<div class="interview-q">
+<strong>Q: "What's the difference between sync and async in FastAPI?"</strong><br>
+A: "Async (await) allows handling multiple concurrent requests without blocking. Critical for LLM apps because API calls take 1-5 seconds. With sync, one slow LLM call blocks all other users. With async, the server handles other requests while waiting for the LLM response."
+</div>
+
+<div class="interview-q">
+<strong>Q: "How do you handle secrets in Docker?"</strong><br>
+A: "Never bake secrets into images. Use environment variables (--set-env-vars in Cloud Run), or secret managers (AWS Secrets Manager, GCP Secret Manager). In docker-compose, use .env files (gitignored). In K8s, use Secrets objects."
+</div>
+
+<div class="nav" style="margin-top:3rem;text-align:center">
+<a href="index.html">← Course Home</a> | <a href="fine_tuning_lora.html">Next: Week 2 — Fine-Tuning →</a>
+</div>
+</div>
+</body>
+</html>
