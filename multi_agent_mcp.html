@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Multi-Agent System with Online MCP Servers</title>
+<script src="auth_guard.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0a0a14;color:#e0e0e0;padding:1.5rem;line-height:1.7}
+.container{max-width:900px;margin:0 auto}
+h1{font-size:1.8rem;margin-bottom:.5rem;background:linear-gradient(90deg,#7b2ff7,#00d2ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-align:center}
+.sub{color:#666;text-align:center;margin-bottom:2rem;font-size:.9rem}
+h2{font-size:1.3rem;color:#7b2ff7;margin:2.5rem 0 .8rem;border-bottom:1px solid #222;padding-bottom:.5rem}
+h3{font-size:1rem;color:#00d2ff;margin:1.2rem 0 .4rem}
+p{margin-bottom:.8rem;color:#bbb;font-size:.9rem}
+pre{background:#0d0d1a;border:1px solid #222;border-radius:8px;padding:1rem;overflow-x:auto;margin:.8rem 0;font-size:.78rem;line-height:1.5}
+code{color:#e0e0e0;font-family:'Fira Code',monospace}
+.arch{background:#0f1a2e;border:2px solid #1d4ed8;border-radius:12px;padding:1.2rem;margin:1rem 0;font-family:monospace;font-size:.72rem;white-space:pre;overflow-x:auto;color:#60a5fa;line-height:1.4}
+.key{background:#1a1a2e;border-left:4px solid #00e676;padding:.8rem 1rem;margin:.8rem 0;border-radius:0 8px 8px 0;font-size:.85rem}
+.key strong{color:#00e676}
+.nav{margin-bottom:1.5rem;text-align:center}
+.nav a{color:#7b2ff7;text-decoration:none;font-size:.85rem}
+table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:.8rem}
+th,td{border:1px solid #333;padding:.5rem;text-align:left}
+th{background:#1a1a2e;color:#7b2ff7}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="nav"><a href="index.html">← Course Home</a> | <a href="round2_code_patterns.html">← Code Patterns</a></div>
+<h1>🤖 Multi-Agent System with Online MCP Servers</h1>
+<p class="sub">Connect real MCP servers + build a multi-agent orchestrator using LangGraph</p>
+
+<h2>Architecture</h2>
+
+<div class="arch">
+┌──────────────────────────────────────────────────────────────────┐
+│                    MULTI-AGENT ORCHESTRATOR                        │
+│                                                                    │
+│  User Query → [Router Agent] → decides which specialist to call   │
+│                    │                                               │
+│       ┌────────────┼────────────────┐                             │
+│       ↓            ↓                ↓                             │
+│  [Research      [Code           [Document                         │
+│   Agent]         Agent]          Agent]                           │
+│       │            │                │                             │
+│       ↓            ↓                ↓                             │
+│  MCP: Web      MCP: GitHub     MCP: Filesystem                   │
+│  Search        Code Search     Read/Write Files                   │
+│                                                                    │
+│  Each agent has access to specific MCP tools                      │
+│  Router decides WHO handles the query                             │
+│  Results are synthesized and returned                             │
+└──────────────────────────────────────────────────────────────────┘
+
+Online MCP Servers Used:
+• @modelcontextprotocol/server-brave-search  — Web search
+• @modelcontextprotocol/server-github        — GitHub repos
+• @modelcontextprotocol/server-filesystem    — Local files
+</div>
+
+<h2>Step 1: MCP Config (Connect Online Servers)</h2>
+
+<pre><code>// .kiro/settings/mcp.json (or claude_desktop_config.json)
+{
+  "mcpServers": {
+    "brave-search": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-brave-search"],
+      "env": {
+        "BRAVE_API_KEY": "your-brave-api-key"
+      }
+    },
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "ghp_xxx"
+      }
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "./workspace"]
+    }
+  }
+}</code></pre>
+
+<div class="key"><strong>Key:</strong> These are REAL open-source MCP servers from the official registry. <code>npx -y</code> downloads and runs them automatically. No install needed.</div>
+
+<h2>Step 2: Multi-Agent System (LangGraph)</h2>
+
+<div class="arch">
+                    ┌─────────────┐
+                    │   Router    │
+                    │   Agent     │
+                    └──────┬──────┘
+                           │ (classifies intent)
+              ┌────────────┼────────────────┐
+              ↓            ↓                ↓
+    ┌──────────────┐ ┌──────────────┐ ┌──────────────┐
+    │  Research    │ │    Code      │ │   Writer     │
+    │  Agent      │ │    Agent     │ │   Agent      │
+    │             │ │              │ │              │
+    │ Tools:      │ │ Tools:       │ │ Tools:       │
+    │ • web_search│ │ • github_    │ │ • read_file  │
+    │ • brave_api │ │   search     │ │ • write_file │
+    └──────────────┘ └──────────────┘ └──────────────┘
+              │            │                │
+              └────────────┼────────────────┘
+                           ↓
+                    ┌─────────────┐
+                    │ Synthesizer │ → Final Answer
+                    └─────────────┘
+</div>
+
+<pre><code>from typing import TypedDict, Literal, Annotated
+from langgraph.graph import StateGraph, END
+from langchain_groq import ChatGroq
+import json
+
+# ═══════════════════════════════════════════
+# STATE
+# ═══════════════════════════════════════════
+class AgentState(TypedDict):
+    query: str
+    intent: str          # "research" | "code" | "write"
+    research_result: str
+    code_result: str
+    write_result: str
+    final_answer: str
+
+# ═══════════════════════════════════════════
+# LLM
+# ═══════════════════════════════════════════
+llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.3)
+
+# ═══════════════════════════════════════════
+# ROUTER AGENT — classifies user intent
+# ═══════════════════════════════════════════
+def router_agent(state: AgentState) -> AgentState:
+    prompt = f"""Classify this query into ONE category:
+- "research" = needs web search, current info, news
+- "code" = needs code examples, GitHub repos, technical implementation
+- "write" = needs to create/edit documents or files
+
+Query: {state['query']}
+Return ONLY the category word."""
+    
+    response = llm.invoke(prompt)
+    intent = response.content.strip().lower().replace('"', '')
+    if intent not in ("research", "code", "write"):
+        intent = "research"  # default
+    return {"intent": intent}
+
+# ═══════════════════════════════════════════
+# SPECIALIST AGENTS
+# ═══════════════════════════════════════════
+def research_agent(state: AgentState) -> AgentState:
+    """Uses web search MCP tool to find information."""
+    # In real code: call brave-search MCP server
+    # Simulated here for learning:
+    prompt = f"""You are a research specialist. 
+Search the web and provide comprehensive information about:
+{state['query']}
+
+Provide 3-5 key findings with sources."""
+    response = llm.invoke(prompt)
+    return {"research_result": response.content}
+
+def code_agent(state: AgentState) -> AgentState:
+    """Uses GitHub MCP tool to find code examples."""
+    # In real code: call github MCP server to search repos
+    prompt = f"""You are a code specialist.
+Find relevant code implementations for:
+{state['query']}
+
+Provide working Python code examples."""
+    response = llm.invoke(prompt)
+    return {"code_result": response.content}
+
+def write_agent(state: AgentState) -> AgentState:
+    """Uses filesystem MCP tool to create documents."""
+    # In real code: call filesystem MCP server to write files
+    prompt = f"""You are a technical writer.
+Create a well-structured document about:
+{state['query']}"""
+    response = llm.invoke(prompt)
+    return {"write_result": response.content}
+
+# ═══════════════════════════════════════════
+# SYNTHESIZER — combines results
+# ═══════════════════════════════════════════
+def synthesizer(state: AgentState) -> AgentState:
+    """Combine specialist output into final answer."""
+    result = state.get("research_result") or state.get("code_result") or state.get("write_result") or ""
+    prompt = f"""Synthesize this into a clear, concise answer:
+{result}
+
+Original question: {state['query']}"""
+    response = llm.invoke(prompt)
+    return {"final_answer": response.content}
+
+# ═══════════════════════════════════════════
+# ROUTING LOGIC
+# ═══════════════════════════════════════════
+def route_to_specialist(state: AgentState) -> Literal["research_agent", "code_agent", "write_agent"]:
+    intent = state.get("intent", "research")
+    if intent == "code": return "code_agent"
+    if intent == "write": return "write_agent"
+    return "research_agent"
+
+# ═══════════════════════════════════════════
+# BUILD GRAPH
+# ═══════════════════════════════════════════
+graph = StateGraph(AgentState)
+
+graph.add_node("router", router_agent)
+graph.add_node("research_agent", research_agent)
+graph.add_node("code_agent", code_agent)
+graph.add_node("write_agent", write_agent)
+graph.add_node("synthesizer", synthesizer)
+
+graph.set_entry_point("router")
+graph.add_conditional_edges("router", route_to_specialist)
+graph.add_edge("research_agent", "synthesizer")
+graph.add_edge("code_agent", "synthesizer")
+graph.add_edge("write_agent", "synthesizer")
+graph.add_edge("synthesizer", END)
+
+app = graph.compile()
+
+# ═══════════════════════════════════════════
+# RUN
+# ═══════════════════════════════════════════
+result = app.invoke({"query": "How to implement RAG with reranking in Python?"})
+print(f"Intent: {result['intent']}")
+print(f"Answer: {result['final_answer']}")</code></pre>
+
+<h2>Step 3: Connecting REAL MCP Tools to Agents</h2>
+
+<pre><code># In production, each agent calls MCP tools like this:
+# (using mcp client library)
+
+from mcp.client import ClientSession
+from mcp.client.stdio import stdio_client, StdioServerParameters
+
+async def call_brave_search(query: str) -> str:
+    """Call the Brave Search MCP server."""
+    params = StdioServerParameters(
+        command="npx",
+        args=["-y", "@modelcontextprotocol/server-brave-search"],
+        env={"BRAVE_API_KEY": "your-key"}
+    )
+    async with stdio_client(params) as (r, w):
+        async with ClientSession(r, w) as session:
+            await session.initialize()
+            result = await session.call_tool("brave_web_search", {"query": query})
+            return result.content[0].text
+
+async def call_github_search(query: str) -> str:
+    """Call the GitHub MCP server."""
+    params = StdioServerParameters(
+        command="npx",
+        args=["-y", "@modelcontextprotocol/server-github"],
+        env={"GITHUB_PERSONAL_ACCESS_TOKEN": "ghp_xxx"}
+    )
+    async with stdio_client(params) as (r, w):
+        async with ClientSession(r, w) as session:
+            await session.initialize()
+            result = await session.call_tool("search_repositories", {"query": query})
+            return result.content[0].text
+
+# Then in your agent nodes:
+# def research_agent(state):
+#     results = asyncio.run(call_brave_search(state["query"]))
+#     return {"research_result": results}</code></pre>
+
+<h2>Available Public MCP Servers (Use These in Interviews)</h2>
+
+<table>
+<tr><th>Server</th><th>What It Does</th><th>Install Command</th></tr>
+<tr><td>brave-search</td><td>Web search via Brave API</td><td><code>npx -y @modelcontextprotocol/server-brave-search</code></td></tr>
+<tr><td>github</td><td>Search repos, read files, create issues</td><td><code>npx -y @modelcontextprotocol/server-github</code></td></tr>
+<tr><td>filesystem</td><td>Read/write local files</td><td><code>npx -y @modelcontextprotocol/server-filesystem ./dir</code></td></tr>
+<tr><td>postgres</td><td>Query PostgreSQL databases</td><td><code>npx -y @modelcontextprotocol/server-postgres</code></td></tr>
+<tr><td>memory</td><td>Persistent key-value memory</td><td><code>npx -y @modelcontextprotocol/server-memory</code></td></tr>
+<tr><td>puppeteer</td><td>Browser automation, screenshots</td><td><code>npx -y @modelcontextprotocol/server-puppeteer</code></td></tr>
+<tr><td>sqlite</td><td>Query SQLite databases</td><td><code>npx -y @modelcontextprotocol/server-sqlite</code></td></tr>
+<tr><td>aws-docs</td><td>Search AWS documentation</td><td><code>uvx awslabs.aws-documentation-mcp-server@latest</code></td></tr>
+</table>
+
+<h2>Interview Answer</h2>
+
+<div class="key"><strong>"How would you build a multi-agent system with MCP?"</strong><br><br>
+"I'd use LangGraph as the orchestrator with a Router agent that classifies intent, then routes to specialist agents. Each specialist connects to specific MCP servers via stdio transport. For example: a Research agent connects to Brave Search MCP, a Code agent connects to GitHub MCP, and a Writer agent connects to Filesystem MCP. The router decides WHO handles the query, MCP handles HOW tools are discovered and called. Results flow back through a Synthesizer node that combines specialist outputs into a coherent response. This gives us modularity — add a new MCP server and the system gains new capabilities without changing agent logic."</div>
+
+<div class="nav" style="margin-top:2rem;text-align:center">
+<a href="round2_code_patterns.html">← Code Patterns</a> | <a href="index.html">Course Home</a>
+</div>
+</div>
+</body>
+</html>
