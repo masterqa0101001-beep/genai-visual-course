@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Round 2: Code Patterns + Architecture Diagrams</title>
+<script src="auth_guard.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0a0a14;color:#e0e0e0;padding:1.5rem;line-height:1.7}
+.container{max-width:900px;margin:0 auto}
+h1{font-size:1.8rem;margin-bottom:.5rem;background:linear-gradient(90deg,#ff6b6b,#ffc107);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-align:center}
+.sub{color:#666;text-align:center;margin-bottom:2rem;font-size:.9rem}
+h2{font-size:1.3rem;color:#ff6b6b;margin:2.5rem 0 .8rem;border-bottom:1px solid #222;padding-bottom:.5rem}
+h3{font-size:1rem;color:#ffc107;margin:1.2rem 0 .4rem}
+p{margin-bottom:.8rem;color:#bbb;font-size:.9rem}
+pre{background:#0d0d1a;border:1px solid #222;border-radius:8px;padding:1rem;overflow-x:auto;margin:.8rem 0;font-size:.78rem;line-height:1.5}
+code{color:#e0e0e0;font-family:'Fira Code',monospace}
+.arch{background:#0f1a2e;border:2px solid #1d4ed8;border-radius:12px;padding:1.2rem;margin:1rem 0;font-family:monospace;font-size:.75rem;white-space:pre;overflow-x:auto;color:#60a5fa;line-height:1.4}
+.key{background:#1a1a2e;border-left:4px solid #00e676;padding:.8rem 1rem;margin:.8rem 0;border-radius:0 8px 8px 0;font-size:.85rem}
+.key strong{color:#00e676}
+.nav{margin-bottom:1.5rem;text-align:center}
+.nav a{color:#7b2ff7;text-decoration:none;font-size:.85rem}
+.pattern-num{display:inline-block;background:#ff6b6b;color:#0a0a14;font-weight:700;padding:2px 10px;border-radius:12px;font-size:.75rem;margin-right:8px}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="nav"><a href="index.html">← Course Home</a></div>
+<h1>🔥 Round 2: Code Patterns + Architecture</h1>
+<p class="sub">8 patterns to memorize. Each has: Architecture → Code → Key Line. Study on phone.</p>
+
+<h2><span class="pattern-num">1</span> Offline RAG (Fully Local)</h2>
+
+<div class="arch">
+┌─────────────────────────────────────────────────────────┐
+│                 OFFLINE RAG PIPELINE                      │
+│                                                          │
+│  Documents → Chunk → Embed (MiniLM) → Store (Qdrant)    │
+│                                          ↓               │
+│  User Query → Embed → Semantic Search → Top-K chunks    │
+│                                          ↓               │
+│                              LLM (Ollama/local) → Answer │
+└─────────────────────────────────────────────────────────┘
+
+Components (ALL LOCAL — no internet):
+• Embedding:  sentence-transformers/all-MiniLM-L6-v2 (384 dim)
+• Vector DB:  Qdrant (path="./local_db")
+• LLM:        Ollama (llama3.2:3b or mistral:7b)
+</div>
+
+<pre><code>from sentence_transformers import SentenceTransformer
+from qdrant_client import QdrantClient, models
+import ollama, uuid
+
+embed = SentenceTransformer("all-MiniLM-L6-v2")
+db = QdrantClient(path="./qdrant_local")
+
+# INGEST
+def ingest(texts, source="doc"):
+    points = [models.PointStruct(
+        id=str(uuid.uuid4()),
+        vector=embed.encode(t).tolist(),
+        payload={"text": t, "source": source}
+    ) for t in texts]
+    db.upsert("docs", points)
+
+# RETRIEVE
+def retrieve(query, k=3):
+    results = db.search("docs", embed.encode(query).tolist(), limit=k)
+    return [r.payload["text"] for r in results]
+
+# GENERATE
+def rag(query):
+    ctx = "\n".join(retrieve(query))
+    resp = ollama.chat(model="llama3.2:3b", messages=[
+        {"role": "user", "content": f"Context:\n{ctx}\n\nQ: {query}\nA:"}
+    ])
+    return resp["message"]["content"]</code></pre>
+
+<div class="key"><strong>Key line:</strong> <code>db.search("docs", embed.encode(query).tolist(), limit=3)</code></div>
+
+<h2><span class="pattern-num">2</span> Agent with Tools (Manual ReAct)</h2>
+
+<div class="arch">
+┌────────────────────────────────────────────────┐
+│              REACT AGENT LOOP                    │
+│                                                  │
+│  User Query                                      │
+│      ↓                                           │
+│  ┌─→ LLM (Reason) ──→ Tool Call? ──→ YES ──┐   │
+│  │        ↑                                  │   │
+│  │   Observation ←── Execute Tool ←──────────┘   │
+│  │        │                                      │
+│  └────────┘  (loop until final answer)           │
+│                                                  │
+│      ↓ NO (has answer)                           │
+│  Return Final Answer                             │
+└────────────────────────────────────────────────┘
+
+Tools: search_db(), calculate(), get_date()
+Format: LLM outputs JSON → {"tool":"x","args":{}} or {"answer":"x"}
+</div>
+
+<pre><code>import json, ollama
+
+TOOLS = {"search_db": lambda q: f"Found: info about {q}",
+         "calculate": lambda e: str(eval(e))}
+
+def agent(query, max_steps=5):
+    msgs = [{"role":"system","content":"Use tools via JSON: {\"tool\":\"name\",\"args\":{}} or {\"answer\":\"final\"}"},
+            {"role":"user","content":query}]
+    for _ in range(max_steps):
+        resp = ollama.chat(model="llama3.2:3b", messages=msgs)
+        text = resp["message"]["content"]
+        msgs.append({"role":"assistant","content":text})
+        try:
+            parsed = json.loads(text)
+            if "answer" in parsed: return parsed["answer"]
+            if "tool" in parsed:
+                result = TOOLS[parsed["tool"]](**parsed.get("args",{}))
+                msgs.append({"role":"user","content":f"Observation: {result}"})
+        except: return text
+    return "Max steps reached"</code></pre>
+
+<div class="key"><strong>Key insight:</strong> Agent = LLM + Loop + Tool execution. The loop continues until LLM says "I have the answer."</div>
+
+<h2><span class="pattern-num">3</span> Native Function Calling (Groq/OpenAI)</h2>
+
+<div class="arch">
+┌──────────────────────────────────────────────────┐
+│          NATIVE FUNCTION CALLING                  │
+│                                                    │
+│  User → LLM (with tool definitions)               │
+│           ↓                                        │
+│  LLM returns: tool_calls: [{name, args}]          │
+│           ↓                                        │
+│  Execute function → get result                     │
+│           ↓                                        │
+│  Feed result back → LLM generates final answer    │
+│                                                    │
+│  Key: LLM DECIDES which tool to call!             │
+│  You define tools with JSON Schema.               │
+└──────────────────────────────────────────────────┘
+</div>
+
+<pre><code>from groq import Groq
+import json
+
+client = Groq()
+tools = [{"type":"function","function":{
+    "name":"search_docs","description":"Search knowledge base",
+    "parameters":{"type":"object","properties":{"query":{"type":"string"}},"required":["query"]}
+}}]
+
+def search_docs(query): return f"Found: {query} info"
+FUNCS = {"search_docs": search_docs}
+
+def agent(query):
+    msgs = [{"role":"user","content":query}]
+    while True:
+        resp = client.chat.completions.create(
+            model="llama-3.3-70b-versatile", messages=msgs, tools=tools, tool_choice="auto")
+        msg = resp.choices[0].message
+        if not msg.tool_calls: return msg.content
+        msgs.append(msg)
+        for tc in msg.tool_calls:
+            result = FUNCS[tc.function.name](**json.loads(tc.function.arguments))
+            msgs.append({"role":"tool","tool_call_id":tc.id,"content":result})</code></pre>
+
+<div class="key"><strong>Key line:</strong> <code>tools=tools, tool_choice="auto"</code> — the LLM decides whether to call a tool.</div>
+
+<h2><span class="pattern-num">4</span> MCP Server + Client</h2>
+
+<div class="arch">
+┌──────────────┐     JSON-RPC (stdio)    ┌──────────────┐
+│   AI Agent   │ ←─────────────────────→ │  MCP Server  │
+│   (Client)   │                          │   (Tools)    │
+└──────────────┘                          └──────┬───────┘
+                                                  │
+    1. "What tools?" → list_tools()               │
+    2. [{name, schema}] ←                         │
+    3. "Call search" → call_tool(name, args)       │
+    4. Result ←                                   ↓
+                                          External Systems
+                                          (DB, APIs, Files)
+</div>
+
+<pre><code># SERVER (mcp_server.py)
+from mcp.server import Server
+from mcp.server.stdio import stdio_server
+from mcp.types import Tool, TextContent
+
+app = Server("my-server")
+
+@app.list_tools()
+async def list_tools():
+    return [Tool(name="search", description="Search docs",
+                 inputSchema={"type":"object","properties":{"query":{"type":"string"}},"required":["query"]})]
+
+@app.call_tool()
+async def call_tool(name, arguments):
+    if name == "search":
+        return [TextContent(type="text", text=f"Results for: {arguments['query']}")]
+
+async def main():
+    async with stdio_server() as (r, w):
+        await app.run(r, w)
+
+# CLIENT
+from mcp.client import ClientSession
+from mcp.client.stdio import stdio_client, StdioServerParameters
+
+async def main():
+    async with stdio_client(StdioServerParameters(command="python",args=["mcp_server.py"])) as (r,w):
+        async with ClientSession(r,w) as session:
+            await session.initialize()
+            result = await session.call_tool("search", {"query": "RAG"})
+            print(result.content[0].text)</code></pre>
+
+<div class="key"><strong>Key concept:</strong> MCP = USB for AI. Standard protocol so ANY agent talks to ANY tool server.</div>
+
+<h2><span class="pattern-num">5</span> Local Model + Quantization</h2>
+
+<div class="arch">
+┌────────────────────────────────────────────────────────┐
+│           3 WAYS TO RUN MODELS LOCALLY                   │
+├────────────────────────────────────────────────────────┤
+│                                                          │
+│  METHOD 1: OLLAMA (easiest)                             │
+│  ┌─────────────────────────────────────┐                │
+│  │ ollama pull llama3.2:3b  (2GB)      │                │
+│  │ ollama.chat(model="llama3.2:3b")    │                │
+│  └─────────────────────────────────────┘                │
+│                                                          │
+│  METHOD 2: HuggingFace + BitsAndBytes (4-bit)           │
+│  ┌─────────────────────────────────────┐                │
+│  │ BitsAndBytesConfig(load_in_4bit)    │                │
+│  │ 7B model: 14GB → 4GB in RAM        │                │
+│  └─────────────────────────────────────┘                │
+│                                                          │
+│  METHOD 3: GGUF + llama-cpp (pure CPU)                  │
+│  ┌─────────────────────────────────────┐                │
+│  │ Download .gguf file from HuggingFace│                │
+│  │ Llama(model_path="model.gguf")      │                │
+│  └─────────────────────────────────────┘                │
+│                                                          │
+│  QUANTIZATION LEVELS:                                    │
+│  FP32 (28GB) → FP16 (14GB) → INT8 (7GB) → INT4 (4GB)  │
+│  Quality:  100%      99%        97%          93%         │
+└────────────────────────────────────────────────────────┘
+</div>
+
+<pre><code># METHOD 1: Ollama (3 lines)
+import ollama
+resp = ollama.chat(model="llama3.2:3b", messages=[{"role":"user","content":"hi"}])
+print(resp["message"]["content"])
+
+# METHOD 2: HuggingFace 4-bit
+from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+import torch
+bnb = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4",
+                         bnb_4bit_compute_dtype=torch.float16)
+model = AutoModelForCausalLM.from_pretrained("mistralai/Mistral-7B-Instruct-v0.3",
+                                             quantization_config=bnb, device_map="auto")
+tokenizer = AutoTokenizer.from_pretrained("mistralai/Mistral-7B-Instruct-v0.3")
+inputs = tokenizer("Explain RAG:", return_tensors="pt").to(model.device)
+out = model.generate(**inputs, max_new_tokens=100)
+print(tokenizer.decode(out[0], skip_special_tokens=True))
+
+# METHOD 3: GGUF (CPU, no GPU needed)
+from llama_cpp import Llama
+llm = Llama(model_path="./model.Q4_K_M.gguf", n_ctx=4096)
+out = llm("Explain RAG:", max_tokens=100)
+print(out["choices"][0]["text"])</code></pre>
+
+<div class="key"><strong>Interview answer:</strong> "I use Ollama for development (simple, fast), HuggingFace + BitsAndBytes for fine-tuning experiments (4-bit QLoRA), and GGUF for edge deployment (pure CPU, no GPU dependency)."</div>
+
+<h2><span class="pattern-num">6</span> LangGraph (Cycles + Conditional Routing)</h2>
+
+<div class="arch">
+┌────────────────────────────────────────────────────┐
+│              LANGGRAPH — YOUR PIPELINE               │
+│                                                      │
+│  Entry                                               │
+│    ↓                                                 │
+│  [Retrieve] ──→ [Generate] ──→ [Evaluate]           │
+│                      ↑              │                │
+│                      │         score >= 75?          │
+│                      │          /        \           │
+│                   [Improve]   YES         NO         │
+│                      ↑         ↓          │          │
+│                      └─────── END    (loop back)     │
+│                                                      │
+│  Key concepts:                                       │
+│  • StateGraph(TypedDict) — typed state between nodes │
+│  • add_conditional_edges — routing decisions         │
+│  • Cycles allowed (improve → generate → evaluate)   │
+│  • Checkpointing for resume-from-failure             │
+└────────────────────────────────────────────────────┘
+</div>
+
+<pre><code>from typing import TypedDict, Literal
+from langgraph.graph import StateGraph, END
+from langchain_groq import ChatGroq
+
+class State(TypedDict):
+    query: str; context: list[str]; answer: str; score: int; attempt: int
+
+llm = ChatGroq(model="llama-3.3-70b-versatile")
+
+def retrieve(state): return {"context": ["relevant doc..."]}
+def generate(state):
+    resp = llm.invoke(f"Context:{state['context']}\nQ:{state['query']}")
+    return {"answer": resp.content, "attempt": state.get("attempt",0)+1}
+def evaluate(state): return {"score": 80}  # LLM-as-judge in real code
+def improve(state):
+    resp = llm.invoke(f"Improve: {state['answer']}")
+    return {"answer": resp.content}
+
+def should_improve(state) -> Literal["improve","end"]:
+    if state["score"] >= 75 or state["attempt"] >= 3: return "end"
+    return "improve"
+
+g = StateGraph(State)
+g.add_node("retrieve", retrieve)
+g.add_node("generate", generate)
+g.add_node("evaluate", evaluate)
+g.add_node("improve", improve)
+g.set_entry_point("retrieve")
+g.add_edge("retrieve", "generate")
+g.add_edge("generate", "evaluate")
+g.add_conditional_edges("evaluate", should_improve, {"improve":"improve","end":END})
+g.add_edge("improve", "generate")  # CYCLE!
+app = g.compile()
+result = app.invoke({"query":"What is RAG?","attempt":0})</code></pre>
+
+<div class="key"><strong>Key line:</strong> <code>g.add_conditional_edges("evaluate", should_improve, {"improve":"improve","end":END})</code></div>
+
+<h2><span class="pattern-num">7</span> FastAPI Production RAG Server</h2>
+
+<div class="arch">
+┌───────────────────────────────────────────────────────┐
+│              PRODUCTION RAG API                         │
+│                                                         │
+│  Client → POST /query                                   │
+│              ↓                                           │
+│  ┌──────────────────────────────────────────────┐       │
+│  │ FastAPI Server                                │       │
+│  │                                               │       │
+│  │  1. Embed query (sentence-transformers)       │       │
+│  │  2. Search Qdrant (top-k)                     │       │
+│  │  3. Build prompt (context + question)         │       │
+│  │  4. Call LLM (Groq/Ollama)                    │       │
+│  │  5. Return {answer, sources, latency}         │       │
+│  │                                               │       │
+│  │  Extras: /health, /ingest, /query/stream      │       │
+│  └──────────────────────────────────────────────┘       │
+│                                                         │
+│  Deploy: Docker → Cloud Run (auto-scales, free tier)    │
+│  Docs:   Auto-generated at /docs (Swagger UI)           │
+└───────────────────────────────────────────────────────┘
+</div>
+
+<pre><code>from fastapi import FastAPI, HTTPException
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
+from sentence_transformers import SentenceTransformer
+from qdrant_client import QdrantClient
+from groq import Groq
+import time
+
+app = FastAPI(title="RAG API")
+embed = SentenceTransformer("all-MiniLM-L6-v2")
+db = QdrantClient(path="./db")
+llm = Groq()
+
+class QueryReq(BaseModel):
+    question: str; top_k: int = 3
+
+class QueryResp(BaseModel):
+    answer: str; sources: list[str]; latency_ms: float
+
+@app.post("/query", response_model=QueryResp)
+async def query(req: QueryReq):
+    start = time.time()
+    results = db.search("docs", embed.encode(req.question).tolist(), limit=req.top_k)
+    if not results: raise HTTPException(404, "No docs found")
+    ctx = "\n".join([r.payload["text"] for r in results])
+    resp = llm.chat.completions.create(model="llama-3.3-70b-versatile",
+        messages=[{"role":"system","content":"Answer from context only."},
+                  {"role":"user","content":f"Context:\n{ctx}\n\nQ:{req.question}"}])
+    return QueryResp(answer=resp.choices[0].message.content,
+                     sources=[r.payload["source"] for r in results],
+                     latency_ms=round((time.time()-start)*1000,1))
+
+@app.get("/health")
+async def health(): return {"status":"ok"}
+
+# Run: uvicorn app:app --reload
+# Docs: localhost:8000/docs</code></pre>
+
+<div class="key"><strong>Dockerfile (3 lines that matter):</strong><br>
+<code>FROM python:3.11-slim</code><br>
+<code>COPY . /app && pip install -r requirements.txt</code><br>
+<code>CMD ["uvicorn","app:app","--host","0.0.0.0","--port","8000"]</code></div>
+
+<h2><span class="pattern-num">8</span> Full System Architecture (Whiteboard Answer)</h2>
+
+<div class="arch">
+┌─────────────────────────────────────────────────────────────┐
+│                ENTERPRISE GEN AI SYSTEM                       │
+│                                                               │
+│  User → API Gateway (FastAPI + Auth + Rate Limit)            │
+│              ↓                                                │
+│  ┌───────────────────────────────────────────────────┐       │
+│  │         AI AGENT (LangGraph)                       │       │
+│  │                                                    │       │
+│  │   Reason → Decide tool → Execute → Observe        │       │
+│  │              │                                     │       │
+│  │    ┌─────────┼─────────────┐                      │       │
+│  │    ↓         ↓             ↓                      │       │
+│  │ MCP Tool 1  MCP Tool 2   MCP Tool 3              │       │
+│  │ (RAG)       (JIRA)       (Dynatrace)             │       │
+│  │    │                                              │       │
+│  │    ↓                                              │       │
+│  │ Qdrant ← Embed ← Chunk ← Documents               │       │
+│  └───────────────────────────────────────────────────┘       │
+│              ↓                                                │
+│  Guardrails (PII filter + Safety check)                      │
+│              ↓                                                │
+│  Response → User                                             │
+│                                                               │
+│  Observability: LangSmith traces every LLM call              │
+│  Deployment: Docker + CI/CD (GitHub Actions)                  │
+└─────────────────────────────────────────────────────────────┘
+</div>
+
+<div class="key"><strong>Interview one-liner:</strong> "Agent uses MCP to discover tools dynamically. RAG is one tool. The agent decides WHAT to call based on user intent, MCP handles HOW to call it. Everything is traced via LangSmith and gated through guardrails before reaching the user."</div>
+
+<h2>⚡ Quick Recall — Write These from Memory</h2>
+
+<pre><code># Embed
+embed.encode("text").tolist()
+
+# Qdrant search
+db.search("collection", query_vector, limit=3)
+
+# Ollama
+ollama.chat(model="llama3.2:3b", messages=[...])
+
+# Groq
+Groq().chat.completions.create(model="llama-3.3-70b-versatile", messages=[...])
+
+# FastAPI
+@app.post("/query")
+async def query(req: QueryReq): ...
+
+# LangGraph
+g.add_conditional_edges("node", router_fn, {"yes":"node_a","no":END})
+
+# MCP Tool
+Tool(name="x", description="y", inputSchema={...})
+
+# Docker
+FROM python:3.11-slim
+CMD ["uvicorn","app:app","--host","0.0.0.0"]</code></pre>
+
+<div class="nav" style="margin-top:2rem;text-align:center">
+<a href="index.html">← Course Home</a>
+</div>
+</div>
+</body>
+</html>
