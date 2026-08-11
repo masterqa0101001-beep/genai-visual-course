@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>6-Week Gen AI Career Plan | Hemanth</title>
+<style>
+:root{--bg:#0f0f13;--card:#1a1a24;--accent:#6366f1;--accent2:#a78bfa;--text:#e4e4e7;--dim:#9ca3af;--green:#22c55e;--yellow:#eab308;--red:#ef4444;--border:#27272a}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;padding:16px;max-width:800px;margin:0 auto}
+h1{font-size:1.5rem;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px}
+h2{font-size:1.2rem;color:var(--accent2);margin:24px 0 8px;border-bottom:1px solid var(--border);padding-bottom:4px}
+h3{font-size:1rem;color:var(--text);margin:16px 0 6px}
+.subtitle{color:var(--dim);font-size:0.85rem;margin-bottom:20px}
+.week{background:var(--card);border-radius:12px;padding:16px;margin:16px 0;border-left:3px solid var(--accent)}
+.week-header{display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+.week-header h2{margin:0;border:none;padding:0}
+.week-header .toggle{font-size:1.2rem;transition:transform 0.3s}
+.week-header .toggle.open{transform:rotate(90deg)}
+.week-body{display:none;margin-top:12px}
+.week-body.show{display:block}
+.gap{display:inline-block;background:var(--accent);color:#fff;font-size:0.7rem;padding:2px 8px;border-radius:10px;margin-bottom:8px}
+.day{background:#111118;border-radius:8px;padding:10px 12px;margin:8px 0;border-left:2px solid var(--accent2)}
+.day strong{color:var(--accent2)}
+code{background:#111118;padding:2px 6px;border-radius:4px;font-size:0.8rem;color:var(--green)}
+pre{background:#111118;padding:12px;border-radius:8px;overflow-x:auto;font-size:0.75rem;line-height:1.4;margin:8px 0}
+.deliverable{background:#0c1a0c;border:1px solid var(--green);border-radius:8px;padding:10px;margin:12px 0;font-size:0.85rem}
+.deliverable::before{content:"✅ ";font-weight:bold}
+.resume-line{background:#1a0c1a;border:1px solid var(--accent2);border-radius:8px;padding:10px;margin:8px 0;font-size:0.8rem;font-style:italic}
+.resume-line::before{content:"📋 Resume: "}
+table{width:100%;border-collapse:collapse;margin:12px 0;font-size:0.8rem}
+th{background:var(--card);color:var(--accent2);padding:8px;text-align:left}
+td{padding:8px;border-bottom:1px solid var(--border)}
+.progress{margin:20px 0}
+.progress-bar{height:8px;background:var(--border);border-radius:4px;overflow:hidden;margin:4px 0}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--green));border-radius:4px;transition:width 0.5s}
+.tag{display:inline-block;background:var(--border);color:var(--dim);font-size:0.7rem;padding:2px 6px;border-radius:6px;margin:2px}
+ul{padding-left:20px;margin:6px 0}
+li{margin:3px 0;font-size:0.9rem}
+.arch{background:#111118;border-radius:8px;padding:12px;font-family:monospace;font-size:0.7rem;white-space:pre;overflow-x:auto;margin:10px 0;line-height:1.5}
+@media(max-width:600px){body{padding:10px}h1{font-size:1.3rem}.week{padding:12px}pre{font-size:0.7rem}}
+</style>
+</head>
+<body>
+
+<h1>🚀 6-Week Gen AI Career Acceleration</h1>
+<p class="subtitle">V Hemanth Kumar Pranav | 1-2 hrs/day | Goal: 60% → 95% market-ready</p>
+
+<div class="progress">
+<strong style="font-size:0.8rem;color:var(--dim)">Overall Progress</strong>
+<div class="progress-bar"><div class="progress-fill" style="width:0%" id="mainProgress"></div></div>
+</div>
+
+<div class="week" id="w1">
+<div class="week-header" onclick="toggle('w1')"><h2>Week 1: FastAPI + Docker + Deploy RAG API</h2><span class="toggle">▶</span></div>
+<div class="week-body">
+<span class="gap">Deploy LLM to production</span> <span class="gap">REST API</span> <span class="gap">Cloud deployment</span>
+<h3>What you build:</h3>
+<p>A production-ready RAG API that anyone can query over HTTP.</p>
+<div class="day"><strong>Day 1:</strong> FastAPI basics — <code>/ask</code> endpoint calling Groq, Pydantic models, uvicorn</div>
+<div class="day"><strong>Day 2:</strong> Add RAG — PDF → chunk → embed → Qdrant. <code>/ingest</code> + <code>/query</code> endpoints</div>
+<div class="day"><strong>Day 3:</strong> Cross-encoder reranker + <code>/evaluate</code> endpoint + SSE streaming</div>
+<div class="day"><strong>Day 4:</strong> Dockerize — Dockerfile + docker-compose (Qdrant + app)</div>
+<div class="day"><strong>Day 5:</strong> Deploy to Google Cloud Run (free tier) — share live URL</div>
+<div class="day"><strong>Day 6-7:</strong> Polish — rate limiting, error handling, health check, README with architecture diagram</div>
+<div class="deliverable">Live RAG API on Cloud Run + GitHub repo</div>
+<div class="resume-line">Deployed production RAG API (FastAPI + Qdrant + Cloud Run) serving document Q&A with reranking and streaming responses</div>
+</div>
+</div>
+
+<div class="week" id="w2">
+<div class="week-header" onclick="toggle('w2')"><h2>Week 2: Fine-Tuning with LoRA (THE BIG GAP)</h2><span class="toggle">▶</span></div>
+<div class="week-body">
+<span class="gap">Model training</span> <span class="gap">Fine-tuning</span> <span class="gap">HuggingFace</span>
+<h3>What you build:</h3>
+<p>Fine-tune Llama 3.1 8B on a custom dataset using QLoRA on Google Colab.</p>
+<div class="day"><strong>Day 1:</strong> HuggingFace ecosystem — transformers, datasets, peft libraries</div>
+<div class="day"><strong>Day 2:</strong> Prepare training data — 500+ instruction/input/output JSON pairs</div>
+<div class="day"><strong>Day 3:</strong> QLoRA fine-tuning on Colab (4-bit quantization, LoRA r=16)</div>
+<div class="day"><strong>Day 4:</strong> Evaluate — base vs fine-tuned, accuracy/BLEU, MLflow logging</div>
+<div class="day"><strong>Day 5:</strong> Push model to HuggingFace Hub + model card</div>
+<div class="day"><strong>Day 6-7:</strong> Inference — load LoRA adapter, serve via FastAPI, benchmark</div>
+<div class="deliverable">Fine-tuned model on HuggingFace Hub + Colab notebook</div>
+<div class="resume-line">Fine-tuned Llama 3.1 8B using QLoRA (4-bit quantization) for domain-specific content scoring; deployed inference endpoint via FastAPI</div>
+</div>
+</div>
+
+<div class="week" id="w3">
+<div class="week-header" onclick="toggle('w3')"><h2>Week 3: Azure OpenAI + Evaluation + Guardrails</h2><span class="toggle">▶</span></div>
+<div class="week-body">
+<span class="gap">Azure/Cloud AI</span> <span class="gap">LLM Evaluation</span> <span class="gap">Enterprise</span>
+<h3>What you build:</h3>
+<p>RAG on Azure OpenAI + RAGAS evaluation + NeMo Guardrails.</p>
+<div class="day"><strong>Day 1:</strong> Azure OpenAI setup — deploy GPT-4o-mini, call from Python</div>
+<div class="day"><strong>Day 2:</strong> Azure AI Search — vector index, hybrid semantic+keyword</div>
+<div class="day"><strong>Day 3:</strong> RAGAS evaluation — faithfulness, relevancy, precision metrics</div>
+<div class="day"><strong>Day 4:</strong> DeepEval — alternative eval framework, GEval metric</div>
+<div class="day"><strong>Day 5:</strong> NeMo Guardrails — toxicity filter, PII filter, off-topic rails</div>
+<div class="day"><strong>Day 6-7:</strong> Automated eval pipeline — nightly RAGAS on 50 queries, CI/CD</div>
+<div class="deliverable">Azure RAG with automated evaluation + guardrails</div>
+<div class="resume-line">Built enterprise RAG on Azure OpenAI with RAGAS evaluation (faithfulness 0.87+) and NeMo Guardrails for Responsible AI</div>
+</div>
+</div>
+
+<div class="week" id="w4">
+<div class="week-header" onclick="toggle('w4')"><h2>Week 4: PyTorch + Transformer from Scratch</h2><span class="toggle">▶</span></div>
+<div class="week-body">
+<span class="gap">Deep Learning</span> <span class="gap">Neural Networks</span> <span class="gap">PyTorch</span>
+<h3>What you build:</h3>
+<p>A miniature GPT model (transformer decoder) trained from scratch.</p>
+<div class="day"><strong>Day 1:</strong> PyTorch basics — tensors, autograd, nn.Module, train loop</div>
+<div class="day"><strong>Day 2:</strong> NN components — Linear, Embedding, LayerNorm, activations</div>
+<div class="day"><strong>Day 3:</strong> Self-attention from scratch — QKV, scaled dot-product, multi-head</div>
+<div class="day"><strong>Day 4:</strong> Build mini-GPT — transformer blocks, train on Shakespeare</div>
+<div class="day"><strong>Day 5:</strong> Train on Colab — 10M params, generate text</div>
+<div class="day"><strong>Day 6-7:</strong> Production implications — KV-cache, quantization, batching</div>
+<div class="deliverable">Mini-GPT trained from scratch + Colab notebook</div>
+<div class="resume-line">Built transformer decoder from scratch in PyTorch (10M params) — attention, positional encoding, autoregressive generation</div>
+</div>
+</div>
+
+<div class="week" id="w5">
+<div class="week-header" onclick="toggle('w5')"><h2>Week 5: vLLM + Kubernetes + LLMOps</h2><span class="toggle">▶</span></div>
+<div class="week-body">
+<span class="gap">Kubernetes</span> <span class="gap">Model serving</span> <span class="gap">LLMOps</span>
+<h3>What you build:</h3>
+<p>Self-hosted LLM inference with monitoring and auto-scaling.</p>
+<div class="day"><strong>Day 1:</strong> vLLM — fast serving, OpenAI-compatible API, benchmark tokens/s</div>
+<div class="day"><strong>Day 2:</strong> MLflow — experiment tracking, compare RAG configurations</div>
+<div class="day"><strong>Day 3:</strong> Kubernetes basics — Minikube, deploy FastAPI app, scale replicas</div>
+<div class="day"><strong>Day 4:</strong> K8s manifests — Deployment, Service, ConfigMap, HPA auto-scale</div>
+<div class="day"><strong>Day 5:</strong> LangFuse — traces, cost tracking, slow query detection</div>
+<div class="day"><strong>Day 6-7:</strong> Full LLMOps — CI eval on PR, CD to K8s, monitoring alerts</div>
+<div class="deliverable">K8s-deployed RAG with MLflow + LangFuse observability</div>
+<div class="resume-line">Deployed LLM with vLLM (3x throughput), Kubernetes auto-scaling, MLflow tracking, LangFuse observability</div>
+</div>
+</div>
+
+<div class="week" id="w6">
+<div class="week-header" onclick="toggle('w6')"><h2>Week 6: CAPSTONE — Enterprise Gen AI Platform</h2><span class="toggle">▶</span></div>
+<div class="week-body">
+<span class="gap">Architecture</span> <span class="gap">Multi-tenant</span> <span class="gap">Production-grade</span>
+<h3>Architecture:</h3>
+<div class="arch">┌─────────────────────────────────────────────┐
+│            Enterprise Gen AI Platform         │
+├─────────────────────────────────────────────┤
+│ API Layer:     FastAPI + Auth + Rate Limiting │
+│ LLM Layer:     Azure OpenAI + Groq fallback  │
+│ RAG Layer:     Qdrant + Reranker + Hybrid     │
+│ Eval Layer:    RAGAS + Custom metrics         │
+│ Guard Layer:   NeMo Guardrails + PII filter   │
+│ Observe Layer: LangFuse + MLflow              │
+│ Deploy Layer:  Docker + K8s + CI/CD           │
+│ Fine-tune:     LoRA adapter for domain task   │
+└─────────────────────────────────────────────┘</div>
+<div class="day"><strong>Day 1-2:</strong> Integrate all previous weeks into one platform</div>
+<div class="day"><strong>Day 3:</strong> Multi-tenant — API keys, separate collections, per-tenant limits</div>
+<div class="day"><strong>Day 4:</strong> Admin dashboard (Streamlit) — upload docs, view metrics</div>
+<div class="day"><strong>Day 5:</strong> Documentation — ADR, API docs, deployment guide, eval report</div>
+<div class="day"><strong>Day 6-7:</strong> Demo video + portfolio update + resume update</div>
+<div class="deliverable">Full enterprise Gen AI platform on GitHub</div>
+<div class="resume-line">Architected multi-tenant enterprise Gen AI platform (FastAPI + Azure OpenAI + Qdrant + vLLM + K8s) with evaluation, guardrails, and LLMOps</div>
+</div>
+</div>
+
+<h2>📊 Skill Transformation</h2>
+<table>
+<tr><th>Skill</th><th>Before</th><th>After</th></tr>
+<tr><td>FastAPI</td><td>❌</td><td>✅ Production deployed</td></tr>
+<tr><td>Docker</td><td>❌</td><td>✅ Multi-container</td></tr>
+<tr><td>Fine-tuning (LoRA)</td><td>❌</td><td>✅ HuggingFace Hub</td></tr>
+<tr><td>PyTorch</td><td>❌</td><td>✅ Transformer from scratch</td></tr>
+<tr><td>Azure OpenAI</td><td>❌</td><td>✅ Full RAG</td></tr>
+<tr><td>Kubernetes</td><td>❌</td><td>✅ Auto-scaling</td></tr>
+<tr><td>vLLM</td><td>❌</td><td>✅ Benchmarked</td></tr>
+<tr><td>RAGAS Eval</td><td>❌</td><td>✅ Automated pipeline</td></tr>
+<tr><td>MLflow</td><td>❌</td><td>✅ Experiment tracking</td></tr>
+<tr><td>LangFuse</td><td>🟡</td><td>✅ Full tracing</td></tr>
+<tr><td>NeMo Guardrails</td><td>❌</td><td>✅ Responsible AI</td></tr>
+<tr><td>HuggingFace</td><td>🟡</td><td>✅ Trainer, Hub, PEFT</td></tr>
+<tr><td>Cloud deploy</td><td>🟡</td><td>✅ Cloud Run + K8s</td></tr>
+</table>
+
+<h2>🎯 Target Roles</h2>
+<table>
+<tr><th>Role</th><th>CTC</th><th>Match</th></tr>
+<tr><td>Gen AI Developer</td><td>₹15-25 LPA</td><td>95%</td></tr>
+<tr><td>LLM Engineer</td><td>₹20-35 LPA</td><td>85%</td></tr>
+<tr><td>AI Platform Engineer</td><td>₹25-40 LPA</td><td>80%</td></tr>
+<tr><td>MLOps Engineer</td><td>₹18-30 LPA</td><td>75%</td></tr>
+<tr><td>Applied AI Engineer</td><td>₹20-35 LPA</td><td>90%</td></tr>
+</table>
+
+<script>
+function toggle(id){const b=document.querySelector('#'+id+' .week-body');const t=document.querySelector('#'+id+' .toggle');b.classList.toggle('show');t.classList.toggle('open')}
+// Auto-open first week
+document.addEventListener('DOMContentLoaded',()=>{toggle('w1')});
+</script>
+</body>
+</html>
