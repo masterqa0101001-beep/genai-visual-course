@@ -42,9 +42,10 @@ h1{font-size:1.8rem;margin-bottom:.5rem;background:linear-gradient(90deg,#00d2ff
 <p class="error" id="errorMsg">❌ Invalid access code. Try again.</p>
 </div>
 <script>
-// Check if already authenticated
+// Check if already authenticated with current version
 const stored = localStorage.getItem('genai_course_auth');
-if (stored === 'authenticated') {
+const storedVersion = localStorage.getItem('genai_auth_version');
+if (stored === 'authenticated' && storedVersion === '2') {
     window.location.href = 'index.html';
 }
 
@@ -60,8 +61,10 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
     if (encoded === valid) {
         if (remember) {
             localStorage.setItem('genai_course_auth', 'authenticated');
+            localStorage.setItem('genai_auth_version', '2');
         } else {
             sessionStorage.setItem('genai_course_auth', 'authenticated');
+            sessionStorage.setItem('genai_auth_version', '2');
         }
         window.location.href = 'index.html';
     } else {
