@@ -55,7 +55,7 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
     
     // Validate: encode input to base64 and compare
     const encoded = btoa(code);
-    const valid = 'dGhpc2lzbXlwYXNzd29yZEA1NTU=';
+    const valid = 'bmV3cGFzc3dvcmRAMDEwMQ==';
     
     if (encoded === valid) {
         if (remember) {
