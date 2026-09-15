@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><script src="auth_guard.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Azure Cloud for GenAI — Storage, Vector Search, LLM Calls, Requests & Security</title>
+<link rel="stylesheet" href="fix_readability.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0a0a14;color:#e0e0e0;padding:2rem;line-height:1.7}
+.container{max-width:960px;margin:0 auto}
+h1{font-size:2rem;margin-bottom:.5rem;background:linear-gradient(90deg,#0078d4,#50e6ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+h2{font-size:1.4rem;color:#0078d4;margin:2.5rem 0 1rem;border-bottom:1px solid #222;padding-bottom:.5rem}
+h3{font-size:1.1rem;color:#50e6ff;margin:1.5rem 0 .5rem}
+h4{font-size:1rem;color:#00e676;margin:1.2rem 0 .4rem}
+p{margin-bottom:1rem;color:#ccc}
+code{background:#1a1a2e;padding:2px 6px;border-radius:4px;font-size:.9em;color:#50e6ff}
+pre{background:#0d0d1a;border:1px solid #222;border-radius:8px;padding:1.2rem;overflow-x:auto;margin:1rem 0;font-size:.83rem;line-height:1.55}
+pre code{background:none;padding:0;color:#e0e0e0}
+.diagram{background:#12121f;border:1px solid #333;border-radius:12px;padding:1.5rem;margin:1.5rem 0;font-family:monospace;font-size:.8rem;white-space:pre;overflow-x:auto;color:#50e6ff}
+.key-point{background:#1a1a2e;border-left:4px solid #00e676;padding:1rem 1.2rem;margin:1rem 0;border-radius:0 8px 8px 0}
+.key-point strong{color:#00e676}
+.warn{background:#1f1420;border-left:4px solid #ff6b6b;padding:1rem 1.2rem;margin:1rem 0;border-radius:0 8px 8px 0}
+.warn strong{color:#ff6b6b}
+.interview-q{background:#1a1a2e;border-left:4px solid #ffc107;padding:1rem 1.2rem;margin:1rem 0;border-radius:0 8px 8px 0}
+.interview-q strong{color:#ffc107}
+.bnp{background:#0d1a24;border:1px solid #0078d4;border-left:4px solid #0078d4;padding:1rem 1.2rem;margin:1rem 0;border-radius:0 8px 8px 0}
+.bnp strong{color:#50e6ff}
+.nav{margin-bottom:2rem}
+.nav a{color:#7b2ff7;text-decoration:none;font-size:.9rem}
+table{width:100%;border-collapse:collapse;margin:1rem 0}
+th,td{border:1px solid #333;padding:.6rem;text-align:left;font-size:.83rem;vertical-align:top}
+th{background:#1a1a2e;color:#0078d4}
+.toc{background:#12121f;border:1px solid #222;border-radius:12px;padding:1.2rem 1.5rem;margin:1.5rem 0}
+.toc a{color:#50e6ff;text-decoration:none;font-size:.88rem;display:block;padding:3px 0}
+.toc a:hover{color:#00e676}
+.pill{display:inline-block;font-size:.68rem;padding:2px 9px;border-radius:10px;font-weight:600;background:#0078d420;color:#50e6ff;border:1px solid #0078d440;margin-left:6px}
+.svc{display:grid;grid-template-columns:auto 1fr;gap:.5rem 1rem;background:#12121f;border:1px solid #222;border-radius:10px;padding:1rem 1.2rem;margin:1rem 0}
+.svc .n{color:#50e6ff;font-weight:600}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="nav"><a href="index.html">← Back to Course Home</a></div>
+<h1>☁️ Azure Cloud for GenAI <span class="pill">ENTERPRISE / BANKING</span></h1>
+<p>The complete Azure-native GenAI stack — how you store data, run vector search, call LLMs, manage requests at scale, and secure all of it to a bank's standard. Built for the BNP Paribas "AI for IT" role, and any enterprise Azure JD.</p>
+
+<div class="key-point">
+<strong>Why this page exists:</strong> Most tutorials teach GenAI on public OpenAI + a local vector DB. Enterprises (banks especially) run everything <em>inside their own cloud tenant</em> for data residency, compliance, and auditability. This page maps every GenAI building block to its Azure-native service, then hardens it. Sources: Microsoft Learn (Azure OpenAI, Azure AI Search) + 2026 security guidance.
+</div>
+
+<div class="toc">
+<strong style="color:#0078d4">On this page</strong>
+<a href="#map">0 · The Azure GenAI service map (memorize this)</a>
+<a href="#llm">1 · LLM calls — Azure OpenAI / Foundry</a>
+<a href="#storage">2 · Storage — Blob, Cosmos DB, Key Vault</a>
+<a href="#vector">3 · Vector search — Azure AI Search</a>
+<a href="#requests">4 · Managing requests — APIM gateway, quotas, retries</a>
+<a href="#security">5 · Security — identity, network, data, audit (5 layers)</a>
+<a href="#arch">6 · Full reference architecture (enterprise RAG)</a>
+<a href="#iq">7 · Interview questions</a>
+<a href="#gaps">8 · What to say if you haven't used Azure hands-on</a>
+</div>
+
+<h2 id="map">0 · The Azure GenAI service map</h2>
+<p>Every generic GenAI building block has an Azure-native equivalent. When an interviewer says "how would you build this on Azure," you name the service for each layer.</p>
+<table>
+<tr><th>GenAI building block</th><th>Azure service</th><th>What it replaces</th></tr>
+<tr><td>LLM inference (chat, embeddings)</td><td><strong>Azure OpenAI</strong> / Azure AI Foundry Models</td><td>Public OpenAI / Anthropic API</td></tr>
+<tr><td>Vector + keyword retrieval</td><td><strong>Azure AI Search</strong> (hybrid + semantic ranker)</td><td>Qdrant / Pinecone / FAISS</td></tr>
+<tr><td>Raw document / file storage</td><td><strong>Azure Blob Storage</strong></td><td>S3 / local disk</td></tr>
+<tr><td>Chat history, metadata, state</td><td><strong>Azure Cosmos DB</strong> (also does vector now)</td><td>Postgres / Mongo / SQLite checkpoints</td></tr>
+<tr><td>Secrets, keys, certs</td><td><strong>Azure Key Vault</strong></td><td>.env files</td></tr>
+<tr><td>Orchestration framework</td><td><strong>Semantic Kernel</strong> (also LangChain/LangGraph)</td><td>LangChain</td></tr>
+<tr><td>Request gateway / quotas / logging</td><td><strong>Azure API Management (APIM)</strong> — "AI gateway"</td><td>Custom rate limiter</td></tr>
+<tr><td>Compute / serving</td><td><strong>AKS</strong> / Container Apps / Functions</td><td>Docker on a VM</td></tr>
+<tr><td>Identity & access</td><td><strong>Microsoft Entra ID</strong> + Managed Identity + RBAC</td><td>API keys in env</td></tr>
+<tr><td>Observability / audit</td><td><strong>Azure Monitor</strong> + Log Analytics (KQL) + App Insights</td><td>print() / custom tracer</td></tr>
+<tr><td>ML pipelines / fine-tuning</td><td><strong>Azure Machine Learning</strong> / Foundry fine-tuning</td><td>Colab + HF Trainer</td></tr>
+</table>
+<div class="bnp"><strong>BNP tie-in:</strong> The JD lists "cloud platforms (Azure preferred)" and "Azure AI certifications a plus." You don't need to have shipped on all of these — you need to <em>name the right service per layer</em> and explain the security posture. That alone puts you ahead of most candidates.</div>
+
+<h2 id="llm">1 · LLM calls — Azure OpenAI</h2>
+
+<h3>The one mental model: deployment name ≠ model name</h3>
+<p>In Azure you don't call <code>gpt-4o</code> directly. You <strong>deploy</strong> a model into your resource and give the deployment a name (e.g. <code>gpt-4o-prod</code>). Your code calls the <em>deployment name</em>. This lets you swap the underlying model version, set per-deployment quotas, and apply per-deployment RBAC — without changing client code.</p>
+
+<div class="diagram">
+Public OpenAI                Azure OpenAI
+────────────                 ─────────────
+api.openai.com               https://&lt;your-resource&gt;.openai.azure.com/
+model="gpt-4o"               model="gpt-4o-prod"   ← YOUR deployment name
+key in header                Entra ID token (keyless)  ← recommended
+data leaves your tenant      data stays in your tenant / chosen region
+</div>
+
+<h3>The right way to authenticate: keyless (Managed Identity)</h3>
+<p>Microsoft's own guidance: <em>prefer keyless auth via Microsoft Entra ID</em>. A key that is never issued can never be leaked into a repo, image layer, or log line. (Content rephrased from Microsoft Learn for licensing compliance.)</p>
+<pre><code># pip install openai azure-identity
+from azure.identity import DefaultAzureCredential, get_bearer_token_provider
+from openai import AzureOpenAI
+
+# On Azure compute this resolves to the attached Managed Identity.
+# Locally it falls back to your `az login` session — identical code, no secret.
+token_provider = get_bearer_token_provider(
+    DefaultAzureCredential(),
+    "https://cognitiveservices.azure.com/.default",
+)
+
+client = AzureOpenAI(
+    azure_endpoint="https://my-openai-weu.openai.azure.com/",
+    azure_ad_token_provider=token_provider,   # ← no api_key
+    api_version="2024-10-21",
+)
+
+resp = client.chat.completions.create(
+    model="gpt-4o-prod",   # deployment name, NOT model name
+    messages=[{"role": "user", "content": "Summarize this incident report."}],
+    temperature=0.2,       # low temp for factual/banking work
+)
+print(resp.choices[0].message.content)
+</code></pre>
+
+<h3>Embeddings on Azure (for RAG)</h3>
+<pre><code>emb = client.embeddings.create(
+    model="text-embedding-3-large",   # deployment name of your embedding model
+    input=["What is our refund policy?"],
+)
+vector = emb.data[0].embedding   # 3072-dim vector → store in Azure AI Search
+</code></pre>
+
+<div class="key-point"><strong>Interview one-liner:</strong> "Azure OpenAI is the same models as OpenAI, wrapped for the enterprise: data stays in your tenant/region, Entra ID identity instead of shared keys, built-in content filtering, and per-deployment RBAC and quotas."</div>
+
+<h2 id="storage">2 · Storage — Blob, Cosmos DB, Key Vault</h2>
+
+<h3>Azure Blob Storage — the raw document lake</h3>
+<p>Where your source documents (PDFs, transcripts, code) live before ingestion. Azure AI Search can index Blob directly, and Blob is where you keep fine-tuning training sets behind tight RBAC.</p>
+<pre><code>from azure.identity import DefaultAzureCredential
+from azure.storage.blob import BlobServiceClient
+
+svc = BlobServiceClient(
+    account_url="https://mystorage.blob.core.windows.net",
+    credential=DefaultAzureCredential(),      # keyless again
+)
+container = svc.get_container_client("source-docs")
+with open("policy.pdf", "rb") as f:
+    container.upload_blob(name="policy.pdf", data=f, overwrite=True)
+</code></pre>
+
+<h3>Azure Cosmos DB — state, chat history, and vectors</h3>
+<p>Your operational database: conversation history, user metadata, agent state / checkpoints. Cosmos DB now also supports <strong>native vector search</strong>, so for smaller workloads you can store embeddings alongside your app data instead of a separate search service.</p>
+<div class="key-point"><strong>Design call:</strong> Use <strong>Azure AI Search</strong> when retrieval quality/scale is the priority (hybrid + semantic ranker). Use <strong>Cosmos DB vector</strong> when you want vectors co-located with transactional data and simpler ops. Being able to justify this trade-off is a senior signal.</div>
+
+<h3>Azure Key Vault — where secrets go (if you must have them)</h3>
+<p>Best practice is keyless. When a secret is unavoidable (a third-party API key, a DB connection string), it lives in Key Vault and is fetched at runtime via Managed Identity — never in <code>.env</code> in production.</p>
+<pre><code>from azure.identity import DefaultAzureCredential
+from azure.keyvault.secrets import SecretClient
+
+kv = SecretClient(
+    vault_url="https://my-kv.vault.azure.net",
+    credential=DefaultAzureCredential(),
+)
+groq_key = kv.get_secret("GROQ-API-KEY").value
+</code></pre>
+<div class="bnp"><strong>BNP tie-in:</strong> In your ContentMind project you load keys from a <code>.env</code> file. The enterprise upgrade story to tell: "In production I'd move those to Key Vault fetched via Managed Identity, so no secret ever sits on disk or in the image." That shows you understand the gap between a demo and a bank deployment.</div>
+
+<h2 id="vector">3 · Vector search — Azure AI Search</h2>
+
+<h3>Why it's more than a vector DB</h3>
+<p>Azure AI Search runs <strong>keyword (BM25) and vector queries in parallel</strong>, merges them with <strong>Reciprocal Rank Fusion (RRF)</strong>, then optionally re-scores the top results with a <strong>semantic ranker</strong> (an L2 cross-encoder-style reranker). That's the exact hybrid-search pattern you already built by hand with Qdrant — Azure gives it to you as a managed feature. (Facts from Microsoft Learn; rephrased for compliance.)</p>
+
+<div class="diagram">
+Query "refund policy error 429"
+        │
+        ├──────────────┬──────────────────┐
+        ▼              ▼                   
+   Keyword (BM25)   Vector (kNN)      ← run in PARALLEL
+   catches "429",   catches meaning   
+   exact codes      of "refund policy"
+        │              │
+        └──────► RRF fusion ◄──────┘     score = Σ 1/(k + rank)
+                   │
+                   ▼
+          Semantic ranker (L2)           ← re-scores top N for relevance
+                   │
+                   ▼
+            Top-k grounded chunks → LLM
+</div>
+
+<h3>Creating a hybrid query</h3>
+<pre><code>from azure.identity import DefaultAzureCredential
+from azure.search.documents import SearchClient
+from azure.search.documents.models import VectorizableTextQuery
+
+search = SearchClient(
+    endpoint="https://my-search.search.windows.net",
+    index_name="documents",
+    credential=DefaultAzureCredential(),
+)
+
+results = search.search(
+    search_text="refund policy error 429",          # keyword / BM25 leg
+    vector_queries=[VectorizableTextQuery(
+        text="refund policy error 429",              # vector leg (auto-embedded)
+        k_nearest_neighbors=5,
+        fields="content_vector",
+    )],
+    query_type="semantic",                            # turn on semantic ranker
+    semantic_configuration_name="default",
+    select=["title", "content", "source"],
+    top=5,
+)
+for r in results:
+    print(r["@search.reranker_score"], r["title"])
+</code></pre>
+
+<h3>Integrated vectorization — no manual embedding pipeline</h3>
+<p>Azure AI Search can chunk <em>and</em> embed your documents automatically at ingestion time (calling your Azure OpenAI embedding deployment) and re-embed the query at search time. This removes the hand-written chunk→embed→upsert code you wrote in <code>bootstrap_rag.py</code> — the service does it.</p>
+<div class="key-point"><strong>When to use it:</strong> Integrated vectorization = less code, fewer moving parts, good default for enterprise. Custom pipeline (like your Qdrant one) = more control over chunking/embeddings. Name both and state the trade-off.</div>
+
+<div class="bnp"><strong>BNP tie-in:</strong> "I've implemented hybrid search from scratch — BM25 sparse vectors fused with dense vectors via RRF on Qdrant. Azure AI Search productionizes exactly that pattern with a managed semantic ranker on top, so I understand both the internals and the managed service." That's a killer answer.</div>
+
+<h2 id="requests">4 · Managing requests — APIM gateway, quotas, retries</h2>
+
+<h3>The problem Azure OpenAI alone can't solve</h3>
+<p>A bare Azure OpenAI deployment has <strong>no concept of per-consumer quotas</strong>. Every app sharing a deployment competes for the same tokens-per-minute (TPM), and one runaway retry loop starves everyone. The fix is the <strong>AI gateway pattern</strong>: put <strong>Azure API Management (APIM)</strong> in front.</p>
+
+<div class="diagram">
+   App A ─┐
+   App B ─┼──► Azure API Management ──► Azure OpenAI deployment
+   App C ─┘        │
+                   ├─ per-consumer token quota (429 when exceeded)
+                   ├─ emit token metrics (chargeback + anomaly alerts)
+                   ├─ central logging of every request
+                   └─ authenticates to backend with ITS OWN managed identity
+</div>
+
+<h3>APIM policy: per-consumer token budget</h3>
+<pre><code>&lt;inbound&gt;
+  &lt;!-- Per-consumer token budget: 429 on rate, 403 on quota --&gt;
+  &lt;azure-openai-token-limit
+      counter-key="@(context.Subscription.Id)"
+      tokens-per-minute="5000"
+      estimate-prompt-tokens="true"
+      remaining-tokens-header-name="x-remaining-tokens" /&gt;
+
+  &lt;!-- Emit per-consumer token metrics for chargeback / anomaly detection --&gt;
+  &lt;azure-openai-emit-token-metric namespace="openai"&gt;
+    &lt;dimension name="Subscription ID" value="@(context.Subscription.Id)" /&gt;
+  &lt;/azure-openai-emit-token-metric&gt;
+
+  &lt;!-- Gateway authenticates to the backend once, with a managed identity --&gt;
+  &lt;authentication-managed-identity resource="https://cognitiveservices.azure.com" /&gt;
+&lt;/inbound&gt;
+</code></pre>
+
+<h3>Client-side resilience: rate limits, retries, timeouts</h3>
+<p>Even with a gateway, your client must handle 429s and transient failures gracefully.</p>
+<pre><code>import time, random
+from openai import RateLimitError, APITimeoutError
+
+def call_with_backoff(client, **kwargs):
+    for attempt in range(5):
+        try:
+            return client.chat.completions.create(timeout=30, **kwargs)
+        except RateLimitError:                     # 429 → honor Retry-After / backoff
+            wait = (2 ** attempt) + random.random()  # exponential + jitter
+            time.sleep(wait)
+        except APITimeoutError:
+            if attempt == 4:
+                raise
+    raise RuntimeError("Exhausted retries")
+</code></pre>
+<div class="bnp"><strong>BNP tie-in:</strong> Your failure taxonomy in <code>tracer.py</code> already separates <code>LLM_RATE_LIMIT</code>, <code>LLM_TIMEOUT</code>, and <code>TOOL_TIMEOUT</code>. Say: "I classify failures by type so recovery is targeted — a 429 gets backoff, a timeout gets a retry with a circuit breaker, and I emit token metrics per consumer so a runaway loop shows up as a spend anomaly, not an outage." That maps 1:1 to the APIM pattern.</div>
+
+<h2 id="security">5 · Security — the 5 layers a bank cares about</h2>
+<p>This is the section that wins a banking interview. The default posture of a new Azure OpenAI resource is <strong>permissive</strong> — key auth enabled, public endpoint reachable. Hardening = flipping defaults, in this order.</p>
+
+<div class="warn"><strong>Real-world stakes:</strong> CVE-2025-53767 was a server-side request forgery in Azure OpenAI that let an attacker hit the internal metadata endpoint and steal the resource's managed-identity token — which becomes tenant-wide compromise if that identity is over-privileged. Lesson: <em>least privilege on the identity is not optional.</em></div>
+
+<h3>Layer 1 — Identity: turn off the keys</h3>
+<ul style="color:#ccc;margin:0 0 1rem 1.5rem">
+<li>Set <code>disableLocalAuth: true</code> → the shared-key path disappears.</li>
+<li>Use <strong>Microsoft Entra ID + Managed Identity</strong> for all calls (keyless).</li>
+<li>Assign the <strong>least-privilege data-plane role</strong>: <code>Cognitive Services OpenAI User</code> (inference only) — scoped to the <em>individual account</em>, never the subscription.</li>
+<li>Enforce across the estate with Azure Policy (start in <em>Audit</em> mode, then <em>Deny</em>).</li>
+</ul>
+
+<h3>Layer 2 — Network: take the endpoint off the internet</h3>
+<ul style="color:#ccc;margin:0 0 1rem 1.5rem">
+<li><code>publicNetworkAccess: Disabled</code> + <code>networkAcls.defaultAction: Deny</code>.</li>
+<li>Add a <strong>Private Endpoint</strong> inside your VNet; requires a <code>customSubDomainName</code>.</li>
+<li>Register the <strong>private DNS zone</strong> <code>privatelink.openai.azure.com</code> (the #1 thing people get wrong — A record lands in the wrong zone and resolution fails).</li>
+</ul>
+
+<h3>Layer 3 — Gateway: quotas + central logging (APIM, see §4)</h3>
+
+<h3>Layer 4 — Data & compliance</h3>
+<table>
+<tr><th>Setting</th><th>Why it matters for a bank</th></tr>
+<tr><td>Deployment type: <strong>Regional / DataZone</strong> vs Global</td><td>Decides <strong>data residency</strong>. Regional = stays in one region; DataZone = stays in a geography (EU/US). This is your answer to "where is our data processed?"</td></tr>
+<tr><td>Abuse monitoring / content logging</td><td>By default Microsoft may retain flagged prompts for review. Regulated customers can apply for <strong>modified abuse monitoring</strong> exemptions. Don't promise "nothing is retained" without checking.</td></tr>
+<tr><td>Customer-Managed Keys (CMK) in Key Vault</td><td>Encryption at rest under <em>your</em> key — a common compliance requirement.</td></tr>
+<tr><td>Content filters + <strong>Prompt Shields</strong></td><td>Filters cover hate/sexual/violence/self-harm. Prompt Shields target jailbreaks and <strong>indirect prompt injection</strong> — critical for RAG, where untrusted text arrives inside a retrieved document.</td></tr>
+</table>
+
+<h3>Layer 5 — Detection: prove you'd notice</h3>
+<p>Route diagnostic logs to <strong>Log Analytics</strong> and write the alert before you need it. The highest-value detection is a <strong>token-spend anomaly</strong> — because stolen credentials and a broken retry loop look identical on the bill.</p>
+<pre><code>// KQL: callers whose hourly volume is far above their own baseline
+AzureDiagnostics
+| where ResourceProvider == "MICROSOFT.COGNITIVESERVICES"
+| summarize calls = count() by bin(TimeGenerated, 1h), identity_claim_appid_g
+// ... join against a per-identity baseline, flag calls > baseline * 5
+</code></pre>
+
+<div class="diagram">
+Hardening order (identity → network → gateway → data → detection):
+
+1. disableLocalAuth = true            ← removes the #1 leak path
+2. publicNetworkAccess = Disabled     ← removes remote attackers
+3. APIM in front                      ← quotas + logging the resource lacks
+4. Regional deployment + CMK + filters← residency, encryption, safety
+5. Diagnostic logs + spend alert      ← covers what you haven't fixed yet
+</div>
+
+<div class="bnp"><strong>BNP tie-in (say this):</strong> "For a bank I'd deploy Azure OpenAI keyless with Entra managed identity and the OpenAI User role scoped to the account, behind a private endpoint with public access disabled, fronted by APIM for per-consumer token quotas and central logging, on a Regional deployment for data residency, with content filters + Prompt Shields for injection, and diagnostic logs to Log Analytics with a spend-anomaly alert." — That single paragraph demonstrates enterprise maturity most candidates can't.</div>
+
+<h2 id="arch">6 · Full reference architecture — enterprise RAG on Azure</h2>
+<div class="diagram">
+                        ┌─────────────────────────────┐
+   User / IT staff ───► │  App (FastAPI on AKS /       │
+                        │  Container Apps)             │
+                        └──────────────┬──────────────┘
+                                       │ Managed Identity (no keys)
+                    ┌──────────────────┼───────────────────────┐
+                    ▼                  ▼                        ▼
+          ┌──────────────┐   ┌──────────────────┐   ┌────────────────────┐
+          │ Azure API    │   │ Azure AI Search  │   │ Azure Blob Storage │
+          │ Management    │   │ (hybrid + RRF +  │   │ (source documents) │
+          │ quotas+logging│   │  semantic ranker)│   └────────────────────┘
+          └──────┬───────┘   └────────┬─────────┘
+                 ▼                    │ retrieved chunks
+        ┌──────────────────┐         │
+        │  Azure OpenAI    │◄────────┘  (grounded context)
+        │  gpt-4o + embed  │
+        │  Private Endpoint│
+        └────────┬─────────┘
+                 │
+   Secrets ◄─ Key Vault      State/history ◄─ Cosmos DB
+   Audit   ◄─ Log Analytics (KQL)  •  Identity ◄─ Microsoft Entra ID
+</div>
+<p>Flow: user hits your API (authenticated) → API retrieves grounded context from Azure AI Search (hybrid over docs indexed from Blob) → calls Azure OpenAI (private endpoint, via APIM for quota) → returns a cited answer → every request logged to Log Analytics; secrets in Key Vault; chat state in Cosmos DB; all auth via Entra managed identities.</p>
+
+<h2 id="iq">7 · Interview questions</h2>
+
+<div class="interview-q"><strong>Q: "How is Azure OpenAI different from calling OpenAI directly?"</strong><br>
+A: Same models, enterprise wrapper. Data stays in your tenant and chosen region (residency), you authenticate with Entra ID identities instead of shared keys, you get per-deployment RBAC and quotas, built-in content filtering and Prompt Shields, private networking, and full audit logging. You call a <em>deployment name</em>, not a model name.</div>
+
+<div class="interview-q"><strong>Q: "How would you do vector search on Azure?"</strong><br>
+A: Azure AI Search. It runs BM25 keyword and vector kNN in parallel, fuses with Reciprocal Rank Fusion, then re-scores top results with a semantic ranker. Integrated vectorization can chunk and embed automatically at ingest and query time. For smaller workloads, Cosmos DB now has native vector search co-located with app data.</div>
+
+<div class="interview-q"><strong>Q: "How do you secure a GenAI app in a bank on Azure?"</strong><br>
+A: Five layers — (1) identity: keyless via Entra managed identity, least-privilege OpenAI User role scoped to the account; (2) network: private endpoint, public access disabled; (3) gateway: APIM for per-consumer token quotas and central logging; (4) data: Regional/DataZone deployment for residency, CMK encryption, content filters + Prompt Shields; (5) detection: diagnostic logs to Log Analytics with a token-spend anomaly alert.</div>
+
+<div class="interview-q"><strong>Q: "How do you manage requests / prevent one team starving others?"</strong><br>
+A: Azure OpenAI has no per-consumer quota on its own, so I put APIM in front with the <code>azure-openai-token-limit</code> policy — each consumer gets a TPM budget, exceeding it returns 429. APIM also emits per-consumer token metrics so I can alert on anomalous spend, and it authenticates to the backend with its own managed identity. Client side, I add exponential backoff with jitter on 429/timeout plus a circuit breaker.</div>
+
+<div class="interview-q"><strong>Q: "What's the risk of an over-privileged managed identity?"</strong><br>
+A: If the identity attached to the resource has Owner/Contributor at subscription scope, a service-side flaw (like CVE-2025-53767's SSRF against the metadata endpoint) that leaks its token becomes tenant-wide compromise. Mitigation: assign only the data-plane role you need (OpenAI User), scoped to the individual account — never the subscription.</div>
+
+<div class="interview-q"><strong>Q: "How do you defend RAG against prompt injection on Azure?"</strong><br>
+A: Enable Prompt Shields (they specifically target indirect/injected instructions arriving inside retrieved documents), treat all retrieved content as untrusted, separate system vs user content, validate/limit tool permissions, and filter outputs. Injection through a poisoned document is the RAG-specific threat, so the shield at the retrieval boundary matters most.</div>
+
+<h2 id="gaps">8 · If you haven't used Azure hands-on (honest framing)</h2>
+<div class="key-point">
+<strong>Don't fake depth. Frame transferable skill:</strong><br>
+"I've built the full GenAI stack on open tooling — LangGraph multi-agent orchestration, hybrid search with BM25 + RRF on Qdrant, FastAPI + Docker serving, a failure taxonomy with per-node token/latency telemetry, and human-in-the-loop gates. On Azure those map directly: Azure OpenAI for inference, Azure AI Search for the same hybrid+RRF pattern as a managed service, APIM for the quota/telemetry layer I built by hand, Key Vault + managed identity for the secrets I currently keep in .env, and Log Analytics for the observability my tracer does today. The concepts transfer; I'd be learning Azure's names for patterns I've already implemented." 
+</div>
+<p>That answer is stronger than pretending — it shows you understand the <em>why</em>, not just the SDK, and it turns your existing projects into Azure-ready experience.</p>
+
+<h3>Fastest way to get real hands-on (free-ish)</h3>
+<ul style="color:#ccc;margin:0 0 1rem 1.5rem">
+<li>Azure free account → create an Azure OpenAI resource (may need access approval) + an Azure AI Search free tier.</li>
+<li>Do the keyless-auth quickstart (Entra ID + <code>DefaultAzureCredential</code>) — it's the highest-signal thing to have actually run.</li>
+<li>Skim the <strong>AI-102 (Azure AI Engineer Associate)</strong> outline — even naming the services confidently signals fit for the JD's "Azure certs a plus."</li>
+</ul>
+
+<div class="nav" style="margin-top:3rem;text-align:center">
+<a href="azure_evaluation.html">← Azure + Evaluation + Advanced RAG</a> | <a href="index.html">Course Home</a> | <a href="llmops_deployment.html">LLMOps & Deployment →</a>
+</div>
+<p style="text-align:center;color:#444;font-size:.75rem;margin-top:2rem">Sources: Microsoft Learn (Azure OpenAI, Azure AI Search, keyless connections, hybrid search) + 2026 Azure OpenAI security guidance. Technical content rephrased and summarized for licensing compliance. Verify exact API versions and compliance identifiers against current Microsoft docs.</p>
+</div>
+</body>
+</html>

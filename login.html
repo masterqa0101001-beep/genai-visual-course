@@ -45,7 +45,7 @@ h1{font-size:1.8rem;margin-bottom:.5rem;background:linear-gradient(90deg,#00d2ff
 // Check if already authenticated with current version
 const stored = localStorage.getItem('genai_course_auth');
 const storedVersion = localStorage.getItem('genai_auth_version');
-if (stored === 'authenticated' && storedVersion === '3') {
+if (stored === 'authenticated' && storedVersion === '4') {
     window.location.href = 'index.html';
 }
 
@@ -56,15 +56,15 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
     
     // Validate: encode input to base64 and compare
     const encoded = btoa(code);
-    const valid = 'TmV3YWxwaGFANTU1';
+    const valid = 'TmV3MDEwMUAwMTAx';
     
     if (encoded === valid) {
         if (remember) {
             localStorage.setItem('genai_course_auth', 'authenticated');
-            localStorage.setItem('genai_auth_version', '3');
+            localStorage.setItem('genai_auth_version', '4');
         } else {
             sessionStorage.setItem('genai_course_auth', 'authenticated');
-            sessionStorage.setItem('genai_auth_version', '3');
+            sessionStorage.setItem('genai_auth_version', '4');
         }
         window.location.href = 'index.html';
     } else {

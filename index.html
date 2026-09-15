@@ -22,10 +22,16 @@ h1{font-size:2.2rem;text-align:center;margin-bottom:.3rem;background:linear-grad
 </head>
 <body>
 <script>
-// Auth guard — redirect to login if not authenticated
+// Auth guard — redirect to login if not authenticated (version-aware)
 (function() {
+    const AUTH_VERSION = '4';  // must match login.html + auth_guard.js
     const auth = localStorage.getItem('genai_course_auth') || sessionStorage.getItem('genai_course_auth');
-    if (auth !== 'authenticated') {
+    const version = localStorage.getItem('genai_auth_version') || sessionStorage.getItem('genai_auth_version');
+    if (auth !== 'authenticated' || version !== AUTH_VERSION) {
+        localStorage.removeItem('genai_course_auth');
+        sessionStorage.removeItem('genai_course_auth');
+        localStorage.removeItem('genai_auth_version');
+        sessionStorage.removeItem('genai_auth_version');
         window.location.href = 'login.html';
     }
 })();
@@ -110,6 +116,11 @@ h1{font-size:2.2rem;text-align:center;margin-bottom:.3rem;background:linear-grad
 <h2>🔥 Career Week 2: Fine-Tuning (LoRA/QLoRA)</h2>
 <p>Fine-tune Llama on Colab for free. LoRA, QLoRA, PEFT, HuggingFace Trainer. Your biggest resume gap — FIXED.</p>
 <span class="status done">✅ READY — CRITICAL GAP</span>
+</a>
+<a href="azure_cloud_genai.html" class="card" style="border-color:#0078d4;border-width:2px">
+<h2>☁️ Azure Cloud for GenAI (Storage · Vector · LLM · Security)</h2>
+<p>The complete Azure-native stack: Azure OpenAI (keyless), Azure AI Search hybrid+RRF, Blob/Cosmos/Key Vault, APIM request management, and the 5-layer security model. Mapped to BNP Paribas + your projects.</p>
+<span class="status done">✅ READY — NEW · BANKING GRADE</span>
 </a>
 <a href="azure_evaluation.html" class="card" style="border-color:#0078d4">
 <h2>☁️ Career Week 3: Azure + Evaluation + Advanced RAG</h2>
