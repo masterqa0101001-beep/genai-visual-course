@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>P1 — MCP Deep Dive (Founder Level)</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0a0a14;color:#e0e0e0;line-height:1.7}
+.wrap{max-width:1000px;margin:0 auto;padding:2rem 1.3rem 6rem}
+a.back{color:#7b2ff7;text-decoration:none;font-size:.85rem}
+h1{font-size:2.1rem;margin:1rem 0 .3rem;background:linear-gradient(90deg,#00d2ff,#00e676);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sub{color:#777;margin-bottom:2rem;font-size:.95rem}
+h2{font-size:1.5rem;margin:2.5rem 0 1rem;color:#00d2ff;border-bottom:1px solid #222;padding-bottom:.5rem}
+h3{font-size:1.15rem;margin:1.8rem 0 .7rem;color:#c9a6ff}
+p{margin:.7rem 0;color:#cfcfcf}
+.card{background:#12121f;border:1px solid #222;border-radius:12px;padding:1.3rem 1.5rem;margin:1.2rem 0}
+.hl{background:#7b2ff715;border-left:3px solid #7b2ff7;padding:1rem 1.2rem;border-radius:0 8px 8px 0;margin:1.2rem 0}
+.warn{background:#ff6b6b12;border-left:3px solid #ff6b6b;padding:1rem 1.2rem;border-radius:0 8px 8px 0;margin:1.2rem 0}
+.win{background:#00e67612;border-left:3px solid #00e676;padding:1rem 1.2rem;border-radius:0 8px 8px 0;margin:1.2rem 0}
+.founder{background:linear-gradient(135deg,#102a2e,#101a2e);border:1px solid #00d2ff40;border-radius:12px;padding:1.3rem 1.5rem;margin:1.5rem 0}
+.founder h4{color:#ffc107;font-size:1rem;margin-bottom:.5rem}
+pre{background:#07070f;border:1px solid #1e1e2e;border-radius:8px;padding:1rem;overflow-x:auto;margin:1rem 0;font-size:.82rem}
+code{font-family:'Consolas','Courier New',monospace;color:#8be9fd}
+pre code{color:#e0e0e0}
+.ascii{background:#07070f;border:1px solid #1e1e2e;border-radius:8px;padding:1.2rem;overflow-x:auto;color:#00d2ff;font-family:'Consolas',monospace;font-size:.8rem;white-space:pre;line-height:1.4;margin:1.2rem 0}
+table{width:100%;border-collapse:collapse;margin:1.2rem 0;font-size:.85rem}
+th,td{border:1px solid #222;padding:.6rem .8rem;text-align:left;vertical-align:top}
+th{background:#1a1a2e;color:#00d2ff}
+.mine{border-left:3px solid #00d2ff;background:#00d2ff10;padding:1rem 1.2rem;border-radius:0 8px 8px 0;margin:1.2rem 0}
+.mine b{color:#00d2ff}
+ul,ol{margin:.6rem 0 .6rem 1.4rem}li{margin:.35rem 0}
+.q{background:#12121f;border:1px dashed #444;border-radius:8px;padding:1rem 1.2rem;margin:1rem 0}
+.q .a{color:#00e676;margin-top:.5rem;font-size:.9rem}
+.nav{display:flex;justify-content:space-between;margin-top:3rem;gap:1rem}
+.nav a{flex:1;background:#12121f;border:1px solid #222;border-radius:8px;padding:1rem;text-decoration:none;color:#e0e0e0;transition:.3s}
+.nav a:hover{border-color:#00d2ff}
+</style>
+</head>
+<body>
+<script>
+(function(){const V='4';const a=localStorage.getItem('genai_course_auth')||sessionStorage.getItem('genai_course_auth');const v=localStorage.getItem('genai_auth_version')||sessionStorage.getItem('genai_auth_version');if(a!=='authenticated'||v!==V){window.location.href='login.html';}})();
+</script>
+<div class="wrap">
+<a class="back" href="index.html">← Back to course home</a>
+<h1>🔌 P1 — MCP (Model Context Protocol) Deep Dive</h1>
+<p class="sub">The standard that lets any agent plug into any tool. You've already built an MCP server — this makes you able to <em>explain and architect</em> it. Content synthesized + rephrased from the official MCP docs. <a style="color:#7b2ff7" href="https://modelcontextprotocol.io/docs/getting-started/intro">source</a></p>
+
+<div class="founder">
+<h4>⭐ THE ONE-LINER</h4>
+<p>"MCP is <strong>USB-C for AI</strong> — an open standard so you build a tool once and every agent (Claude, ChatGPT, Cursor, VS Code) can use it. It's function calling plus a transport layer and a discovery mechanism. I've built one, so I know it's just a server exposing tools, resources, and prompts over a defined protocol."</p>
+</div>
+
+<h2>1. What MCP actually is</h2>
+<p>MCP is an open-source standard for connecting AI applications to external systems — data sources (files, DBs), tools (search, calculators), and workflows (specialized prompts). Before MCP, every app wired every tool with a custom integration (the "M×N problem"). MCP turns that into "build once, integrate everywhere."</p>
+<div class="ascii">
+ WITHOUT MCP (M×N custom integrations)      WITH MCP (M+N)
+   App1 ─┐  ┌─ Tool1                          App1 ─┐        ┌─ Tool1
+   App2 ─┼──┼─ Tool2        →                 App2 ─┼─[MCP]──┼─ Tool2
+   App3 ─┘  └─ Tool3                          App3 ─┘        └─ Tool3
+   (every line = custom code)                 (one standard protocol)
+</div>
+
+<h2>2. The architecture: Host · Client · Server</h2>
+<div class="ascii">
+ ┌─────────────────────────────────────────────┐
+ │ HOST (Claude / ChatGPT / Cursor / your app)   │
+ │   ┌─────────────┐      ┌─────────────┐        │
+ │   │  MCP CLIENT  │◀────▶│  MCP CLIENT  │       │
+ │   └──────┬──────┘      └──────┬──────┘        │
+ └──────────┼─────────────────────┼──────────────┘
+            │ transport            │ transport
+            │ (stdio / HTTP+SSE)   │
+      ┌─────▼──────┐         ┌─────▼──────┐
+      │ MCP SERVER  │         │ MCP SERVER  │
+      │ (your tools)│         │ (GitHub,    │
+      │             │         │  Postgres…) │
+      └─────────────┘         └─────────────┘
+</div>
+<table>
+<tr><th>Piece</th><th>Role</th></tr>
+<tr><td><b>Host</b></td><td>The AI app the user interacts with; manages one or more clients</td></tr>
+<tr><td><b>Client</b></td><td>Lives in the host; maintains a 1:1 connection to a server</td></tr>
+<tr><td><b>Server</b></td><td>Exposes capabilities (what YOU build). Your job_search MCP = this.</td></tr>
+</table>
+
+<h2>3. The three server primitives</h2>
+<table>
+<tr><th>Primitive</th><th>What it is</th><th>Example</th></tr>
+<tr><td><b>Tools</b></td><td>Functions the model can call (actions)</td><td>search_jobs, run_query</td></tr>
+<tr><td><b>Resources</b></td><td>Data the model can read (context)</td><td>a file, a DB row, a doc</td></tr>
+<tr><td><b>Prompts</b></td><td>Reusable prompt templates/workflows</td><td>"summarize-ticket" workflow</td></tr>
+</table>
+<div class="hl"><b>The distinction that impresses:</b> Tools = <em>do</em> (model-controlled actions). Resources = <em>know</em> (app-controlled context). Most people only know "tools" — knowing all three + when to use each signals depth.</div>
+
+<h2>4. Transport: stdio vs HTTP+SSE</h2>
+<table>
+<tr><th>Transport</th><th>Use when</th></tr>
+<tr><td><b>stdio</b></td><td>Local server, same machine (CLI tools, local files). Simple, fast, no network.</td></tr>
+<tr><td><b>HTTP + SSE (streamable)</b></td><td>Remote server, over the network. Needs auth + network hardening.</td></tr>
+</table>
+<div class="mine"><b>YOUR work:</b> your job_search MCP server exposes tools — that's exactly the Server role over a transport. In an interview: "MCP is function calling (structured tool defs) + a transport layer (stdio/HTTP) + discovery, so any MCP-aware agent can call my tools without custom glue."</div>
+
+<h2>5. MCP vs Function Calling vs A2A (know the difference)</h2>
+<table>
+<tr><th>Thing</th><th>What it standardizes</th></tr>
+<tr><td>Function calling</td><td>How ONE model calls a tool in ONE API call (the primitive)</td></tr>
+<tr><td><b>MCP</b></td><td>How ANY app connects to ANY tool/data source (app ↔ tools)</td></tr>
+<tr><td>A2A (P2)</td><td>How agents talk to OTHER agents (agent ↔ agent)</td></tr>
+</table>
+<div class="win"><b>Clean mental model:</b> function calling is the atom, MCP is how you distribute tools to apps, A2A is how agents collaborate. They're complementary layers, not competitors.</div>
+
+<h2>6. ⚠️ MCP security (founder-critical)</h2>
+<p>An MCP server <b>executes real actions</b> — so it's a serious attack surface. The agent-security lessons apply directly:</p>
+<div class="card">
+<ul>
+<li><b>Untrusted servers:</b> connecting to a random MCP server = running its code paths. Vet them.</li>
+<li><b>Tool poisoning:</b> a malicious server can describe tools deceptively to manipulate the model (indirect injection via tool descriptions).</li>
+<li><b>Auth on remote (HTTP) servers:</b> stdio is local; the moment you go remote you need real auth + egress control.</li>
+<li><b>Least privilege:</b> an MCP tool that can delete or pay needs scoping + human-in-the-loop (ties to Excessive Agency, OWASP LLM06).</li>
+</ul>
+</div>
+
+<h2>7. Why MCP matters for YOU specifically</h2>
+<div class="founder"><p>You've <b>built an MCP server</b> — that's rare and concrete. The 2026 reference stack (per the roadmaps in your resources CSV) is <b>LangGraph + MCP + A2A + LangSmith.</b> You already have two of those in your projects. Framing: "I expose my job-search pipeline as MCP tools, so any agent can use it — it's like building a REST API, but for AI agents." That lands in enterprise interviews.</p></div>
+
+<h2>8. Q&A Drills</h2>
+<div class="q">What problem does MCP solve?<div class="a">The M×N integration problem — every app wiring every tool with custom code. MCP standardizes it to M+N: build a tool once as an MCP server and any MCP-aware agent can use it. USB-C for AI.</div></div>
+<div class="q">Tools vs resources vs prompts in MCP?<div class="a">Tools are model-controlled actions (do something), resources are app-controlled context the model can read (know something), prompts are reusable templated workflows. Most people only know tools.</div></div>
+<div class="q">How is MCP different from function calling?<div class="a">Function calling is the primitive — one model calling a tool in one API call. MCP is the distribution standard — how any app connects to any tool/data source over a transport (stdio or HTTP+SSE), with discovery. MCP uses function-calling-style structured defs under the hood.</div></div>
+<div class="q">What are the security risks of MCP?<div class="a">An MCP server executes real actions, so: untrusted servers run arbitrary logic, tool descriptions can poison the model (indirect injection), remote HTTP servers need auth + egress control, and powerful tools need least-privilege scoping plus human gates.</div></div>
+
+<div class="founder"><h4>🔥 BUILD CHALLENGE</h4><p>Extend your existing MCP server with a <b>resource</b> (not just tools) — e.g. expose your scored-jobs list as a readable resource — and add one <b>prompt</b> template. Then connect it to a LangGraph agent via the MCP client. You'll have demonstrated all three primitives + MCP↔agent integration, which is genuinely senior-level.</p></div>
+
+<div class="nav">
+<a href="agents_p1_multiagent.html">← Multi-Agent</a>
+<a href="agents_p1_eval_observability.html">Next → Evaluation & Observability 📊</a>
+</div>
+</div>
+</body>
+</html>

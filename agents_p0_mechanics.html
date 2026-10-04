@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>P0 — Core Agent Mechanics (Founder Level)</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0a0a14;color:#e0e0e0;line-height:1.7}
+.wrap{max-width:1000px;margin:0 auto;padding:2rem 1.3rem 6rem}
+a.back{color:#7b2ff7;text-decoration:none;font-size:.85rem}
+h1{font-size:2.1rem;margin:1rem 0 .3rem;background:linear-gradient(90deg,#00d2ff,#7b2ff7);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sub{color:#777;margin-bottom:2rem;font-size:.95rem}
+h2{font-size:1.5rem;margin:2.5rem 0 1rem;color:#00d2ff;border-bottom:1px solid #222;padding-bottom:.5rem}
+h3{font-size:1.15rem;margin:1.8rem 0 .7rem;color:#c9a6ff}
+p{margin:.7rem 0;color:#cfcfcf}
+.card{background:#12121f;border:1px solid #222;border-radius:12px;padding:1.3rem 1.5rem;margin:1.2rem 0}
+.hl{background:#7b2ff715;border-left:3px solid #7b2ff7;padding:1rem 1.2rem;border-radius:0 8px 8px 0;margin:1.2rem 0}
+.warn{background:#ff6b6b12;border-left:3px solid #ff6b6b;padding:1rem 1.2rem;border-radius:0 8px 8px 0;margin:1.2rem 0}
+.win{background:#00e67612;border-left:3px solid #00e676;padding:1rem 1.2rem;border-radius:0 8px 8px 0;margin:1.2rem 0}
+.founder{background:linear-gradient(135deg,#1a1030,#101a2e);border:1px solid #7b2ff740;border-radius:12px;padding:1.3rem 1.5rem;margin:1.5rem 0}
+.founder h4{color:#ffc107;font-size:1rem;margin-bottom:.5rem}
+pre{background:#07070f;border:1px solid #1e1e2e;border-radius:8px;padding:1rem;overflow-x:auto;margin:1rem 0;font-size:.82rem}
+code{font-family:'Consolas','Courier New',monospace;color:#8be9fd}
+pre code{color:#e0e0e0}
+.ascii{background:#07070f;border:1px solid #1e1e2e;border-radius:8px;padding:1.2rem;overflow-x:auto;color:#00e676;font-family:'Consolas',monospace;font-size:.8rem;white-space:pre;line-height:1.4;margin:1.2rem 0}
+table{width:100%;border-collapse:collapse;margin:1.2rem 0;font-size:.85rem}
+th,td{border:1px solid #222;padding:.6rem .8rem;text-align:left;vertical-align:top}
+th{background:#1a1a2e;color:#00d2ff}
+.tag{display:inline-block;font-size:.7rem;padding:2px 9px;border-radius:10px;font-weight:600;margin-right:.4rem}
+.t0{background:#ff6b6b20;color:#ff6b6b}
+.ty{background:#ffc10720;color:#ffc107}
+.tg{background:#00e67620;color:#00e676}
+.mine{border-left:3px solid #00d2ff;background:#00d2ff10;padding:1rem 1.2rem;border-radius:0 8px 8px 0;margin:1.2rem 0}
+.mine b{color:#00d2ff}
+ul,ol{margin:.6rem 0 .6rem 1.4rem}li{margin:.35rem 0}
+.q{background:#12121f;border:1px dashed #444;border-radius:8px;padding:1rem 1.2rem;margin:1rem 0}
+.q .a{color:#00e676;margin-top:.5rem;font-size:.9rem}
+.nav{display:flex;justify-content:space-between;margin-top:3rem;gap:1rem}
+.nav a{flex:1;background:#12121f;border:1px solid #222;border-radius:8px;padding:1rem;text-decoration:none;color:#e0e0e0;transition:.3s}
+.nav a:hover{border-color:#7b2ff7}
+</style>
+</head>
+<body>
+<script>
+(function(){const V='4';const a=localStorage.getItem('genai_course_auth')||sessionStorage.getItem('genai_course_auth');const v=localStorage.getItem('genai_auth_version')||sessionStorage.getItem('genai_auth_version');if(a!=='authenticated'||v!==V){window.location.href='login.html';}})();
+</script>
+<div class="wrap">
+<a class="back" href="index.html">← Back to course home</a>
+<h1>🤖 P0 — Core Agent Mechanics</h1>
+<p class="sub">Founder-level. Not "how to call a framework" — but <em>what an agent actually is, when it breaks, what it costs, and how you'd architect it for a company.</em> Sourced from Anthropic's "Building Effective Agents" + mapped to YOUR ContentMind pipeline.</p>
+
+<div class="founder">
+<h4>⭐ THE ONE SENTENCE THAT MAKES YOU SOUND LIKE A FOUNDER</h4>
+<p>"An agent is just an LLM running tools in a loop based on environmental feedback — everything else is a framework trying to sell you abstraction. The hard part isn't the loop, it's the <strong>tool interface, the stopping conditions, and the cost of being wrong.</strong>"</p>
+</div>
+
+<h2>1. The Mental Model: Workflow vs Agent</h2>
+<p>Anthropic draws the single most important architectural line in this entire field. Memorize it — interviewers and co-founders both test it:</p>
+<table>
+<tr><th>Workflow</th><th>Agent</th></tr>
+<tr><td>LLMs + tools orchestrated through <b>predefined code paths</b></td><td>LLM <b>dynamically directs its own</b> process and tool use</td></tr>
+<tr><td>Predictable, cheap, debuggable</td><td>Flexible, expensive, can compound errors</td></tr>
+<tr><td>Use when the task decomposes cleanly</td><td>Use when you can't predict the steps in advance</td></tr>
+</table>
+<div class="hl">
+<b>The founder insight:</b> Most "AI agent" startups are actually building <em>workflows</em> and calling them agents for the hype. Knowing the difference means you build the <em>cheaper, more reliable</em> thing when you can — and only pay the agent tax when flexibility genuinely earns it.
+</div>
+<div class="win"><b>Anthropic's rule, verbatim intent:</b> "Find the simplest solution possible, and only increase complexity when needed." Sometimes the right answer is <em>not building an agent at all</em> — a single LLM call with retrieval + good examples is often enough.</div>
+
+<h2>2. The Loop — Think → Act → Observe</h2>
+<p>This is the heartbeat. Everything (LangChain, LangGraph, CrewAI, AutoGen) is this loop plus decoration.</p>
+<div class="ascii">
+   USER GOAL
+       │
+       ▼
+  ┌──────────────┐
+  │  THINK        │  LLM reasons over (history + tools + goal)
+  └──────┬───────┘
+         ▼
+  ┌──────────────┐
+  │  ACT          │  parse decision → call ONE tool
+  └──────┬───────┘
+         ▼
+  ┌──────────────┐
+  │  OBSERVE      │  feed tool result back into history
+  └──────┬───────┘
+         ▼
+     Done?  ──No──┐  (loop back to THINK)
+         │        │
+        Yes       └──────────────┘
+         ▼
+   FINAL ANSWER / stop condition (max steps hit)
+</div>
+
+<div class="card">
+<h3>The 50-line truth (your module_4 code)</h3>
+<pre><code>messages = [system_prompt, user_goal]
+for step in range(MAX_STEPS):            # ← stopping condition #1
+    thought = llm(messages)              # THINK
+    action, args = parse(thought)        # DECIDE
+    if action == "final_answer":         # ← stopping condition #2
+        return args
+    if action not in TOOLS:              # ← guardrail: hallucinated tool
+        messages.append("Invalid tool"); continue
+    result = TOOLS[action](args)         # ACT
+    messages.append(result)              # OBSERVE
+</code></pre>
+</div>
+<div class="mine"><b>YOUR work mapped:</b> Your <code>trend_ranker.py</code> is this exact loop (ReAct). Your <code>main_pipeline.py</code> wraps it in LangGraph. When an interviewer asks "how does your pipeline work under the hood," you point at this loop — not at <code>add_node()</code>.</div>
+
+<h2>3. The 5 Workflow Patterns (Anthropic's building blocks)</h2>
+<p>Before you reach for a full agent, these composable patterns solve most real problems. Each is a tool in your founder toolbox.</p>
+
+<h3>① Prompt Chaining</h3>
+<div class="ascii">
+ In → [LLM 1] → gate? → [LLM 2] → [LLM 3] → Out
+                 │
+              fail → stop
+</div>
+<p>Decompose into fixed steps; each LLM call does one easy thing. Add programmatic <b>gates</b> between steps. <span class="tag tg">Use when</span> the task splits cleanly and you'd trade latency for accuracy.</p>
+
+<h3>② Routing</h3>
+<p>Classify the input, send it to a specialized path. <span class="tag tg">Use when</span> distinct categories are better handled by different prompts/models. <b>Founder move:</b> route easy queries to a cheap model (Haiku) and hard ones to a strong model (Sonnet) — this is a direct <em>cost lever</em>.</p>
+<div class="mine"><b>YOUR work:</b> <code>content_router.py</code> (story vs tech mode) is exactly this.</div>
+
+<h3>③ Parallelization (Sectioning + Voting)</h3>
+<p><b>Sectioning:</b> split independent subtasks, run concurrently. <b>Voting:</b> run the same task N times for confidence. <span class="tag tg">Use when</span> you need speed or multiple perspectives (e.g. one model answers, another screens for safety).</p>
+<div class="mine"><b>YOUR work:</b> your quality council (critic / fact-check / virality / SEO) is the Voting pattern.</div>
+
+<h3>④ Orchestrator-Workers</h3>
+<div class="ascii">
+        ┌─ ORCHESTRATOR (LLM breaks down task)
+        │        ├──→ Worker LLM (subtask A)
+        │        ├──→ Worker LLM (subtask B)
+        │        └──→ Worker LLM (subtask C)
+        └─ synthesize results
+</div>
+<p>Like parallelization, but subtasks are <b>decided at runtime by the orchestrator</b>, not pre-defined. <span class="tag tg">Use when</span> you can't predict how many sub-tasks you'll need (e.g. "edit however many files this bug touches").</p>
+
+<h3>⑤ Evaluator-Optimizer</h3>
+<p>One LLM generates, another critiques, loop until good. <span class="tag tg">Use when</span> you have clear eval criteria and iteration measurably helps (translation, deep search).</p>
+
+<div class="founder">
+<h4>⭐ FOUNDER DECISION TREE</h4>
+<pre><code>Can a single LLM call + retrieval do it?        → DO THAT (cheapest)
+Task splits into fixed steps?                   → Prompt Chaining
+Distinct input types?                           → Routing
+Independent subtasks / need confidence?         → Parallelization
+Can't predict the subtasks?                     → Orchestrator-Workers
+Clear eval criteria + iteration helps?          → Evaluator-Optimizer
+Truly open-ended, unknown # of steps, trusted?  → AGENT (pay the tax)
+</code></pre>
+</div>
+
+<h2>4. The Augmented LLM (the atom)</h2>
+<p>Every pattern is built from one atom: an LLM augmented with <b>retrieval + tools + memory</b>. The model generates its own search queries, picks tools, and decides what to remember.</p>
+<div class="ascii">
+          ┌─────────────────────────┐
+   ───────│      AUGMENTED LLM        │───────
+   query  │  ┌────────┬────────┬────┐ │ output
+          │  │Retrieval│ Tools  │Mem │ │
+          │  └────────┴────────┴────┘ │
+          └─────────────────────────┘
+</div>
+<div class="hl"><b>MCP connection:</b> Anthropic says one clean way to wire these augmentations is the <b>Model Context Protocol</b> — the standard that lets your agent plug into a growing ecosystem of tools. (That's your P1 topic, and you've already built an MCP server — huge edge.)</div>
+
+<h2>5. Tool Design — the ACI (where founders win or lose)</h2>
+<p>Anthropic's sharpest practical lesson: invest as much effort in your <b>Agent-Computer Interface (ACI)</b> as teams invest in human UI. On their SWE-bench agent, they spent <em>more time optimizing tools than the prompt itself.</em></p>
+<div class="card">
+<h3>Tool design rules that actually move the needle</h3>
+<ul>
+<li><b>Give the model room to "think"</b> before it commits to a format (don't force it to write itself into a corner).</li>
+<li><b>Match formats to what the model saw on the internet</b> — markdown over escaped-JSON-with-newlines.</li>
+<li><b>Remove overhead</b> — e.g. don't make it count line numbers for a diff.</li>
+<li><b>Poka-yoke (mistake-proof) your tools</b> — Anthropic switched to <em>absolute file paths</em> and the model stopped making path errors entirely.</li>
+<li><b>Write tool descriptions like a docstring for a junior dev</b> — include example usage, edge cases, boundaries vs other tools.</li>
+</ul>
+</div>
+<div class="warn"><b>#1 failure mode in production:</b> ambiguous tool descriptions → wrong tool selection. The fix is <em>not</em> a smarter model, it's a clearer interface. This is a cheap, high-leverage thing most teams skip.</div>
+
+<h2>6. Stopping Conditions & Control (the part amateurs forget)</h2>
+<p>Agents operate for many turns and <b>you must retain control.</b> Three levers:</p>
+<ol>
+<li><b>Max iterations</b> — hard cap so a confused agent can't loop forever (or bankrupt you).</li>
+<li><b>Explicit <code>final_answer</code></b> — the agent signals completion.</li>
+<li><b>Ground truth every step</b> — tool results / code execution tell the agent (and you) real progress, not vibes.</li>
+</ol>
+<div class="warn"><b>The autonomy tax:</b> Anthropic is explicit — agent autonomy means <b>higher cost</b> and <b>compounding errors</b> (one bad step poisons the next). Their guidance: test extensively in <b>sandboxed environments</b> with guardrails before trusting autonomy.</div>
+
+<h2>7. Founder-Level Economics & Scale</h2>
+<div class="founder">
+<h4>⭐ THE THINGS A FOUNDER KNOWS THAT A CANDIDATE DOESN'T</h4>
+<table>
+<tr><th>Dimension</th><th>What you must reason about</th></tr>
+<tr><td>Cost per task</td><td>Every loop step = 1+ LLM call. A 10-step agent at Sonnet prices can cost 20–50× a single call. Route cheap models for easy steps.</td></tr>
+<tr><td>Latency</td><td>Sequential loops feel slow. Parallelize independent work; stream partial output.</td></tr>
+<tr><td>Blast radius</td><td>An autonomous agent with a <code>delete</code> or <code>send_money</code> tool is a liability. Least privilege + human gates.</td></tr>
+<tr><td>Reliability</td><td>Non-determinism means you need evals + regression tests, not "it worked once."</td></tr>
+<tr><td>Trust boundary</td><td>Trusted env = more autonomy OK. Untrusted inputs (web, user content) = assume adversarial.</td></tr>
+</table>
+</div>
+<div class="win"><b>Company-building takeaway:</b> The successful teams Anthropic worked with used <b>simple composable patterns, not complex frameworks.</b> If you start a company, your moat is a <em>clean tool interface + great evals + cost discipline</em> — not which framework you picked.</div>
+
+<h2>8. Interview / Co-founder Q&A Drills</h2>
+<div class="q">What's the difference between a workflow and an agent?<div class="a">A workflow runs LLMs through predefined code paths — predictable and cheap. An agent lets the LLM dynamically control its own process and tool use — flexible but costly and error-prone. I default to workflows and only use agents when the step count is genuinely unpredictable.</div></div>
+<div class="q">How do you stop an agent from looping forever / blowing the budget?<div class="a">Hard max-iteration cap, an explicit final_answer action, and ground-truth checks each step. Plus repeated-action detection and a spend cap. Autonomy without stopping conditions is how you get a $10k API bill.</div></div>
+<div class="q">You have a flaky agent picking the wrong tool. What do you fix first?<div class="a">The tool interface, not the model. Rewrite descriptions like a docstring for a junior dev, add example usage and edge cases, and poka-yoke the arguments (e.g. absolute paths). Anthropic spent more time on tools than prompts for a reason.</div></div>
+<div class="q">When would you NOT build an agent?<div class="a">When a single LLM call with retrieval and good in-context examples solves it. Agents trade latency and cost for flexibility — if the task decomposes cleanly, a workflow or even one call is the right, cheaper engineering choice.</div></div>
+
+<div class="founder">
+<h4>🔥 BUILD CHALLENGE (do this, don't just read)</h4>
+<p>Take your <code>trend_ranker</code> and consciously rebuild it three ways: (1) as a single LLM call, (2) as a Routing workflow, (3) as a full ReAct agent. Measure tokens + latency for each on the same input. You'll <em>feel</em> the autonomy tax — and that intuition is what founders have and candidates fake.</p>
+</div>
+
+<div class="nav">
+<a href="index.html">🏠 Course Home</a>
+<a href="agents_p0_security.html">Next → P0 Agent Security 🔐</a>
+</div>
+</div>
+</body>
+</html>

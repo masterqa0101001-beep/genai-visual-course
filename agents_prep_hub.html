@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Agents — Hands-On Labs & Interview Prep Hub</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0a0a14;color:#e0e0e0;line-height:1.7}
+.wrap{max-width:1000px;margin:0 auto;padding:2rem 1.3rem 6rem}
+a.back{color:#ffc107;text-decoration:none;font-size:.85rem}
+h1{font-size:2.1rem;margin:1rem 0 .3rem;background:linear-gradient(90deg,#ffc107,#ff6b6b);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sub{color:#777;margin-bottom:2rem;font-size:.95rem}
+h2{font-size:1.4rem;margin:2.3rem 0 1rem;color:#ffc107;border-bottom:1px solid #222;padding-bottom:.5rem}
+p{margin:.6rem 0;color:#cfcfcf}
+.card{background:#12121f;border:1px solid #222;border-radius:12px;padding:1.2rem 1.4rem;margin:1rem 0}
+.loop{background:linear-gradient(135deg,#2a2410,#101a2e);border:1px solid #ffc10740;border-radius:12px;padding:1.3rem 1.5rem;margin:1.5rem 0}
+.loop h4{color:#ffc107;margin-bottom:.5rem}
+code{font-family:'Consolas','Courier New',monospace;color:#8be9fd;background:#07070f;padding:1px 6px;border-radius:4px}
+table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:.85rem}
+th,td{border:1px solid #222;padding:.55rem .8rem;text-align:left;vertical-align:top}
+th{background:#1a1a2e;color:#ffc107}
+.path{font-family:'Consolas',monospace;color:#00e676;font-size:.82rem}
+.lesson{color:#c9a6ff}
+ul,ol{margin:.5rem 0 .5rem 1.3rem}li{margin:.3rem 0}
+.pill{display:inline-block;font-size:.68rem;padding:2px 8px;border-radius:10px;font-weight:600;background:#00e67620;color:#00e676;border:1px solid #00e67640}
+.nav{display:flex;justify-content:space-between;margin-top:3rem;gap:1rem}
+.nav a{flex:1;background:#12121f;border:1px solid #222;border-radius:8px;padding:1rem;text-decoration:none;color:#e0e0e0;transition:.3s;text-align:center}
+.nav a:hover{border-color:#ffc107}
+.note{background:#ff6b6b12;border-left:3px solid #ff6b6b;padding:.9rem 1.1rem;border-radius:0 8px 8px 0;margin:1rem 0;font-size:.88rem}
+</style>
+</head>
+<body>
+<script>
+(function(){const V='4';const a=localStorage.getItem('genai_course_auth')||sessionStorage.getItem('genai_course_auth');const v=localStorage.getItem('genai_auth_version')||sessionStorage.getItem('genai_auth_version');if(a!=='authenticated'||v!==V){window.location.href='login.html';}})();
+</script>
+<div class="wrap">
+<a class="back" href="index.html">← Back to course home</a>
+<h1>🧪 Agents — Labs & Interview Prep Hub</h1>
+<p class="sub">The visual lessons teach the "what/why." This is the "build & drill" half — your runnable labs (all tested + passing), the Azure interview Q&A, and the planning CSVs. Everything lives as files in your Kiro workspace; this page is the map.</p>
+
+<div class="loop">
+<h4>⭐ THE PREP LOOP (do this per topic)</h4>
+<ol>
+<li><b>Read</b> the visual lesson (understand the concept)</li>
+<li><b>Build</b> — open the matching lab, delete the solution, write it yourself, run it green</li>
+<li><b>Drill</b> — say the Q&A answer aloud without reading</li>
+</ol>
+<p style="margin-top:.5rem">Reading alone builds recall. The labs build the "can you actually code it" muscle interviews test. Do all three.</p>
+</div>
+
+<div class="note"><b>How to open these:</b> they're files/folders in your workspace, not web pages. Open them in Kiro's file explorer at the paths shown. Run a lab with <code>python &lt;file&gt;.py</code> from its folder.</div>
+
+<h2>P0 — Foundation labs <span class="pill">6 labs · all passing</span></h2>
+<div class="card">
+<p>Folder: <span class="path">AgentsP0Lab/</span> &nbsp;·&nbsp; blind-practice copies in <span class="path">AgentsP0Lab/practice/</span></p>
+<table>
+<tr><th>Lab</th><th>Topic</th><th>Visual lesson it pairs with</th></tr>
+<tr><td><span class="path">lab_00_fake_llm.py</span></td><td>infra (read first)</td><td>—</td></tr>
+<tr><td><span class="path">lab_01_agent_loop.py</span></td><td>Think-Act-Observe loop</td><td class="lesson">P0 · Core Mechanics</td></tr>
+<tr><td><span class="path">lab_02_function_calling.py</span></td><td>schema-validated tools</td><td class="lesson">P0 · Tools/RAG</td></tr>
+<tr><td><span class="path">lab_03_memory.py</span></td><td>sliding window + summarization</td><td class="lesson">P0 · Tools/RAG</td></tr>
+<tr><td><span class="path">lab_04_reliability.py</span></td><td>retries + fallback ladder</td><td class="lesson">P0 · Core Mechanics</td></tr>
+<tr><td><span class="path">lab_05_prompt_injection.py</span></td><td>injection attack + defense</td><td class="lesson">P0 · Security</td></tr>
+</table>
+<p>Also: the <b>S13 prompt-injection scenario</b> was ported into your real repo at <span class="path">TrendingVideoPortfolio/chaos/scenarios.py</span> (portfolio artifact).</p>
+</div>
+
+<h2>P1 — Architect labs <span class="pill">4 labs · all passing</span></h2>
+<div class="card">
+<p>Folder: <span class="path">AgentsP1Lab/</span></p>
+<table>
+<tr><th>Lab</th><th>Topic</th><th>Visual lesson it pairs with</th></tr>
+<tr><td><span class="path">lab_00_fake_llm.py</span></td><td>infra + fake router/judge</td><td>—</td></tr>
+<tr><td><span class="path">lab_01_supervisor.py</span></td><td>supervisor multi-agent + handoffs</td><td class="lesson">P1 · Multi-Agent</td></tr>
+<tr><td><span class="path">lab_02_mcp_server.py</span></td><td>MCP server (tools/resources/prompts) + client</td><td class="lesson">P1 · MCP Deep Dive</td></tr>
+<tr><td><span class="path">lab_03_llm_judge_eval.py</span></td><td>LLM-as-judge + golden dataset + regression gate</td><td class="lesson">P1 · Evaluation</td></tr>
+</table>
+</div>
+
+<h2>Azure — Cloud labs <span class="pill">5 labs · all passing</span></h2>
+<div class="card">
+<p>Folder: <span class="path">AgentsAzureLab/</span> &nbsp;·&nbsp; runs offline (no card). Setup: <span class="path">AgentsAzureLab/SETUP_GUIDE.md</span></p>
+<table>
+<tr><th>Lab</th><th>Topic</th><th>Visual lesson it pairs with</th></tr>
+<tr><td><span class="path">lab_01_foundry_agent.py</span></td><td>Foundry Agent Service (agent/thread/run)</td><td class="lesson">Azure Mapping</td></tr>
+<tr><td><span class="path">lab_02_prompt_shields.py</span></td><td>Content Safety Prompt Shields</td><td class="lesson">Azure Mapping</td></tr>
+<tr><td><span class="path">lab_03_keyvault.py</span></td><td>Key Vault + Managed Identity</td><td class="lesson">Azure Mapping</td></tr>
+<tr><td><span class="path">lab_04_langgraph_on_foundry.py</span></td><td>LangGraph on Foundry (the key distinction)</td><td class="lesson">Azure Mapping</td></tr>
+<tr><td><span class="path">lab_05_entra_agent_id.py</span></td><td>Entra Agent ID (least privilege)</td><td class="lesson">Azure Mapping</td></tr>
+</table>
+</div>
+
+<h2>Interview Q&A — say it aloud <span class="pill">22 Q + cheat card</span></h2>
+<div class="card">
+<p>File: <span class="path">AgentsAzureLab/AZURE_AGENTS_INTERVIEW_QA.md</span></p>
+<p>Tuned for BFSI/enterprise rounds (BNP, Infosys, Accenture, Cognizant). Drill the ⭐ ones first — Foundry vs LangGraph (Q5), Prompt Shields (Q7), Key Vault (Q9), Entra Agent ID (Q10). Each answer maps to a lab you built, so follow-ups won't catch you out.</p>
+</div>
+
+<h2>Planning & tracking <span class="pill">3 CSVs</span></h2>
+<div class="card">
+<table>
+<tr><th>File</th><th>Use for</th></tr>
+<tr><td><span class="path">ai-agents-topics-must.csv</span></td><td>what to learn (topics, key points, status, frameworks, challenges)</td></tr>
+<tr><td><span class="path">ai-agents-resources.csv</span></td><td>where to learn (docs + videos + tech depth)</td></tr>
+<tr><td><span class="path">ai-agents-azure-mapping.csv</span></td><td>framework → Azure translation + free-access notes</td></tr>
+</table>
+</div>
+
+<h2>Honest status check</h2>
+<div class="card">
+<ul>
+<li>✅ <b>Read + recall</b>: 8 visual lessons (P0×3, P1×4, Azure×1)</li>
+<li>✅ <b>Build</b>: 15 runnable labs, all tested and passing</li>
+<li>✅ <b>Drill</b>: 22-question Azure interview sheet</li>
+<li>⚠️ <b>Live cloud</b>: Azure labs are offline fakes (no card). They teach the SDK shapes (~90% of interview value); the live portal step is deferred until you have card access. Real inference is available free via Groq (<span class="path">AgentsAzureLab/live_smoketest.py</span>).</li>
+<li>🔜 <b>Not yet built</b>: P2 tier (A2A, red-teaming, sandboxing, governance, computer-use, fine-tuning) — the 2027 frontier.</li>
+</ul>
+</div>
+
+<div class="nav">
+<a href="index.html">🏠 Course Home</a>
+<a href="agents_p0_mechanics.html">Start P0 → Core Mechanics</a>
+</div>
+</div>
+</body>
+</html>

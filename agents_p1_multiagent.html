@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>P1 — Multi-Agent Orchestration (Founder Level)</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0a0a14;color:#e0e0e0;line-height:1.7}
+.wrap{max-width:1000px;margin:0 auto;padding:2rem 1.3rem 6rem}
+a.back{color:#7b2ff7;text-decoration:none;font-size:.85rem}
+h1{font-size:2.1rem;margin:1rem 0 .3rem;background:linear-gradient(90deg,#f7b733,#fc4a1a);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sub{color:#777;margin-bottom:2rem;font-size:.95rem}
+h2{font-size:1.5rem;margin:2.5rem 0 1rem;color:#f7b733;border-bottom:1px solid #222;padding-bottom:.5rem}
+h3{font-size:1.15rem;margin:1.8rem 0 .7rem;color:#c9a6ff}
+p{margin:.7rem 0;color:#cfcfcf}
+.card{background:#12121f;border:1px solid #222;border-radius:12px;padding:1.3rem 1.5rem;margin:1.2rem 0}
+.hl{background:#7b2ff715;border-left:3px solid #7b2ff7;padding:1rem 1.2rem;border-radius:0 8px 8px 0;margin:1.2rem 0}
+.warn{background:#ff6b6b12;border-left:3px solid #ff6b6b;padding:1rem 1.2rem;border-radius:0 8px 8px 0;margin:1.2rem 0}
+.win{background:#00e67612;border-left:3px solid #00e676;padding:1rem 1.2rem;border-radius:0 8px 8px 0;margin:1.2rem 0}
+.founder{background:linear-gradient(135deg,#2a1e10,#101a2e);border:1px solid #f7b73340;border-radius:12px;padding:1.3rem 1.5rem;margin:1.5rem 0}
+.founder h4{color:#ffc107;font-size:1rem;margin-bottom:.5rem}
+pre{background:#07070f;border:1px solid #1e1e2e;border-radius:8px;padding:1rem;overflow-x:auto;margin:1rem 0;font-size:.82rem}
+code{font-family:'Consolas','Courier New',monospace;color:#8be9fd}
+pre code{color:#e0e0e0}
+.ascii{background:#07070f;border:1px solid #1e1e2e;border-radius:8px;padding:1.2rem;overflow-x:auto;color:#f7b733;font-family:'Consolas',monospace;font-size:.8rem;white-space:pre;line-height:1.4;margin:1.2rem 0}
+table{width:100%;border-collapse:collapse;margin:1.2rem 0;font-size:.85rem}
+th,td{border:1px solid #222;padding:.6rem .8rem;text-align:left;vertical-align:top}
+th{background:#1a1a2e;color:#f7b733}
+.mine{border-left:3px solid #00d2ff;background:#00d2ff10;padding:1rem 1.2rem;border-radius:0 8px 8px 0;margin:1.2rem 0}
+.mine b{color:#00d2ff}
+ul,ol{margin:.6rem 0 .6rem 1.4rem}li{margin:.35rem 0}
+.q{background:#12121f;border:1px dashed #444;border-radius:8px;padding:1rem 1.2rem;margin:1rem 0}
+.q .a{color:#00e676;margin-top:.5rem;font-size:.9rem}
+.nav{display:flex;justify-content:space-between;margin-top:3rem;gap:1rem}
+.nav a{flex:1;background:#12121f;border:1px solid #222;border-radius:8px;padding:1rem;text-decoration:none;color:#e0e0e0;transition:.3s}
+.nav a:hover{border-color:#f7b733}
+</style>
+</head>
+<body>
+<script>
+(function(){const V='4';const a=localStorage.getItem('genai_course_auth')||sessionStorage.getItem('genai_course_auth');const v=localStorage.getItem('genai_auth_version')||sessionStorage.getItem('genai_auth_version');if(a!=='authenticated'||v!==V){window.location.href='login.html';}})();
+</script>
+<div class="wrap">
+<a class="back" href="index.html">← Back to course home</a>
+<h1>🕸️ P1 — Multi-Agent Orchestration</h1>
+<p class="sub">From "one agent" to "a system of agents." The headline 2026 skill. Founder-level: patterns, tradeoffs, and the failure modes that make multi-agent dangerous.</p>
+
+<div class="founder">
+<h4>⭐ THE SENTENCE THAT SIGNALS SENIORITY</h4>
+<p>"Multi-agent systems have the same complexity as microservices — <strong>compounded by non-determinism.</strong> I only add agents when a single agent hits a specific ceiling it can't overcome. More agents is more cost, more latency, and more ways to fail — not automatically more capable."</p>
+</div>
+
+<h2>1. When to go multi-agent (and when NOT to)</h2>
+<p>This is the gate. Anthropic + the LangGraph production community agree: <b>start with one agent.</b> Reach for multi-agent only when you hit a real ceiling:</p>
+<table>
+<tr><th>Go multi-agent when…</th><th>Stay single-agent when…</th></tr>
+<tr><td>One agent's context is overflowing with too many tools</td><td>A handful of tools fit comfortably</td></tr>
+<tr><td>Distinct expertise needs distinct prompts (SEO vs legal vs code)</td><td>One role covers the task</td></tr>
+<tr><td>Subtasks genuinely parallelize</td><td>Work is inherently sequential</td></tr>
+<tr><td>You need independent verification (one agent checks another)</td><td>Self-check is good enough</td></tr>
+</table>
+<div class="warn"><b>The trap:</b> multi-agent feels impressive but multiplies cost (N agents = N+ LLM calls per step), latency, and debugging pain. Non-determinism compounds — agent A's slightly-wrong output becomes agent B's input.</div>
+
+<h2>2. The 4 core patterns</h2>
+
+<h3>① Supervisor (Router + Workers)</h3>
+<div class="ascii">
+            ┌──────────────┐
+   task ───▶│  SUPERVISOR   │   (its ONLY job: route)
+            └──┬───┬───┬────┘
+         ┌─────┘   │   └─────┐
+     ┌───▼──┐  ┌───▼──┐  ┌───▼──┐
+     │Worker│  │Worker│  │Worker│
+     │ A    │  │ B    │  │ C    │
+     └───┬──┘  └───┬──┘  └───┬──┘
+         └─────────┼─────────┘
+                   ▼
+            SUPERVISOR merges → done?
+</div>
+<p>A central LLM owns routing, state merging, and failure decisions. Each worker handles one bounded subtask and returns control. <b>Most accurate</b> because routing is a dedicated, focused LLM call. <span style="color:#f7b733">LangGraph: <code>create_supervisor()</code> wraps specialists into a routing graph via handoff tools.</span></p>
+<div class="mine"><b>YOUR work:</b> your <code>content_router.py</code> (story vs tech) is a supervisor. Your quality council (critic/fact-check/SEO under a moderator) is supervisor + parallelization.</div>
+
+<h3>② Swarm (peer-to-peer handoffs)</h3>
+<div class="ascii">
+   Agent A ──handoff──▶ Agent B ──handoff──▶ Agent C
+      ▲                                        │
+      └────────────── handoff ─────────────────┘
+   (no central router — last active agent drives next step)
+</div>
+<p>Agents hand off directly to each other, no central supervisor. <b>Faster</b> (skips the routing hop) but <b>more misroute-prone.</b></p>
+<div class="hl"><b>Supervisor vs Swarm — the founder tradeoff:</b> Supervisor = more accurate (dedicated router) but one extra LLM call per hop. Swarm = faster but routing errors creep in. <em>Choose based on whether your bottleneck is latency (swarm) or misroutes (supervisor).</em></div>
+
+<h3>③ Planner-Executor</h3>
+<div class="ascii">
+   goal → [PLANNER] → [step1, step2, step3, step4]
+                          │     │     │     │
+                       [exec][exec][exec][exec]
+                                      │
+                                 [REPLANNER] (adjust remaining steps)
+</div>
+<p>A planner writes the whole plan up front; executors run each step; a replanner adjusts based on results. Cheaper + more predictable than re-reasoning every step.</p>
+
+<h3>④ Debate / Voting</h3>
+<p>Multiple agents independently judge, then aggregate (vote or moderator synthesis). Great for high-stakes evaluation where multiple perspectives raise confidence.</p>
+
+<h2>3. Handoffs — the hard part nobody teaches</h2>
+<p>A handoff is where multi-agent systems corrupt state. The production rule:</p>
+<div class="card">
+<b>A handoff should carry only:</b>
+<ul>
+<li>✅ <b>validated</b> state (not raw, unchecked output)</li>
+<li>✅ the next objective + constraints</li>
+<li>✅ an audit ID (trace which agent did what)</li>
+<li>❌ NOT the entire conversation history by default (cost + leakage)</li>
+</ul>
+Keep identifiers consistent with your thread / session / user-isolation model, or you leak one user's state into another's.
+</div>
+<div class="warn"><b>Failure mode — disagreement:</b> when two agents disagree, who wins? The supervisor must own that decision explicitly, or the system loops or deadlocks. Design the tiebreaker up front.</div>
+
+<h2>4. State management across agents</h2>
+<p>Founder-grade multi-agent needs <b>externalized, persisted state</b> (Redis/Postgres), so any worker/pod can resume a session. In LangGraph: a shared state object + checkpointer, with the Send API for fan-out parallelism.</p>
+<pre><code># LangGraph supervisor sketch (conceptual)
+from langgraph_supervisor import create_supervisor
+
+supervisor = create_supervisor(
+    agents=[seo_agent, factcheck_agent, virality_agent],
+    model=router_llm,
+    prompt="Route each task to the right specialist. Stop when quality >= threshold.",
+)
+# supervisor picks an agent via a handoff tool, that agent runs,
+# returns control, repeat until supervisor says done.
+</code></pre>
+
+<h2>5. Founder economics of multi-agent</h2>
+<div class="founder">
+<table>
+<tr><th>Dimension</th><th>Reality</th></tr>
+<tr><td>Cost</td><td>Each agent + the router is its own LLM call. A 3-agent supervisor loop can be 4–6× a single agent per step.</td></tr>
+<tr><td>Latency</td><td>Supervisor adds a routing hop; swarm skips it. Parallelize independent agents to claw back time.</td></tr>
+<tr><td>Debuggability</td><td>Non-determinism × N agents. You MUST have tracing (next lesson) or you're flying blind.</td></tr>
+<tr><td>Reliability</td><td>Errors compound. Validate state at every handoff.</td></tr>
+<tr><td>Security</td><td>More agents = more identities to scope. Each should have least-privilege tools (ties to agentic security).</td></tr>
+</table>
+</div>
+<div class="win"><b>Company-building insight:</b> the best multi-agent systems look boring — a supervisor, 2–3 focused workers, validated handoffs, strong tracing. Resist "agent swarm" hype; sell reliability.</div>
+
+<h2>6. Q&A Drills</h2>
+<div class="q">Supervisor vs swarm — when do you pick which?<div class="a">Supervisor when accuracy/correct routing matters most — routing is a dedicated focused LLM call. Swarm when latency is the bottleneck — agents hand off peer-to-peer, skipping the router hop, at the cost of more misroutes.</div></div>
+<div class="q">What should a handoff carry between agents?<div class="a">Only validated state, the next objective + constraints, and an audit ID — not the full conversation by default. Passing raw unvalidated output or the whole history causes state corruption, cost blowup, and cross-session leakage.</div></div>
+<div class="q">When would you NOT use multi-agent?<div class="a">When a single agent handles it. Multi-agent has microservice-level complexity plus non-determinism. I only add agents at a specific ceiling — context overflow from too many tools, genuinely distinct expertise, real parallelism, or needing independent verification.</div></div>
+<div class="q">How do you handle two agents that disagree?<div class="a">The supervisor owns the tiebreaker explicitly — defined up front. Without that, the system loops or deadlocks. State merging and failure decisions are the supervisor's job, not an emergent accident.</div></div>
+
+<div class="founder"><h4>🔥 BUILD CHALLENGE</h4><p>Refactor your quality council into an explicit LangGraph <b>supervisor</b>: a router LLM that calls critic/fact-check/SEO as workers and merges scores, with validated handoffs (score + reasoning + audit ID only). Then measure cost vs your current compressed single-call version — and be able to argue the tradeoff. That argument is the founder skill.</p></div>
+
+<div class="nav">
+<a href="index.html">🏠 Course Home</a>
+<a href="agents_p1_mcp.html">Next → MCP Deep Dive 🔌</a>
+</div>
+</div>
+</body>
+</html>

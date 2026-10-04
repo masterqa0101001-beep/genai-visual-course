@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>P0 — Tools, Function Calling, RAG & Memory</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0a0a14;color:#e0e0e0;line-height:1.7}
+.wrap{max-width:1000px;margin:0 auto;padding:2rem 1.3rem 6rem}
+a.back{color:#7b2ff7;text-decoration:none;font-size:.85rem}
+h1{font-size:2.1rem;margin:1rem 0 .3rem;background:linear-gradient(90deg,#00e676,#00d2ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sub{color:#777;margin-bottom:2rem;font-size:.95rem}
+h2{font-size:1.5rem;margin:2.5rem 0 1rem;color:#00e676;border-bottom:1px solid #222;padding-bottom:.5rem}
+h3{font-size:1.15rem;margin:1.8rem 0 .7rem;color:#c9a6ff}
+p{margin:.7rem 0;color:#cfcfcf}
+.card{background:#12121f;border:1px solid #222;border-radius:12px;padding:1.3rem 1.5rem;margin:1.2rem 0}
+.hl{background:#7b2ff715;border-left:3px solid #7b2ff7;padding:1rem 1.2rem;border-radius:0 8px 8px 0;margin:1.2rem 0}
+.warn{background:#ff6b6b12;border-left:3px solid #ff6b6b;padding:1rem 1.2rem;border-radius:0 8px 8px 0;margin:1.2rem 0}
+.win{background:#00e67612;border-left:3px solid #00e676;padding:1rem 1.2rem;border-radius:0 8px 8px 0;margin:1.2rem 0}
+.founder{background:linear-gradient(135deg,#102a1e,#101a2e);border:1px solid #00e67640;border-radius:12px;padding:1.3rem 1.5rem;margin:1.5rem 0}
+.founder h4{color:#ffc107;font-size:1rem;margin-bottom:.5rem}
+pre{background:#07070f;border:1px solid #1e1e2e;border-radius:8px;padding:1rem;overflow-x:auto;margin:1rem 0;font-size:.82rem}
+code{font-family:'Consolas','Courier New',monospace;color:#8be9fd}
+pre code{color:#e0e0e0}
+.ascii{background:#07070f;border:1px solid #1e1e2e;border-radius:8px;padding:1.2rem;overflow-x:auto;color:#00e676;font-family:'Consolas',monospace;font-size:.8rem;white-space:pre;line-height:1.4;margin:1.2rem 0}
+table{width:100%;border-collapse:collapse;margin:1.2rem 0;font-size:.85rem}
+th,td{border:1px solid #222;padding:.6rem .8rem;text-align:left;vertical-align:top}
+th{background:#1a1a2e;color:#00e676}
+.mine{border-left:3px solid #00d2ff;background:#00d2ff10;padding:1rem 1.2rem;border-radius:0 8px 8px 0;margin:1.2rem 0}
+.mine b{color:#00d2ff}
+ul,ol{margin:.6rem 0 .6rem 1.4rem}li{margin:.35rem 0}
+.q{background:#12121f;border:1px dashed #444;border-radius:8px;padding:1rem 1.2rem;margin:1rem 0}
+.q .a{color:#00e676;margin-top:.5rem;font-size:.9rem}
+.nav{display:flex;justify-content:space-between;margin-top:3rem;gap:1rem}
+.nav a{flex:1;background:#12121f;border:1px solid #222;border-radius:8px;padding:1rem;text-decoration:none;color:#e0e0e0;transition:.3s}
+.nav a:hover{border-color:#00e676}
+</style>
+</head>
+<body>
+<script>
+(function(){const V='4';const a=localStorage.getItem('genai_course_auth')||sessionStorage.getItem('genai_course_auth');const v=localStorage.getItem('genai_auth_version')||sessionStorage.getItem('genai_auth_version');if(a!=='authenticated'||v!==V){window.location.href='login.html';}})();
+</script>
+<div class="wrap">
+<a class="back" href="index.html">← Back to course home</a>
+<h1>🧰 P0 — Tools, Function Calling, RAG & Memory</h1>
+<p class="sub">The four things that turn a chatbot into an agent that <em>acts</em>. Founder-level: how each works, where it breaks, and the cost/reliability tradeoffs.</p>
+
+<div class="founder">
+<h4>⭐ THE FRAME</h4>
+<p>A model that only talks is a toy. The moment you give it <strong>tools</strong> (to act), <strong>function calling</strong> (to act reliably), <strong>RAG</strong> (to know your data), and <strong>memory</strong> (to persist), you've built something a company will pay for. These are the P0 "hands and brain" of an agent.</p>
+</div>
+
+<h2>1. Function / Tool Calling — the professional way to act</h2>
+<p>Old way: parse free text like <code>ACTION: search\nINPUT: ...</code> → fragile regex hell. New way: the model returns <b>structured JSON</b> describing which function to call. The API enforces the schema.</p>
+<div class="ascii">
+ TEXT PARSING (fragile)          FUNCTION CALLING (robust)
+ ┌────────────────────┐          ┌──────────────────────────┐
+ │ LLM text output     │          │ LLM returns tool_call:    │
+ │ "ACTION: search..." │   vs     │ { name:"search",          │
+ │ → regex → hope      │          │   args:{"q":"AI jobs"} }  │
+ │ → breaks on format  │          │ → schema-validated JSON   │
+ └────────────────────┘          └──────────────────────────┘
+</div>
+<pre><code>tools = [{
+  "type":"function",
+  "function":{
+    "name":"search_jobs",
+    "description":"Search job listings. Returns title, company, location.",
+    "parameters":{
+      "type":"object",
+      "properties":{
+        "query":{"type":"string","description":"what to search for"},
+        "location":{"type":"string","description":"city or 'remote'"}
+      },
+      "required":["query"]
+    }
+  }
+}]
+resp = client.chat.completions.create(model=..., messages=msgs,
+                                      tools=tools, tool_choice="auto")
+call = resp.choices[0].message.tool_calls[0]
+result = search_jobs(**json.loads(call.function.arguments))  # no regex!
+</code></pre>
+<table>
+<tr><th>Why it wins</th></tr>
+<tr><td>Schema-enforced parsing (no regex)</td></tr>
+<tr><td>Parallel tool calls in one turn</td></tr>
+<tr><td>Built-in type + enum validation</td></tr>
+<tr><td>Universal: OpenAI, Anthropic, Groq, Ollama — and the basis of MCP</td></tr>
+</table>
+<div class="warn"><b>Failure modes:</b> hallucinated arguments, schema drift, weak models emitting invalid JSON. Fixes: strict enums, Pydantic/instructor validation, retry-on-invalid, and clear descriptions.</div>
+<div class="mine"><b>YOUR work:</b> your MCP server exposes tools as structured functions — MCP is literally function calling + a transport layer. You've already built the infrastructure agents call.</div>
+
+<h2>2. Tool Integration — making the real world callable</h2>
+<p>A tool is any function the agent can invoke: API, DB query, web search, file I/O, code execution. Three properties separate hobby tools from production tools:</p>
+<table>
+<tr><th>Property</th><th>Why it matters</th></tr>
+<tr><td><b>Idempotency</b></td><td>If the agent retries, it mustn't double-charge / double-post</td></tr>
+<tr><td><b>Timeouts</b></td><td>A hung tool freezes the whole loop</td></tr>
+<tr><td><b>Errors as observations</b></td><td>Return a readable error so the agent can retry/skip, not crash</td></tr>
+</table>
+<pre><code>def search_jobs(query, location="remote"):
+    try:
+        r = httpx.get(API, params={...}, timeout=10)   # timeout!
+        r.raise_for_status()
+        rows = r.json()
+        if not rows:
+            return "No results. Try a broader query."    # error-as-observation
+        return format(rows)
+    except httpx.TimeoutException:
+        return "Search timed out. The agent may retry or skip."
+</code></pre>
+<div class="mine"><b>YOUR work:</b> your <code>groq_client.py</code> (retry + fast-fail) and <code>narration_generator.py</code> (fallback ladder) already embody this. That fallback-chain instinct is exactly production tool design.</div>
+
+<h2>3. RAG for Agents — giving the agent YOUR data</h2>
+<p>Retrieval-Augmented Generation = fetch relevant chunks and put them in context so the model answers from <em>your</em> knowledge, not its training. For agents, retrieval is often <b>just another tool</b> the agent chooses to call.</p>
+<div class="ascii">
+ docs → chunk → embed → [VECTOR DB]
+                              ▲
+ query → embed ───────────────┤ (dense/semantic)
+ query → keywords ────────────┤ (sparse / BM25)
+                              ▼
+                       HYBRID merge (RRF)
+                              ▼
+                        rerank top-k
+                              ▼
+                   stuff into LLM context → answer
+</div>
+<table>
+<tr><th>Stage</th><th>What to master</th><th>Where it breaks</th></tr>
+<tr><td>Chunking</td><td>size vs overlap; semantic boundaries</td><td>too big = noise; too small = lost context</td></tr>
+<tr><td>Embedding</td><td>model choice; dimensionality</td><td>weak model = irrelevant hits</td></tr>
+<tr><td>Hybrid search</td><td>dense + BM25 fused (RRF)</td><td>dense-only misses exact terms/IDs</td></tr>
+<tr><td>Reranking</td><td>cross-encoder on top-k</td><td>skipping it = noisy context</td></tr>
+</table>
+<div class="mine"><b>YOUR work:</b> <code>genAI_Upskill/day01_hybrid_search.py</code> and <code>day02_qdrant_hybrid.py</code> are this exact pipeline. You're already strong here — the agent angle is simply "wrap retrieval as a tool the agent can call when it decides it needs facts."</div>
+<div class="warn"><b>Security tie-in (from the Security lesson):</b> your vector store is an attack surface (OWASP LLM08). Validate what gets written to it and track provenance — poisoned chunks get retrieved later.</div>
+
+<h2>4. Memory & State — short-term vs long-term</h2>
+<table>
+<tr><th>Type</th><th>What</th><th>Challenge</th></tr>
+<tr><td>Short-term</td><td>conversation history, scratchpad, current run state</td><td>context window overflow</td></tr>
+<tr><td>Long-term</td><td>persisted facts/preferences across sessions (often in a vector DB)</td><td>poisoning + stale data</td></tr>
+</table>
+<div class="card">
+<h3>Beating context overflow (the #1 memory bug)</h3>
+<ul>
+<li><b>Sliding window:</b> keep the last N turns verbatim.</li>
+<li><b>Summarization:</b> periodically compress old history into a short summary — but <em>don't lose key facts</em>.</li>
+<li><b>Observation compression:</b> trim verbose tool results before feeding them back.</li>
+<li><b>Typed state object:</b> store structured fields, not raw transcript.</li>
+</ul>
+</div>
+<div class="mine"><b>YOUR work:</b> your <code>PipelineState</code> in <code>utils/state.py</code> is a typed state object — exactly the right pattern. LangGraph's checkpointer gives you resumable state for free.</div>
+
+<h2>5. Prompting for Agents (the cheap, high-leverage lever)</h2>
+<div class="card">
+<ul>
+<li><b>System prompt</b> defines the agent's role, available tools, and output format.</li>
+<li><b>Few-shot tool examples</b> dramatically cut wrong-tool-selection errors.</li>
+<li><b>Enforce output format</b> explicitly (and prefer function calling to enforce it structurally).</li>
+<li><b>Low temperature</b> (~0.2) for stable, deterministic tool decisions.</li>
+</ul>
+</div>
+<div class="hl"><b>Anthropic's lesson, applied:</b> treat tool descriptions with as much care as the main prompt — write them like a docstring for a junior dev, with examples and edge cases. This single habit prevents most tool-selection failures.</div>
+
+<h2>6. Founder-Level Tradeoffs</h2>
+<div class="founder">
+<table>
+<tr><th>Lever</th><th>The founder decision</th></tr>
+<tr><td>How many tools?</td><td>Fewer = cheaper, safer, less confusion. Add only what the task needs (also a security win).</td></tr>
+<tr><td>RAG vs long context?</td><td>RAG = cheaper + scoped; giant context = simpler but costly and can bury the needle.</td></tr>
+<tr><td>Memory depth?</td><td>Every remembered token is recurring cost. Summarize aggressively.</td></tr>
+<tr><td>Text parse vs function calling?</td><td>Always function calling in production — reliability compounds across millions of calls.</td></tr>
+</table>
+</div>
+
+<h2>7. Q&A Drills</h2>
+<div class="q">Why function calling over text parsing?<div class="a">Schema-enforced structured output means no fragile regex, built-in type/enum validation, parallel tool calls, and it's universal across providers. In production, parsing reliability compounds — one brittle regex fails at scale.</div></div>
+<div class="q">How do you stop context overflow in a long-running agent?<div class="a">Sliding window for recent turns, periodic summarization of old history, compressing verbose tool observations, and a typed state object instead of a raw transcript.</div></div>
+<div class="q">What makes a tool production-grade vs a demo tool?<div class="a">Idempotency (safe to retry), timeouts (won't freeze the loop), and returning errors as readable observations so the agent can retry or skip instead of crashing.</div></div>
+<div class="q">Dense-only retrieval is missing exact matches like product IDs. Fix?<div class="a">Add sparse/BM25 and fuse with dense via hybrid search (RRF), then rerank the top-k. Dense captures meaning; sparse captures exact terms.</div></div>
+
+<div class="founder"><h4>🔥 BUILD CHALLENGE</h4><p>Convert your <code>trend_ranker</code>'s text-parsed actions to real <b>function calling</b> with a Pydantic-validated schema. Then wrap your <code>day01_hybrid_search</code> as a callable <code>retrieve()</code> tool the agent invokes only when it decides it needs facts. You'll have a clean, schema-safe, retrieval-augmented agent — the P0 stack, end to end.</p></div>
+
+<div class="nav">
+<a href="agents_p0_security.html">← P0 Security</a>
+<a href="index.html">🏠 Course Home</a>
+</div>
+</div>
+</body>
+</html>

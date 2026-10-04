@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>P1 — Production: Cost, LLMOps & Agentic Security</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0a0a14;color:#e0e0e0;line-height:1.7}
+.wrap{max-width:1000px;margin:0 auto;padding:2rem 1.3rem 6rem}
+a.back{color:#7b2ff7;text-decoration:none;font-size:.85rem}
+h1{font-size:2.1rem;margin:1rem 0 .3rem;background:linear-gradient(90deg,#7b2ff7,#fc4a1a);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sub{color:#777;margin-bottom:2rem;font-size:.95rem}
+h2{font-size:1.5rem;margin:2.5rem 0 1rem;color:#c9a6ff;border-bottom:1px solid #222;padding-bottom:.5rem}
+h3{font-size:1.15rem;margin:1.8rem 0 .7rem;color:#c9a6ff}
+p{margin:.7rem 0;color:#cfcfcf}
+.card{background:#12121f;border:1px solid #222;border-radius:12px;padding:1.3rem 1.5rem;margin:1.2rem 0}
+.hl{background:#7b2ff715;border-left:3px solid #7b2ff7;padding:1rem 1.2rem;border-radius:0 8px 8px 0;margin:1.2rem 0}
+.warn{background:#ff6b6b12;border-left:3px solid #ff6b6b;padding:1rem 1.2rem;border-radius:0 8px 8px 0;margin:1.2rem 0}
+.win{background:#00e67612;border-left:3px solid #00e676;padding:1rem 1.2rem;border-radius:0 8px 8px 0;margin:1.2rem 0}
+.founder{background:linear-gradient(135deg,#1a1030,#2a1010);border:1px solid #7b2ff740;border-radius:12px;padding:1.3rem 1.5rem;margin:1.5rem 0}
+.founder h4{color:#ffc107;font-size:1rem;margin-bottom:.5rem}
+pre{background:#07070f;border:1px solid #1e1e2e;border-radius:8px;padding:1rem;overflow-x:auto;margin:1rem 0;font-size:.82rem}
+code{font-family:'Consolas','Courier New',monospace;color:#8be9fd}
+pre code{color:#e0e0e0}
+.ascii{background:#07070f;border:1px solid #1e1e2e;border-radius:8px;padding:1.2rem;overflow-x:auto;color:#c9a6ff;font-family:'Consolas',monospace;font-size:.8rem;white-space:pre;line-height:1.4;margin:1.2rem 0}
+table{width:100%;border-collapse:collapse;margin:1.2rem 0;font-size:.85rem}
+th,td{border:1px solid #222;padding:.6rem .8rem;text-align:left;vertical-align:top}
+th{background:#1a1a2e;color:#c9a6ff}
+.mine{border-left:3px solid #00d2ff;background:#00d2ff10;padding:1rem 1.2rem;border-radius:0 8px 8px 0;margin:1.2rem 0}
+.mine b{color:#00d2ff}
+ul,ol{margin:.6rem 0 .6rem 1.4rem}li{margin:.35rem 0}
+.q{background:#12121f;border:1px dashed #444;border-radius:8px;padding:1rem 1.2rem;margin:1rem 0}
+.q .a{color:#00e676;margin-top:.5rem;font-size:.9rem}
+.nav{display:flex;justify-content:space-between;margin-top:3rem;gap:1rem}
+.nav a{flex:1;background:#12121f;border:1px solid #222;border-radius:8px;padding:1rem;text-decoration:none;color:#e0e0e0;transition:.3s}
+.nav a:hover{border-color:#7b2ff7}
+.rank{display:inline-block;background:#fc4a1a;color:#0a0a14;font-weight:700;border-radius:6px;padding:1px 8px;margin-right:.5rem;font-size:.8rem}
+</style>
+</head>
+<body>
+<script>
+(function(){const V='4';const a=localStorage.getItem('genai_course_auth')||sessionStorage.getItem('genai_course_auth');const v=localStorage.getItem('genai_auth_version')||sessionStorage.getItem('genai_auth_version');if(a!=='authenticated'||v!==V){window.location.href='login.html';}})();
+</script>
+<div class="wrap">
+<a class="back" href="index.html">← Back to course home</a>
+<h1>🚀 P1 — Production: Cost, LLMOps & Agentic Security</h1>
+<p class="sub">The three things that decide whether an agent survives contact with real users and a real budget. This is pure founder territory.</p>
+
+<h2>PART A — COST & LATENCY OPTIMIZATION</h2>
+
+<div class="founder">
+<h4>⭐ THE FOUNDER REALITY</h4>
+<p>"Every loop step is a paid LLM call. A naive 10-step agent on a frontier model can cost 20–50× a single call. If you don't engineer cost, your unit economics are underwater before you have a customer."</p>
+</div>
+
+<h2>1. The cost levers</h2>
+<table>
+<tr><th>Lever</th><th>How it saves</th><th>Tool</th></tr>
+<tr><td><b>Model routing</b></td><td>Cheap model (Haiku/Llama) for easy steps, strong model for hard ones</td><td>LiteLLM, OpenRouter, custom router</td></tr>
+<tr><td><b>Caching</b></td><td>Reuse identical/similar calls (prompt + semantic cache)</td><td>prompt caching, GPTCache</td></tr>
+<tr><td><b>Token budgeting</b></td><td>Trim history/observations; cap max tokens per task</td><td>your memory lesson (summarization)</td></tr>
+<tr><td><b>Batching</b></td><td>Group independent calls</td><td>provider batch APIs</td></tr>
+<tr><td><b>Fewer steps</b></td><td>Workflow instead of agent where possible</td><td>the P0 decision tree</td></tr>
+</table>
+<div class="mine"><b>YOUR work:</b> your <code>groq_client.py</code> fast-fail + retry is a start. Add a model-router (cheap for planning, strong for the hard quality-council step) and a semantic cache for repeated trend queries.</div>
+<div class="warn"><b>Tradeoff to name in interviews:</b> routing/caching trade a little quality or freshness for big cost wins. Measure real per-task cost + quality, don't guess.</div>
+
+<h2>PART B — LLMOps / DEPLOYMENT</h2>
+
+<h2>2. From notebook to production</h2>
+<div class="ascii">
+  code → Docker image → registry → deploy (App Service / Cloud Run / K8s)
+    │                                      │
+  CI/CD                              health checks + autoscale
+    │                                      │
+  eval gate (regression suite)       observability (tracing/metrics)
+</div>
+<table>
+<tr><th>Concern</th><th>What to do</th></tr>
+<tr><td>Serving</td><td>Wrap the agent in FastAPI; stream responses for UX</td></tr>
+<tr><td>Long-running tasks</td><td>Use a queue (agent runs can exceed HTTP timeouts)</td></tr>
+<tr><td>State</td><td>Persist externally (Redis/Postgres) so any pod resumes a session</td></tr>
+<tr><td>Scaling</td><td>Stateless workers + external state = horizontal scale</td></tr>
+<tr><td>CI/CD for prompts</td><td>Version prompts; gate deploys on the eval regression suite</td></tr>
+<tr><td>Health</td><td>Liveness/readiness probes; graceful degradation</td></tr>
+</table>
+<div class="mine"><b>YOUR work:</b> <code>module_9_llmops_deployment</code> (FastAPI + Docker) covers serving. The agent-specific adds are: external state for resumability, a queue for long runs, and gating deploys on your eval suite.</div>
+<div class="warn"><b>Classic agent deploy bug:</b> long agent runs blow past the default HTTP request timeout. Fix: kick off async + poll/stream, or run on a queue/worker.</div>
+
+<h2>PART C — AGENTIC SECURITY (OWASP Top 10 for Agentic Apps 2026)</h2>
+
+<div class="founder">
+<h4>⭐ THE NEW FRONTIER</h4>
+<p>OWASP shipped a <strong>separate</strong> Top 10 for <em>Agentic</em> Applications in 2026 (ASI-prefixed) because agents introduce risks the LLM list didn't cover — risks from <em>autonomous action</em>, not just model output. Almost no candidate knows this list. Knowing it is a flex.</p>
+</div>
+
+<h2>3. The agentic risks (autonomy-specific)</h2>
+<table>
+<tr><th>Risk</th><th>Meaning</th><th>Defense</th></tr>
+<tr><td><span class="rank">!</span>Goal hijacking</td><td>Attacker redirects the agent's objective mid-task</td><td>validate goals; trust boundary; monitor goal drift</td></tr>
+<tr><td><span class="rank">!</span>Tool misuse</td><td>Agent uses a legit tool in a harmful way</td><td>constrain tool args; approval for high-impact calls</td></tr>
+<tr><td><span class="rank">!</span>Privilege abuse</td><td>Agent escalates / uses perms beyond its task</td><td>per-agent identity + scoped RBAC (Entra Agent ID)</td></tr>
+<tr><td><span class="rank">!</span>Memory poisoning</td><td>Injected content in long-term memory steers future runs</td><td>validate memory writes; provenance; isolation</td></tr>
+<tr><td><span class="rank">!</span>Rogue / cascading agents</td><td>One compromised agent corrupts others in a multi-agent system</td><td>isolate agents; validate handoffs; audit trail</td></tr>
+<tr><td><span class="rank">!</span>Identity & auth</td><td>Agents acting without proper identity/attribution</td><td>give each agent an identity; log who did what</td></tr>
+</table>
+<div class="hl"><b>The through-line:</b> P0 security was about the <em>model</em> (injection, output). Agentic security is about <em>autonomous action</em> — identity, permissions, memory integrity, and multi-agent blast radius. Both lists matter; name both in interviews.</div>
+<div class="mine"><b>YOUR work:</b> your chaos module now tests prompt injection (S13). The next portfolio move: a "rogue agent" or "memory poisoning" scenario — testing that one compromised node can't corrupt the multi-agent pipeline. That's cutting-edge.</div>
+
+<h2>4. The production security checklist</h2>
+<div class="card">
+<ol>
+<li>Each agent has its own <b>scoped identity</b> (least privilege per agent)</li>
+<li>High-impact tool calls go through a <b>human-in-the-loop gate</b></li>
+<li>All actions are <b>audited</b> (who/what/when) — no anonymous autonomy</li>
+<li>Long-term <b>memory writes are validated</b> + provenance-tracked</li>
+<li>Multi-agent <b>handoffs validate state</b> (contain blast radius)</li>
+<li>Secrets in a <b>vault</b>, never in prompts/logs/code</li>
+<li>A <b>spend cap</b> + rate limits (unbounded consumption / denial of wallet)</li>
+</ol>
+</div>
+
+<h2>5. Founder Q&A Drills</h2>
+<div class="q">How do you keep agent costs under control at scale?<div class="a">Model routing (cheap model for easy steps, strong for hard), prompt + semantic caching, token budgeting via history summarization, batching independent calls, and preferring workflows over agents where flexibility isn't needed. Then measure real per-task cost and quality, not estimates.</div></div>
+<div class="q">What breaks when you deploy an agent to production?<div class="a">Long runs exceed HTTP timeouts (use async/queues), state isn't resumable across pods (externalize to Redis/Postgres), and prompt changes regress quality (gate deploys on the eval suite). Plus health checks and graceful degradation.</div></div>
+<div class="q">How is agentic security different from LLM security?<div class="a">LLM security (OWASP 2025) is about model output — injection, data leakage, output handling. Agentic security (OWASP 2026, ASI) is about autonomous action — goal hijacking, tool misuse, privilege abuse, memory poisoning, rogue/cascading agents, and agent identity. Agents can act, so permissions and auditing become first-class.</div></div>
+<div class="q">A compromised agent in a multi-agent system — how do you contain it?<div class="a">Per-agent scoped identity (least privilege), validated handoffs so bad state can't propagate, agent isolation, a full audit trail, and human gates on high-impact actions. The goal is bounding blast radius so one rogue agent can't corrupt the system.</div></div>
+
+<div class="founder"><h4>🔥 BUILD CHALLENGE</h4><p>Add two things to your stack: (1) a <b>model-router</b> in <code>groq_client.py</code> (cheap vs strong) and measure the cost delta over a full pipeline run, and (2) a <b>"rogue agent" chaos scenario</b> (S14) testing that a corrupted node's bad state is caught at handoff and doesn't cascade. Cost engineering + agentic security chaos testing = genuine founder-grade portfolio.</p></div>
+
+<div class="win"><b>🎓 P1 COMPLETE.</b> You can now architect agent <em>systems</em>: multi-agent orchestration, MCP tool distribution, evaluation + observability, and production cost/ops/security. Combined with P0, that's the full "build a company" foundation. Next frontier: P2 (A2A, red-teaming, sandboxing, governance, computer-use, fine-tuning).</div>
+
+<div class="nav">
+<a href="agents_p1_eval_observability.html">← Evaluation & Observability</a>
+<a href="index.html">🏠 Course Home</a>
+</div>
+</div>
+</body>
+</html>

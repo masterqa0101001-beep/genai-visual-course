@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>P1 — Evaluation & Observability (Founder Level)</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0a0a14;color:#e0e0e0;line-height:1.7}
+.wrap{max-width:1000px;margin:0 auto;padding:2rem 1.3rem 6rem}
+a.back{color:#7b2ff7;text-decoration:none;font-size:.85rem}
+h1{font-size:2.1rem;margin:1rem 0 .3rem;background:linear-gradient(90deg,#00e676,#f7b733);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sub{color:#777;margin-bottom:2rem;font-size:.95rem}
+h2{font-size:1.5rem;margin:2.5rem 0 1rem;color:#00e676;border-bottom:1px solid #222;padding-bottom:.5rem}
+h3{font-size:1.15rem;margin:1.8rem 0 .7rem;color:#c9a6ff}
+p{margin:.7rem 0;color:#cfcfcf}
+.card{background:#12121f;border:1px solid #222;border-radius:12px;padding:1.3rem 1.5rem;margin:1.2rem 0}
+.hl{background:#7b2ff715;border-left:3px solid #7b2ff7;padding:1rem 1.2rem;border-radius:0 8px 8px 0;margin:1.2rem 0}
+.warn{background:#ff6b6b12;border-left:3px solid #ff6b6b;padding:1rem 1.2rem;border-radius:0 8px 8px 0;margin:1.2rem 0}
+.win{background:#00e67612;border-left:3px solid #00e676;padding:1rem 1.2rem;border-radius:0 8px 8px 0;margin:1.2rem 0}
+.founder{background:linear-gradient(135deg,#102a1e,#2a1e10);border:1px solid #00e67640;border-radius:12px;padding:1.3rem 1.5rem;margin:1.5rem 0}
+.founder h4{color:#ffc107;font-size:1rem;margin-bottom:.5rem}
+pre{background:#07070f;border:1px solid #1e1e2e;border-radius:8px;padding:1rem;overflow-x:auto;margin:1rem 0;font-size:.82rem}
+code{font-family:'Consolas','Courier New',monospace;color:#8be9fd}
+pre code{color:#e0e0e0}
+.ascii{background:#07070f;border:1px solid #1e1e2e;border-radius:8px;padding:1.2rem;overflow-x:auto;color:#00e676;font-family:'Consolas',monospace;font-size:.8rem;white-space:pre;line-height:1.4;margin:1.2rem 0}
+table{width:100%;border-collapse:collapse;margin:1.2rem 0;font-size:.85rem}
+th,td{border:1px solid #222;padding:.6rem .8rem;text-align:left;vertical-align:top}
+th{background:#1a1a2e;color:#00e676}
+.mine{border-left:3px solid #00d2ff;background:#00d2ff10;padding:1rem 1.2rem;border-radius:0 8px 8px 0;margin:1.2rem 0}
+.mine b{color:#00d2ff}
+ul,ol{margin:.6rem 0 .6rem 1.4rem}li{margin:.35rem 0}
+.q{background:#12121f;border:1px dashed #444;border-radius:8px;padding:1rem 1.2rem;margin:1rem 0}
+.q .a{color:#00e676;margin-top:.5rem;font-size:.9rem}
+.nav{display:flex;justify-content:space-between;margin-top:3rem;gap:1rem}
+.nav a{flex:1;background:#12121f;border:1px solid #222;border-radius:8px;padding:1rem;text-decoration:none;color:#e0e0e0;transition:.3s}
+.nav a:hover{border-color:#00e676}
+</style>
+</head>
+<body>
+<script>
+(function(){const V='4';const a=localStorage.getItem('genai_course_auth')||sessionStorage.getItem('genai_course_auth');const v=localStorage.getItem('genai_auth_version')||sessionStorage.getItem('genai_auth_version');if(a!=='authenticated'||v!==V){window.location.href='login.html';}})();
+</script>
+<div class="wrap">
+<a class="back" href="index.html">← Back to course home</a>
+<h1>📊 P1 — Evaluation & Observability</h1>
+<p class="sub">How you know an agent actually works — and keep knowing in production. Explicitly demanded in 2026 job postings. This is YOUR edge (QA × AI).</p>
+
+<div class="founder">
+<h4>⭐ THE FOUNDER TRUTH</h4>
+<p>"Agents are non-deterministic, so 'it worked once' means nothing. You can't ship what you can't measure. <strong>Evaluation</strong> tells you if it works before you ship; <strong>observability</strong> tells you if it's still working after. No evals = no business."</p>
+</div>
+
+<h2>PART A — EVALUATION</h2>
+
+<h2>1. Why agent eval is hard</h2>
+<p>Traditional software: input → deterministic output → assert equals. Agents: same input → different outputs, multi-step trajectories, "correct" is fuzzy. You evaluate <b>distributions and trajectories</b>, not exact matches.</p>
+
+<h2>2. The levels of agent evaluation</h2>
+<table>
+<tr><th>Level</th><th>Question it answers</th><th>Method</th></tr>
+<tr><td><b>Final output</b></td><td>Was the answer good?</td><td>LLM-as-judge, reference comparison, rubric</td></tr>
+<tr><td><b>Trajectory</b></td><td>Did it take sensible steps / call the right tools?</td><td>step/tool-call trace eval</td></tr>
+<tr><td><b>Task success</b></td><td>Did it accomplish the goal?</td><td>pass/fail on a goal checker</td></tr>
+<tr><td><b>Component</b></td><td>Is retrieval / a tool good in isolation?</td><td>RAGAS (faithfulness, relevance), unit tests</td></tr>
+</table>
+
+<h2>3. LLM-as-Judge (the workhorse)</h2>
+<p>Use a strong model to score outputs against a rubric. Powerful but biased — handle the pitfalls:</p>
+<div class="warn"><b>Judge pitfalls:</b> position bias (prefers first answer), verbosity bias (prefers longer), self-preference (prefers its own style), and variance (same input, different score). Fixes: randomize order, fix the rubric tightly, average multiple runs, calibrate against human labels.</div>
+<pre><code># LLM-as-judge sketch
+judge_prompt = """Score 1-5 on FAITHFULNESS to the source.
+5 = fully supported, 1 = fabricated. Return JSON: {"score":N,"reason":"..."}
+SOURCE: {source}
+ANSWER: {answer}"""
+# run 3x, average, log score + reason for audit
+</code></pre>
+
+<h2>4. Datasets & regression suites</h2>
+<div class="card">
+<ul>
+<li><b>Golden dataset:</b> curated input→expected pairs that define "good."</li>
+<li><b>Regression suite:</b> run it on every prompt/model change so you catch quality drops before shipping.</li>
+<li><b>Offline vs online:</b> offline = batch on a dataset pre-ship; online = sample live traffic post-ship.</li>
+</ul>
+Tools: <b>LangSmith, Ragas, DeepEval, promptfoo.</b>
+</div>
+<div class="mine"><b>YOUR work:</b> your <code>evaluation/evaluators.py</code> is this layer. Add a golden dataset + a regression run tied to prompt changes and you've got a real eval harness — exactly what 2026 JDs ask for.</div>
+
+<h2>PART B — OBSERVABILITY</h2>
+
+<h2>5. What to trace</h2>
+<div class="ascii">
+ RUN (trace)
+  └─ Agent step 1 (span)
+       ├─ LLM call  → tokens, cost, latency, prompt, response
+       ├─ Tool call → name, args, result, duration
+       └─ decision  → which tool, why
+  └─ Agent step 2 (span) ...
+  └─ RUN summary → total tokens, total cost, success, failures
+</div>
+<table>
+<tr><th>Metric</th><th>Why it matters</th></tr>
+<tr><td>Tokens + cost per step/run</td><td>Agents are expensive — you must see spend per task</td></tr>
+<tr><td>Latency per span</td><td>Find the slow step (usually a tool or a big LLM call)</td></tr>
+<tr><td>Success / failure + type</td><td>Classify failures (your taxonomy!) to fix the common ones</td></tr>
+<tr><td>Trajectory replay</td><td>Reproduce a bad run exactly to debug non-determinism</td></tr>
+</table>
+<div class="mine"><b>YOUR work — you're AHEAD here:</b> your <code>observability/tracer.py</code> already does per-node latency, token/cost, a failure taxonomy (<code>FailureType</code>), and run summaries. That's a production observability layer most candidates have never built. Tools that do this commercially: <b>LangSmith, Langfuse, OpenTelemetry.</b></p></div>
+
+<h2>6. The golden rule of agent logging</h2>
+<div class="warn"><b>Never log secrets or raw PII.</b> Traces capture prompts — which may contain keys, tokens, or user data. Scrub before persisting. (Ties directly to Secrets Hygiene + OWASP LLM02 Sensitive Information Disclosure.)</div>
+
+<h2>7. Eval + Observability = the flywheel</h2>
+<div class="ascii">
+  production traces ──▶ find failures ──▶ add to golden dataset
+        ▲                                        │
+        └──── ship fix ◀── eval passes ◀── fix + regression test
+</div>
+<div class="win"><b>Founder flywheel:</b> observability surfaces real failures → they become eval cases → fixes are regression-tested → you ship with confidence. This loop is the difference between a demo and a product.</div>
+
+<h2>8. Q&A Drills</h2>
+<div class="q">How do you evaluate a non-deterministic agent?<div class="a">On multiple axes: final-output quality (LLM-as-judge against a rubric), trajectory (did it call sensible tools), task success (goal checker), and components (RAGAS for retrieval). Against a golden dataset, run as a regression suite on every change, averaging over multiple runs to handle variance.</div></div>
+<div class="q">What are LLM-as-judge pitfalls?<div class="a">Position bias, verbosity bias, self-preference, and score variance. Mitigate by randomizing order, tight rubrics, averaging multiple runs, and calibrating against human labels.</div></div>
+<div class="q">What do you trace in an agent and why?<div class="a">Per-span: tokens, cost, latency, tool name/args/result, and the decision made. Per-run: totals, success/failure with a failure-type classification, and full trajectory for replay. Because agents are costly and non-deterministic, you can't debug or control them without this.</div></div>
+<div class="q">Biggest logging risk in observability?<div class="a">Leaking secrets/PII — traces capture prompts that may contain keys or user data. Scrub before persisting. It maps to OWASP LLM02 Sensitive Information Disclosure.</div></div>
+
+<div class="founder"><h4>🔥 BUILD CHALLENGE</h4><p>Close the flywheel on your own stack: take one failure type from your <code>tracer.py</code> taxonomy, turn a real failing trace into a golden-dataset case in <code>evaluators.py</code>, add an LLM-as-judge score, and wire it as a regression check. One documented eval→fix→regression loop is a portfolio centerpiece.</p></div>
+
+<div class="nav">
+<a href="agents_p1_mcp.html">← MCP Deep Dive</a>
+<a href="agents_p1_production.html">Next → Production: Cost, LLMOps & Agentic Security 🚀</a>
+</div>
+</div>
+</body>
+</html>
